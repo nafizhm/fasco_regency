@@ -1,6 +1,8 @@
 @extends('layouts.app')
 
-@section('title', 'Siteplan Penjualan - Dealaska')
+@section('title')
+    Siteplan Penjualan - {{ \App\Models\PengaturanProfil::value('nama_perusahaan') ?: 'Perumahan' }}
+@endsection
 
 @push('styles')
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
