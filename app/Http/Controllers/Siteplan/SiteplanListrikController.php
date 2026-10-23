@@ -15,9 +15,10 @@ class SiteplanListrikController extends Controller
 {
     public function index()
     {
-        $lokasiKavling = LokasiKavling::orderBy('urutan', 'asc')->get();
+        $selection = \App\Services\SiteplanSelection::load(['masterSvg', 'kavlingPeta.listrikAir']);
+        $lokasiKavling = $selection['lokasiKavling'];
 
-        return view('admin.siteplan.siteplan_listrik.index', compact('lokasiKavling'));
+        return view('admin.siteplan.siteplan_listrik.index', compact('lokasiKavling'))->with($selection);
     }
 
     public function show($id)

@@ -14,12 +14,13 @@ class SiteplanUnitReadyController extends Controller
 {
     public function index()
     {
-        $lokasiKavling = LokasiKavling::orderBy('urutan', 'asc')->get();
+        $selection = \App\Services\SiteplanSelection::load(['masterSvg', 'kavlingPeta']);
+        $lokasiKavling = $selection['lokasiKavling'];
 
         $legend = ProgresUnitReady::orderBy('id', 'asc')
             ->get();
 
-        return view('admin.siteplan.siteplan_unit_ready.index', compact('lokasiKavling', 'legend'));
+        return view('admin.siteplan.siteplan_unit_ready.index', compact('lokasiKavling', 'legend'))->with($selection);
     }
 
     public function show($id)

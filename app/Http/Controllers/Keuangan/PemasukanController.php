@@ -117,18 +117,21 @@ class PemasukanController extends Controller
                 ->make(true);
         }
 
+        $paymentCategoryId = KategoriTransaksi::where('kategori', 'Pembayaran Piutang')->where('jenis_kategori', 'PEMASUKAN')->value('id');
         $kategoriTransaksi = KategoriTransaksi::where('jenis_kategori', 'PEMASUKAN')
-            ->whereNotIn('id', [1, 2, 3, 4, 5, 6, 7, 17, 19, 20])
+            ->where(fn ($query) => $query->whereNotIn('id', [1, 2, 3, 4, 5, 6, 7, 17, 19, 20])->orWhere('id', $paymentCategoryId))
             ->get();
 
         $kategoriTransaksiDetail = KategoriTransaksi::where('jenis_kategori', 'PEMASUKAN')
             ->get();
 
-        $PiutangList = Piutang::where('status', 1)->where('id_customer', 0)->get();
+        app(\App\Services\PiutangPaymentService::class)->syncAll();
+        $PiutangList = Piutang::with('customer')->where('sisa_bayar', '>', 0)
+            ->orderBy('id_customer')->orderBy('id')->get();
 
         $bankList = Bank::all();
 
-        return view('admin.keuangan.pemasukan.index', compact('permissions', 'kategoriTransaksi', 'kategoriTransaksiDetail', 'PiutangList', 'bankList'));
+        return view('admin.keuangan.pemasukan.index', compact('paymentCategoryId', 'permissions', 'kategoriTransaksi', 'kategoriTransaksiDetail', 'PiutangList', 'bankList'));
     }
     public function edit($id)
     {
@@ -160,7 +163,7 @@ class PemasukanController extends Controller
             'id_bank'               => 'required',
             'lampiran'              => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'id_kategori_transaksi' => 'required',
-            'id_piutang'            => 'nullable|integer|min:1|exists:piutang,id',
+            'id_piutang'            => 'required_if:id_kategori_transaksi,' . KategoriTransaksi::where('kategori', 'Pembayaran Piutang')->where('jenis_kategori', 'PEMASUKAN')->value('id') . '|nullable|integer|min:1|exists:piutang,id',
         ], [
             'tanggal.required'               => 'Tanggal wajib diisi.',
             'tanggal.date'                   => 'Tanggal harus berupa tanggal.',
@@ -175,6 +178,7 @@ class PemasukanController extends Controller
         ]);
 
         if (! empty($request->id_piutang)) {
+            app(\App\Services\PiutangPaymentService::class)->syncPiutang($request->id_piutang);
             $piutang = Piutang::find($request->id_piutang);
 
             if ($piutang) {
@@ -190,6 +194,8 @@ class PemasukanController extends Controller
 
         $db = [
             'id_piutang'            => $request->id_piutang ?? 0,
+            'id_customer'           => isset($piutang) ? ($piutang->id_customer ?? 0) : 0,
+            'id_lokasi'             => isset($piutang) ? ($piutang->customer?->id_lokasi ?? 0) : 0,
             'id_hutang'             => 0,
             'id_invoice'            => 0,
             'id_mutasi'             => 0,

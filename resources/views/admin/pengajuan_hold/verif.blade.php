@@ -202,15 +202,7 @@
                                             <label for="nik_p" class="col-sm-4 col-form-label">NIK Pasangan</label>
                                             <div class="col-sm-8"><input type="text" name="nik_p" id="nik_p" value="{{ $data->nik_p }}" class="form-control"></div>
                                         </div>
-                                        <div class="form-group row">
-                                            <label for="tgl_registrasi" class="col-sm-4 col-form-label">Jenis
-                                                Perumahan</label>
-                                            <div class="col-sm-8">
-                                                <select name="jenis_perumahan" id="jenis_perumahan" class="form-control"><option value=""></option><option value="Subsidi" {{ $data->jenis_perumahan == 'Subsidi' ? 'selected' : '' }}>Subsidi</option><option value="Komersil" {{ $data->jenis_perumahan == 'Komersil' ? 'selected' : '' }}>Komersil</option></select>
-                                            </div>
-                                        </div>
-
-                                        <div class="form-group row">
+<div class="form-group row">
                                             <label for="tgl_registrasi" class="col-sm-4 col-form-label">Booking
                                                 Fee</label>
                                             <div class="col-sm-8">
@@ -244,6 +236,7 @@
                                                         <span class="text-muted">Tidak ada file</span>
                                                     @endif
                                                 </div>
+                                                @include('admin.pengajuan_hold.attachment-actions', ['field' => 'foto_ktp'])
                                                 <input type="file" name="foto_ktp" id="foto_ktp" class="form-control-file mt-2 attachment-input" accept=".jpg,.jpeg,.png,.webp">
                                                 <small class="text-muted">Pilih file untuk mengganti lampiran (maks. 10 MB).</small>
                                             </div>
@@ -263,6 +256,7 @@
                                                         <span class="text-muted">Tidak ada file</span>
                                                     @endif
                                                 </div>
+                                                @include('admin.pengajuan_hold.attachment-actions', ['field' => 'foto_npwp'])
                                                 <input type="file" name="foto_npwp" id="foto_npwp" class="form-control-file mt-2 attachment-input" accept=".jpg,.jpeg,.png,.webp">
                                                 <small class="text-muted">Pilih file untuk mengganti lampiran (maks. 10 MB).</small>
                                             </div>
@@ -284,6 +278,7 @@
                                                         <span class="text-muted">Tidak ada file</span>
                                                     @endif
                                                 </div>
+                                                @include('admin.pengajuan_hold.attachment-actions', ['field' => 'foto_kk'])
                                                 <input type="file" name="foto_kk" id="foto_kk" class="form-control-file mt-2 attachment-input" accept=".jpg,.jpeg,.png,.webp">
                                                 <small class="text-muted">Pilih file untuk mengganti lampiran (maks. 10 MB).</small>
                                             </div>
@@ -303,6 +298,7 @@
                                                         <span class="text-muted">Tidak ada file</span>
                                                     @endif
                                                 </div>
+                                                @include('admin.pengajuan_hold.attachment-actions', ['field' => 'foto_bpjs'])
                                                 <input type="file" name="foto_bpjs" id="foto_bpjs" class="form-control-file mt-2 attachment-input" accept=".jpg,.jpeg,.png,.webp">
                                                 <small class="text-muted">Pilih file untuk mengganti lampiran (maks. 10 MB).</small>
                                             </div>
@@ -324,6 +320,7 @@
                                                         <span class="text-muted">Tidak ada file</span>
                                                     @endif
                                                 </div>
+                                                @include('admin.pengajuan_hold.attachment-actions', ['field' => 'foto_ktp_p'])
                                                 <input type="file" name="foto_ktp_p" id="foto_ktp_p" class="form-control-file mt-2 attachment-input" accept=".jpg,.jpeg,.png,.webp">
                                                 <small class="text-muted">Pilih file untuk mengganti lampiran (maks. 10 MB).</small>
                                             </div>
@@ -343,6 +340,7 @@
                                                         <span class="text-muted">Tidak ada file</span>
                                                     @endif
                                                 </div>
+                                                @include('admin.pengajuan_hold.attachment-actions', ['field' => 'file_bukti'])
                                                 <input type="file" name="file_bukti" id="file_bukti" class="form-control-file mt-2 attachment-input" accept=".jpg,.jpeg,.png,.webp,.pdf">
                                                 <small class="text-muted">Pilih file untuk mengganti lampiran (maks. 10 MB).</small>
                                             </div>
@@ -364,6 +362,7 @@
                                                         <span class="text-muted">Tidak ada file</span>
                                                     @endif
                                                 </div>
+                                                @include('admin.pengajuan_hold.attachment-actions', ['field' => 'foto_pemohon'])
                                                 <input type="file" name="foto_pemohon" id="foto_pemohon" class="form-control-file mt-2 attachment-input" accept=".jpg,.jpeg,.png,.webp">
                                                 <small class="text-muted">Pilih file untuk mengganti lampiran (maks. 10 MB).</small>
                                             </div>
@@ -553,6 +552,40 @@
             $('#attachmentModal').on('hidden.bs.modal', function() {
                 $('#attachmentImage, #attachmentPdf').removeAttr('src');
             });
+            function refreshAttachmentActions(input) {
+                const preview = input.siblings('.img-thumbnail').find('.attachment-preview');
+                const url = preview.attr('data-url');
+                const actions = input.siblings('.attachment-actions');
+                const file = input[0].files[0];
+                actions.find('.attachment-print').prop('disabled', !url);
+                const download = actions.find('.attachment-download').toggleClass('disabled', !url)
+                    .attr('aria-disabled', url ? 'false' : 'true');
+                if (url) download.attr({href: url, download: file ? file.name : url.split('/').pop()});
+                else download.removeAttr('href download');
+            }
+            $(document).on('click', '.attachment-print', function() {
+                const preview = $(this).closest('.attachment-actions').siblings('.img-thumbnail').find('.attachment-preview');
+                const url = preview.attr('data-url');
+                if (!url) return;
+                const printWindow = window.open('', '_blank');
+                if (!printWindow) {
+                    toastr.error('Izinkan pop-up untuk mencetak lampiran.');
+                    return;
+                }
+                printWindow.document.title = 'Cetak Lampiran Booking';
+                const style = printWindow.document.createElement('style');
+                style.textContent = '@page { margin: 10mm; } body { margin: 0; text-align: center; } img { max-width: 100%; max-height: 95vh; object-fit: contain; } iframe { width: 100%; height: 95vh; border: 0; }';
+                printWindow.document.head.appendChild(style);
+                const isPdf = preview.attr('data-pdf') === '1';
+                const content = printWindow.document.createElement(isPdf ? 'iframe' : 'img');
+                content.onload = function() {
+                    printWindow.focus();
+                    if (isPdf) content.contentWindow.print();
+                    else printWindow.print();
+                };
+                content.src = url;
+                printWindow.document.body.appendChild(content);
+            });
             $('.attachment-input').each(function() {
                 $(this).data('original-preview', $(this).siblings('.img-thumbnail').html());
             }).on('change', function() {
@@ -563,6 +596,7 @@
                 const file = this.files[0];
                 if (!file) {
                     thumbnail.html(input.data('original-preview'));
+                    refreshAttachmentActions(input);
                     return;
                 }
                 const isPdf = file.type === 'application/pdf';
@@ -570,6 +604,7 @@
                     toastr.error('Pilih gambar JPG/PNG/WebP atau bukti PDF, maksimal 10 MB.');
                     this.value = '';
                     thumbnail.html(input.data('original-preview'));
+                    refreshAttachmentActions(input);
                     return;
                 }
                 const url = URL.createObjectURL(file);
@@ -578,6 +613,7 @@
                 if (isPdf) button.text('Lihat PDF');
                 else button.append($('<img alt="Lampiran baru" style="max-width:100%;max-height:100%;">').attr('src', url));
                 thumbnail.empty().append(button);
+                refreshAttachmentActions(input);
             });
         });
         $(document).ready(function() {

@@ -970,7 +970,6 @@ class PengajuanHoldController extends Controller
             'id_lokasi' => 'required|exists:lokasi_kavling,id',
             'id_kavling' => 'required|exists:kavling_peta,id',
             'id_marketing' => 'required|integer|min:0',
-            'jenis_perumahan' => 'required|in:Subsidi,Komersil',
             'booking_fee' => 'required|numeric|gt:0',
         ];
         foreach (['npwp', 'no_bpjs_kes', 'nama_saudara', 'no_telp_saudara', 'pekerjaan', 'status_pernikahan', 'nama_p', 'nik_p'] as $field) {

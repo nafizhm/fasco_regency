@@ -63,11 +63,11 @@
 
         .sidebar {
             position: relative;
-            padding-bottom: 60px;
+            padding-bottom: 12px;
         }
 
         .sidebar .nav-sidebar {
-            padding-bottom: 30px;
+            padding-bottom: 12px;
         }
 
         .sidebar-fixed-bottom {
@@ -99,7 +99,7 @@
         }
 
         .sidebar-fixed-bottom .nav-link:hover {
-            background-color: #6610f2;
+            background-color: #ffa619;
             color: #fff;
         }
 
@@ -214,6 +214,7 @@
             background-color: #374151;
         }
     </style>
+    <link rel="stylesheet" href="{{ asset('css/brand-theme.css') }}?v={{ filemtime(public_path('css/brand-theme.css')) }}">
 </head>
 
 <body class="hold-transition sidebar-mini layout-fixed">
@@ -234,7 +235,7 @@
 
 
         <!-- Navbar -->
-        <nav class="main-header navbar navbar-expand navbar-light bg-indigo">
+        <nav class="main-header navbar navbar-expand navbar-dark naufal-navbar">
             <ul class="navbar-nav d-flex align-items-center" style="margin-left: 5px;">
                 <li class="nav-item">
                     <a class="nav-link text-white" data-widget="pushmenu" href="#" role="button">
@@ -325,7 +326,17 @@
                                 }
                             @endphp
 
-                            @if ($children->isEmpty())
+                            @if ($children->isNotEmpty() && $children->every(fn ($child) => in_array($child->route_name, \App\Services\SiteplanSelection::ROUTES, true)))
+                                @php
+                                    $siteplanEntry = $children->firstWhere('route_name', 'siteplan-penjualan.index') ?? $children->first();
+                                @endphp
+                                <li class="nav-item">
+                                    <a href="{{ route($siteplanEntry->route_name) }}" class="nav-link {{ $isActiveParent ? 'active' : '' }}">
+                                        <i class="nav-icon fas {{ $menu->icon }}"></i>
+                                        <p>{{ $menu->title }}</p>
+                                    </a>
+                                </li>
+                            @elseif ($children->isEmpty())
                                 @php
                                     $isActiveSingle =
                                         request()->routeIs($menu->route_name . '*') ||
@@ -334,24 +345,19 @@
                                 @endphp
                                 <li class="nav-item">
                                     <a href="{{ route($menu->route_name) }}"
-                                        class="nav-link {{ $isActiveSingle ? '' : '' }}"
-                                        style="{{ $isActiveSingle ? 'background-color: #6610f2 !important; color: #ffffff !important;' : '' }}">
-                                        <i class="nav-icon fas {{ $menu->icon }}"
-                                            style="{{ $isActiveSingle ? 'color: #ffffff !important;' : '' }}"></i>
-                                        <p style="{{ $isActiveSingle ? 'color: #ffffff !important;' : '' }}">
+                                        class="nav-link {{ $isActiveSingle ? 'active' : '' }}">
+                                        <i class="nav-icon fas {{ $menu->icon }}"></i>
+                                        <p>
                                             {{ $menu->route_name === 'sppr.index' ? 'Cetak SPR' : $menu->title }}</p>
                                     </a>
                                 </li>
                             @else
                                 <li class="nav-item {{ $isActiveParent ? 'menu-open' : '' }}">
-                                    <a href="#" class="nav-link {{ $isActiveParent ? 'active' : '' }}"
-                                        style="{{ $isActiveParent ? 'background-color: #6610f2 !important; color: #ffffff !important;' : '' }}">
-                                        <i class="nav-icon fas {{ $menu->icon }}"
-                                            style="{{ $isActiveParent ? 'color: #ffffff !important;' : '' }}"></i>
-                                        <p style="{{ $isActiveParent ? 'color: #ffffff !important;' : '' }}">
+                                    <a href="#" class="nav-link {{ $isActiveParent ? 'active' : '' }}">
+                                        <i class="nav-icon fas {{ $menu->icon }}"></i>
+                                        <p>
                                             {{ $menu->title }}
-                                            <i class="right fas fa-angle-left"
-                                                style="{{ $isActiveParent ? 'color: #ffffff !important;' : '' }}"></i>
+                                            <i class="right fas fa-angle-left"></i>
                                         </p>
                                     </a>
                                     <ul class="nav nav-treeview">
@@ -380,12 +386,6 @@
                         </form>
                     </ul>
                 </nav>
-                <div class="sidebar-fixed-bottom">
-                    <a href="{{ route('panduan-aplikasi.index') }}" target="_blank" class="nav-link">
-                        <i class="nav-icon fas fa-info-circle"></i>
-                        <p>Panduan Aplikasi</p>
-                    </a>
-                </div>
 
                 <!-- /.sidebar-menu -->
             </div>

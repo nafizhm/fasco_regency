@@ -159,6 +159,10 @@
         const customer = unit.customer;
         const utilities = unit.listrik_air || response.listrik_air || {};
         selectedSiteplanUnit = unit;
+        $('#unitConstructionHistory').remove();
+        $('<button type="button" id="unitConstructionHistory" class="btn btn-outline-primary btn-sm mb-3">')
+            .attr('data-build-history', unit.id).text('Lihat progres pembangunan & histori foto')
+            .prependTo('#unitOverview');
         $('#modalDetailLabel').text('Unit ' + siteplanValue(unit.kode_kavling));
         $('#unitLocation').text(siteplanValue(unit.lokasi?.nama_kavling));
         $('#unitStatus').text(customer?.progres?.status_progres || (customer ? 'Terjual' : (unit.is_booked ? 'Hold' : 'Tersedia')));

@@ -31,6 +31,36 @@ class PiutangController extends Controller
                 $data->whereDate('tanggal_piutang', $request->filter_tanggal);
             }
             
+            $bills = $data->get();
+            $customers = \App\Models\Customer::whereIn('id', $bills->pluck('id_customer')->filter())->get()->keyBy('id');
+            $data = $bills->groupBy(fn ($bill) => $bill->id_customer
+                ? 'customer-' . $bill->id_customer : 'piutang-' . $bill->id)
+                ->map(function ($items) use ($customers) {
+                    $row = clone $items->first();
+                    if ($row->id_customer) {
+                        $customer = $customers->get($row->id_customer);
+                        $row->deskripsi = ($customer?->nama_lengkap ?? 'Customer #' . $row->id_customer)
+                            . ($customer?->kode_customer ? ' (' . $customer->kode_customer . ')' : '')
+                            . ' — ' . $items->count() . ' tagihan';
+                        $row->nominal = $items->sum('nominal');
+                        $row->terbayar = $items->sum('terbayar');
+                        $row->sisa_bayar = $items->sum('sisa_bayar');
+                        $row->status = $row->sisa_bayar > 0 ? 1 : 2;
+                        $row->tgl_pelunasan = $row->status === 2 ? $items->max('tgl_pelunasan') : null;
+                        $row->rincian = $items->map(fn ($bill) => [
+                            'tanggal' => Carbon::parse($bill->tanggal_piutang)->translatedFormat('j F Y'),
+                            'deskripsi' => $bill->deskripsi,
+                            'nominal' => $bill->nominal,
+                            'terbayar' => $bill->terbayar,
+                            'sisa_bayar' => $bill->sisa_bayar,
+                            'url' => route('piutang.show', $bill->id),
+                            'id' => $bill->id,
+                        ])->values()->all();
+                    }
+                    $row->syncOriginal();
+                    return $row;
+                })->values();
+
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('nominal_raw', fn ($row) => (int) $row->getRawOriginal('nominal'))
@@ -69,12 +99,10 @@ class PiutangController extends Controller
                         ? Carbon::parse($row->tgl_pelunasan)->translatedFormat('j F Y')
                         : '';
                 })
-                ->filterColumn('tanggal_piutang', function ($query, $keyword) {
-                    $query->where(function ($q) use ($keyword) {
-                        $q->WhereDate('tanggal_piutang', 'like', "%{$keyword}%");
-                    });
-                })
                 ->addColumn('action', function ($row) use ($permissions) {
+                    if ($row->id_customer) {
+                        return '<button type="button" class="btn btn-primary btn-sm rincian-button">Rincian Tagihan</button>';
+                    }
                     $editUrl   = route('piutang.edit', $row->id);
                     $detailUrl = route('piutang.show', $row->id);
                     $deleteUrl = route('piutang.destroy', $row->id);

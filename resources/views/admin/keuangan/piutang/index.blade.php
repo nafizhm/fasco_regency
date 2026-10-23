@@ -60,8 +60,8 @@
                                     <thead>
                                         <tr>
                                             <th>No</th>
-                                            <th>Tanggal Piutang</th>
-                                            <th width="250px">Deskripsi</th>
+                                            <th>Tanggal Piutang Terbaru</th>
+                                            <th width="250px">Customer / Deskripsi</th>
                                             <th>Nominal</th>
                                             <th>Terbayar</th>
                                             <th>Sisa Bayar</th>
@@ -188,6 +188,28 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalRincian" tabindex="-1" role="dialog"
+        aria-labelledby="modalRincianLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-indigo">
+                    <div>
+                        <h5 class="modal-title text-white font-weight-bold" id="modalRincianLabel">Rincian Tagihan</h5>
+                        <div id="rincian-customer" class="small text-white mt-1"></div>
+                    </div>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Tutup">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3" id="rincian-summary"></div>
+                    <div class="table-responsive" id="rincian-table"></div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button></div>
             </div>
         </div>
     </div>
@@ -370,6 +392,42 @@
             });
             $('#filter_tanggal').on('change', function() {
                 table.ajax.reload();
+            });
+            $('.data-table').on('click', '.rincian-button', function() {
+                let tr = $(this).closest('tr');
+                if (tr.hasClass('child')) tr = tr.prev();
+                const row = table.row(tr);
+                const data = row.data();
+                $('#rincian-customer').text(data.deskripsi);
+                const summary = $('#rincian-summary').empty();
+                [['Total Piutang', 'nominal_raw'], ['Terbayar', 'terbayar_raw'], ['Sisa Bayar', 'sisa_bayar_raw']].forEach(function(item) {
+                    const card = $('<div class="col-md-4 mb-2">').appendTo(summary);
+                    const content = $('<div class="border rounded p-3 h-100">').appendTo(card);
+                    $('<div class="text-muted small mb-2">').text(item[0]).appendTo(content);
+                    $('<div class="h5 font-weight-bold mb-0">').text('Rp ' + Number(data[item[1]]).toLocaleString('id-ID')).appendTo(content);
+                });
+                const detail = $('<table class="table table-sm table-bordered mb-0">');
+                detail.append('<thead><tr><th>Tanggal</th><th>Tagihan</th><th>Nominal</th><th>Terbayar</th><th>Sisa Bayar</th><th>Action</th></tr></thead>');
+                const body = $('<tbody>').appendTo(detail);
+                (row.data().rincian || []).forEach(function(bill) {
+                    const line = $('<tr>').appendTo(body);
+                    $('<td>').text(bill.tanggal).appendTo(line);
+                    $('<td>').text(bill.deskripsi).appendTo(line);
+                    ['nominal', 'terbayar', 'sisa_bayar'].forEach(function(key) {
+                        $('<td class="text-right">').text('Rp ' + Number(bill[key]).toLocaleString('id-ID')).appendTo(line);
+                    });
+                    $('<td>').append($('<button type="button" class="btn btn-primary btn-sm detail-button">')
+                        .attr('data-id', bill.id).attr('data-url', bill.url).text('Detail')).appendTo(line);
+                });
+                $('#rincian-table').empty().append(detail);
+                $('#modalRincian').modal('show');
+            });
+            $('#modalRincian').on('click', '.detail-button', function(event) {
+                event.stopPropagation();
+                const button = $(this).clone().hide();
+                $('#modalRincian').one('hidden.bs.modal', function() {
+                    button.appendTo(document.body).trigger('click').remove();
+                }).modal('hide');
             });
             $(window).on('focus.piutang', function() {
                 table.ajax.reload(null, false);

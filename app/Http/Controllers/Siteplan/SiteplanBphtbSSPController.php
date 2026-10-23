@@ -15,9 +15,10 @@ class SiteplanBphtbSSPController extends Controller
 {
     public function index()
     {
-        $lokasiKavling = LokasiKavling::orderBy('urutan', 'asc')->get();
+        $selection = \App\Services\SiteplanSelection::load(['masterSvg', 'kavlingPeta.BphtbSsp']);
+        $lokasiKavling = $selection['lokasiKavling'];
 
-        return view('admin.siteplan.siteplan_bphtb_ssp.index', compact('lokasiKavling'));
+        return view('admin.siteplan.siteplan_bphtb_ssp.index', compact('lokasiKavling'))->with($selection);
     }
 
     public function show($id)

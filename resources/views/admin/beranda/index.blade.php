@@ -5,13 +5,13 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
     :root {
-      --bg: #f6f8fc;
+      --bg: #f5f5f4;
       --surface: #ffffff;
       --text: #111827;
       --muted: #6b7280;
       --line: #e5e7eb;
-      --primary: #5b2cff;
-      --primary-soft: #ede9fe;
+      --primary: #a25e00;
+      --primary-soft: #fff1d9;
       --shadow: 0 10px 30px rgba(17, 24, 39, .07);
       --radius: 18px;
     }
@@ -120,7 +120,7 @@
     .blue { background: linear-gradient(135deg,#0ea5e9,#2563eb); }
     .green { background: linear-gradient(135deg,#22c55e,#15803d); }
     .orange { background: linear-gradient(135deg,#f59e0b,#f97316); }
-    .purple { background: linear-gradient(135deg,#7c3aed,#4f46e5); }
+    .purple { background: linear-gradient(135deg,#945500,#945500); }
     .red { background: linear-gradient(135deg,#fb7185,#e11d48); }
 
     .kpi-label {
@@ -255,7 +255,7 @@
     .c-green { --pipeline-accent:#15803d; color:#15803d; border-color:#4ade80; background:#f3fff6; }
     .c-orange { --pipeline-accent:#c56a00; color:#c56a00; border-color:#f59e0b; background:#fff9ed; }
     .c-pink { --pipeline-accent:#db2777; color:#db2777; border-color:#f472b6; background:#fff5fb; }
-    .c-purple { --pipeline-accent:#5b21b6; color:#5b21b6; border-color:#8b5cf6; background:#faf7ff; }
+    .c-purple { --pipeline-accent:#945500; color:#945500; border-color:#ffa619; background:#faf7ff; }
     .c-blue { --pipeline-accent:#1d4ed8; color:#1d4ed8; border-color:#60a5fa; background:#f5f9ff; }
 
     .projects-table-wrap {
@@ -326,8 +326,8 @@
       display: inline-flex;
       padding: 3px 7px;
       border-radius: 6px;
-      background: #eef2ff;
-      color: #4338ca;
+      background: #fff1d9;
+      color: #945500;
       font-weight: 700;
       margin-right: 5px;
     }
@@ -340,9 +340,9 @@
     }
 
     .detail-btn {
-      border: 1px solid #c7d2fe;
+      border: 1px solid #ffd696;
       background: #fff;
-      color: #4f46e5;
+      color: #945500;
       border-radius: 9px;
       padding: 7px 12px;
       font-weight: 700;
@@ -394,8 +394,8 @@
     .chart-box { overflow-x: auto; }
     .bar-chart { min-width: 540px; }
 
-    .bar.target { background: #ddd6fe; }
-    .bar.actual { background: #5b2cff; }
+    .bar.target { background: #ffd696; }
+    .bar.actual { background: #a25e00; }
 
     .bar-label {
       position: absolute;
@@ -468,10 +468,10 @@
       width: 38px;
       height: 38px;
       border-radius: 50%;
-      background: linear-gradient(135deg,#c7d2fe,#fbcfe8);
+      background: linear-gradient(135deg,#ffd696,#f3e5cc);
       display: grid;
       place-items: center;
-      color: #4f46e5;
+      color: #945500;
       font-weight: 800;
       flex: 0 0 auto;
     }
@@ -601,7 +601,7 @@
           <div class="kpi-icon purple"><i class="fa-regular fa-credit-card"></i></div>
           <div>
             <div class="kpi-label">Piutang</div>
-            <div class="kpi-value money" style="color:#5b2cff">Rp {{ number_format($summaryMetrics['piutang'] ?? 0, 0, ',', '.') }}</div>
+            <div class="kpi-value money" style="color:#a25e00">Rp {{ number_format($summaryMetrics['piutang'] ?? 0, 0, ',', '.') }}</div>
             <div class="kpi-note">Total {{ $summaryMetrics['piutang_customer'] ?? 0 }} customer</div>
           </div>
         </article>
@@ -689,7 +689,7 @@
                     <td><span class="metric-number" style="color:#15803d">{{ $project['wawancara'] }}</span></td>
                     <td><span class="metric-number" style="color:#c56a00">{{ $project['acc_bank'] }}</span></td>
                     <td><span class="metric-number" style="color:#db2777">{{ $project['ppjb'] }}</span></td>
-                    <td><span class="metric-number" style="color:#5b21b6">{{ $project['akad'] }}</span></td>
+                    <td><span class="metric-number" style="color:#945500">{{ $project['akad'] }}</span></td>
                     <td><span class="metric-number" style="color:#1d4ed8">{{ $project['bast'] }}</span></td>
                   </tr>
                 @empty
@@ -742,7 +742,7 @@
                   </div>
                 @endforeach
               </div>
-              <div class="legend"><span><i style="background:#ddd6fe"></i>Booking</span><span><i style="background:#5b2cff"></i>Akad</span></div>
+              <div class="legend"><span><i style="background:#ffd696"></i>Booking</span><span><i style="background:#a25e00"></i>Akad</span></div>
             </div>
           </div>
         </article>

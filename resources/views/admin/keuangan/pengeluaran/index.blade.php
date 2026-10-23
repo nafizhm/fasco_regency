@@ -16,6 +16,10 @@
                                     <h3 class="font-weight-bold text-lg">Data Pengeluaran</h3>
                                     <div class="d-flex align-items-center">
                                         @if (isset($permissions['tambah']) && $permissions['tambah'] == 1)
+                                            <button type="button" class="btn btn-success btn-sm mr-2" data-toggle="modal"
+                                                data-target="#modalForm" data-payment="hutang">
+                                                <i class="fas fa-money-bill-wave"></i> Pembayaran Hutang
+                                            </button>
                                             <button type="button" class="btn btn-sm btn-primary" data-toggle="modal"
                                                 data-target="#modalForm">
                                                 <i class="fas fa-plus"></i> Tambah Pengeluaran
@@ -159,16 +163,16 @@
                         </div>
                         <div class="form-group row" id="row-hutang" style="display: none;">
                             <label for="id_hutang" class="col-sm-3 col-form-label">Hutang</label>
-                            <div class="col-sm-3">
+                            <div class="col-sm-9">
                                 <select class="form-select select-hutang" name="id_hutang" id="id_hutang">
                                     <option value=""></option>
                                     @foreach ($HutangList as $item)
-                                        <option value="{{ $item->id }}">{{ $item->deskripsi }}</option>
+                                        <option value="{{ $item->id }}">{{ $item->deskripsi }} — Sisa Rp {{ number_format($item->sisa_bayar, 0, ',', '.') }}</option>
                                     @endforeach
                                 </select>
                             </div>
-                            <label for="sisa_bayar" class="col-sm-2 col-form-label">Sisa Bayar</label>
-                            <div class="col-sm-4">
+                            <label for="sisa_bayar" class="col-sm-3 col-form-label mt-sm-3">Sisa Bayar</label>
+                            <div class="col-sm-9 mt-sm-3">
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text">Rp.</span>
@@ -277,6 +281,7 @@
 @endsection
 @push('scripts')
     <script>
+        var paymentCategoryId = @json($paymentCategoryId);
         previewFile('lampiran', 'previewLampiran');
         previewFile('lampiran_detail', 'previewLampiranDetail');
 
@@ -293,6 +298,8 @@
             $('.select-hutang').select2({
                 theme: "bootstrap4",
                 placeholder: "Pilih Hutang",
+                dropdownParent: $('#modalForm'),
+                width: '100%',
             });
             $('.select-metode-bayar').select2({
                 theme: "bootstrap4",
@@ -302,14 +309,18 @@
         });
 
         $(document).on('click', '[data-target="#modalForm"]', function() {
-            $('#modalFormLabel').text('Tambah Pengeluaran');
+            const payment = $(this).data('payment') === 'hutang';
+            $('#modalFormLabel').text(payment ? 'Pembayaran Hutang' : 'Tambah Pengeluaran');
+            $('#id_hutang').prop('disabled', false);
+            $('#id_kategori_transaksi').prop('disabled', false).val(payment ? paymentCategoryId : '').trigger('change');
         });
 
         $(document).ready(function() {
             $('#id_kategori_transaksi').on('change', function() {
                 const selectedValue = $(this).val(); // Ambil value saja
+                $('#id_hutang').prop('required', selectedValue == paymentCategoryId);
 
-                if (selectedValue == 10) {
+                if (selectedValue == paymentCategoryId) {
                     $('#row-hutang').show();
                     $('#sisa_bayar').val('');
                 } else {
@@ -432,7 +443,7 @@
                     const kategori = response.data.id_kategori_transaksi;
                     $('#id_kategori_transaksi').val(kategori).trigger('change');
 
-                    if (kategori == 10) {
+                    if (kategori == paymentCategoryId) {
                         $('#id_kategori_transaksi').prop('disabled', true);
                         $('#id_hutang').val(response.data.id_hutang).trigger('change');
                     } else {
@@ -484,6 +495,7 @@
             $('#id_kategori_transaksi').val('').trigger('change');
             $('#id_kategori_transaksi').prop('disabled', false);
             $('#id_hutang').val('').trigger('change');
+            $('#id_hutang').prop('disabled', false);
             $('.is-invalid').removeClass('is-invalid');
             $('.invalid-feedback').remove();
             let submitBtn = $('#submitBtn');

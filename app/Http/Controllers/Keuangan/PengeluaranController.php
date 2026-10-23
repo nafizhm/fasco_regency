@@ -128,8 +128,9 @@ class PengeluaranController extends Controller
                 ->make(true);
         }
 
+        $paymentCategoryId = KategoriTransaksi::where('kategori', 'Pembayaran Hutang')->where('jenis_kategori', 'PENGELUARAN')->value('id');
         $kategoriTransaksi = KategoriTransaksi::where('jenis_kategori', 'PENGELUARAN')
-            ->whereNotIn('id', [8, 9, 11, 13, 14, 15, 16, 18])
+            ->where(fn ($query) => $query->whereNotIn('id', [8, 9, 11, 13, 14, 15, 16, 18])->orWhere('id', $paymentCategoryId))
             ->get();
 
         $kategoriTransaksiDetail = KategoriTransaksi::where('jenis_kategori', 'PENGELUARAN')
@@ -140,7 +141,7 @@ class PengeluaranController extends Controller
         $bankList = Bank::all();
         $metodeBayarList = MetodeBayar::whereIn('id', [1, 2])->get();
 
-        return view('admin.keuangan.pengeluaran.index', compact('permissions', 'kategoriTransaksi', 'kategoriTransaksiDetail', 'HutangList', 'bankList', 'metodeBayarList'));
+        return view('admin.keuangan.pengeluaran.index', compact('paymentCategoryId', 'permissions', 'kategoriTransaksi', 'kategoriTransaksiDetail', 'HutangList', 'bankList', 'metodeBayarList'));
     }
 
     public function edit($id)
@@ -175,7 +176,7 @@ class PengeluaranController extends Controller
             'id_metode_bayar'       => 'required',
             'lampiran'              => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'id_kategori_transaksi' => 'required',
-            'id_hutang'             => 'required_if:id_kategori_transaksi,3',
+            'id_hutang'             => 'required_if:id_kategori_transaksi,' . KategoriTransaksi::where('kategori', 'Pembayaran Hutang')->where('jenis_kategori', 'PENGELUARAN')->value('id') . '|nullable|integer|exists:hutang,id',
         ], [
             'tanggal.required'               => 'Tanggal wajib diisi.',
             'tanggal.date'                   => 'Tanggal harus berupa tanggal.',
@@ -328,7 +329,7 @@ class PengeluaranController extends Controller
             $db['lampiran'] = $filename;
         }
 
-        if ($data->id_kategori_transaksi == 10) {
+        if ($data->id_hutang > 0) {
             if ($request->id_hutang != $data->id_hutang) {
                 $hutanglama = Hutang::find($data->id_hutang);
                 if ($hutanglama) {

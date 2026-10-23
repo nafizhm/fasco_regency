@@ -16,6 +16,10 @@
                                     <h3 class="font-weight-bold text-lg">Data Pemasukan</h3>
                                     <div class="d-flex align-items-center">
                                         @if (isset($permissions['tambah']) && $permissions['tambah'] == 1)
+                                            <button type="button" class="btn btn-success btn-sm mr-2" data-toggle="modal"
+                                                data-target="#modalForm" data-payment="piutang">
+                                                <i class="fas fa-money-bill-wave"></i> Pembayaran Piutang
+                                            </button>
                                             <button type="button" class="btn btn-sm btn-primary" data-toggle="modal"
                                                 data-target="#modalForm">
                                                 <i class="fas fa-plus"></i> Tambah Pemasukan
@@ -129,16 +133,16 @@
                         </div>
                         <div class="form-group row" id="row-hutang" style="display: none;">
                             <label for="id_piutang" class="col-sm-3 col-form-label">Piutang</label>
-                            <div class="col-sm-3">
+                            <div class="col-sm-9">
                                 <select class="form-select select-piutang" name="id_piutang" id="id_piutang">
                                     <option value=""></option>
                                     @foreach ($PiutangList as $item)
-                                        <option value="{{ $item->id }}">{{ $item->deskripsi }}</option>
+                                        <option value="{{ $item->id }}">{{ $item->customer?->nama_lengkap ?? 'Piutang Umum' }} {{ $item->customer?->kode_customer ? '(' . $item->customer->kode_customer . ')' : '' }} — {{ $item->deskripsi }} — Sisa Rp {{ number_format($item->sisa_bayar, 0, ',', '.') }}</option>
                                     @endforeach
                                 </select>
                             </div>
-                            <label for="sisa_bayar" class="col-sm-2 col-form-label">Sisa Bayar</label>
-                            <div class="col-sm-4">
+                            <label for="sisa_bayar" class="col-sm-3 col-form-label mt-sm-3">Sisa Bayar</label>
+                            <div class="col-sm-9 mt-sm-3">
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text">Rp.</span>
@@ -247,6 +251,7 @@
 @endsection
 @push('scripts')
     <script>
+        var paymentCategoryId = @json($paymentCategoryId);
         previewFile('lampiran', 'previewLampiran');
         previewFile('lampiran_detail', 'previewLampiranDetail');
 
@@ -263,18 +268,24 @@
             $('.select-piutang').select2({
                 theme: "bootstrap4",
                 placeholder: "Pilih Piutang",
+                dropdownParent: $('#modalForm'),
+                width: '100%',
             });
         });
 
         $(document).on('click', '[data-target="#modalForm"]', function() {
-            $('#modalFormLabel').text('Tambah Pemasukan');
+            const payment = $(this).data('payment') === 'piutang';
+            $('#modalFormLabel').text(payment ? 'Pembayaran Piutang' : 'Tambah Pemasukan');
+            $('#id_piutang').prop('disabled', false);
+            $('#id_kategori_transaksi').prop('disabled', false).val(payment ? paymentCategoryId : '').trigger('change');
         });
 
         $(document).ready(function() {
             $('#id_kategori_transaksi').on('change', function() {
                 const selectedValue = $(this).val();
+                $('#id_piutang').prop('required', selectedValue == paymentCategoryId);
 
-                if (selectedValue == 12) {
+                if (selectedValue == paymentCategoryId) {
                     $('#row-hutang').show();
                     $('#sisa_bayar').val('');
                 } else {
@@ -394,7 +405,7 @@
                     const kategori = response.data.id_kategori_transaksi;
                     $('#id_kategori_transaksi').val(kategori).trigger('change');
 
-                    if (kategori == 12) {
+                    if (kategori == paymentCategoryId) {
                         $('#id_kategori_transaksi').prop('disabled', true);
                         $('#id_piutang').val(response.data.id_piutang).trigger('change');
                     } else {
@@ -445,6 +456,7 @@
             $('#id_kategori_transaksi').val('').trigger('change');
             $('#id_bank').val('').trigger('change');
             $('#id_piutang').val('').trigger('change');
+            $('#id_piutang').prop('disabled', false);
             $('#id_kategori_transaksi').prop('disabled', false);
             $('.is-invalid').removeClass('is-invalid');
             $('.invalid-feedback').remove();

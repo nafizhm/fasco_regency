@@ -122,6 +122,22 @@ Route::get('/hutang/sisa-bayar/{id}', [HutangController::class, 'getSisaBayar'])
 Route::get('/piutang/sisa-bayar/{id}', [PiutangController::class, 'getSisaBayar']);
 
 Route::middleware(['auth'])->group(function () {
+    Route::prefix('admin/progres-pembangunan')->name('construction.')->controller(\App\Http\Controllers\ConstructionReportController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/units/{unit}/history', 'history')->name('history');
+        Route::post('/uploads', 'begin')->name('begin');
+        Route::post('/uploads/{id}/photos/{photo}', 'chunk')->whereNumber('photo')->name('chunk');
+        Route::post('/uploads/{id}/finish', 'finish')->name('finish');
+        Route::delete('/reports/{report}', 'destroy')->name('destroy');
+        Route::get('/reports/{report}/photos/{photo}', 'photo')->whereNumber('photo')->name('photo');
+    });
+    Route::prefix('admin/dokumentasi-konten')->name('content-documents.')->controller(\App\Http\Controllers\ContentDocumentController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/uploads', 'begin')->name('begin');
+        Route::post('/uploads/{id}/chunk', 'chunk')->name('chunk');
+        Route::post('/uploads/{id}/finish', 'finish')->name('finish');
+        Route::get('/{document}/download', 'download')->name('download');
+    });
     Route::get('admin/laporan', [\App\Http\Controllers\LaporanController::class, 'index'])->name('laporan.index');
     Route::get('admin/laporan/detail', [\App\Http\Controllers\LaporanController::class, 'detail'])->name('laporan.detail');
     Route::get('admin/laporan/excel', [\App\Http\Controllers\LaporanController::class, 'excel'])->name('laporan.excel');

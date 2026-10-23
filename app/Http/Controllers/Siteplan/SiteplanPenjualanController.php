@@ -20,10 +20,8 @@ class SiteplanPenjualanController extends Controller
 {
     public function index()
     {
-         $lokasiKavling = LokasiKavling::with([
-        'masterSvg',
-        'kavlingPeta' => fn ($query) => $query->withBookingState(), 'kavlingPeta.customer.progres'  // ← tambahkan ini
-    ])->orderBy('urutan', 'asc')->get();
+         $selection = \App\Services\SiteplanSelection::load(['masterSvg', 'kavlingPeta' => fn ($query) => $query->withBookingState(), 'kavlingPeta.customer.progres']);
+        $lokasiKavling = $selection['lokasiKavling'];
 
         $legend = ProgresListPenjualan::forColorSettings()->whereNotNull('warna')
             ->where('warna', '!=', '')
@@ -33,7 +31,7 @@ class SiteplanPenjualanController extends Controller
 
         $holdColor = ProgresListPenjualan::whereRaw('LOWER(TRIM(status_progres)) = ?', ['hold'])->value('warna') ?: '#ffc107';
 
-        return view('admin.siteplan.siteplan_penjualan.index', compact('lokasiKavling', 'legend', 'holdColor'));
+        return view('admin.siteplan.siteplan_penjualan.index', compact('lokasiKavling', 'legend', 'holdColor'))->with($selection);
     }
 
 

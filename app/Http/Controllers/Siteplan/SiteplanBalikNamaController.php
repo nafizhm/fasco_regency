@@ -15,9 +15,10 @@ class SiteplanBalikNamaController extends Controller
 {
     public function index()
     {
-        $lokasiKavling = LokasiKavling::orderBy('urutan', 'asc')->get();
+        $selection = \App\Services\SiteplanSelection::load(['masterSvg', 'kavlingPeta.BalikNama']);
+        $lokasiKavling = $selection['lokasiKavling'];
 
-        return view('admin.siteplan.siteplan_baliknama.index', compact('lokasiKavling'));
+        return view('admin.siteplan.siteplan_baliknama.index', compact('lokasiKavling'))->with($selection);
     }
 
     public function show($id)
