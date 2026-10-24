@@ -175,6 +175,9 @@ class SPPRController extends Controller
         abort_unless($sppr->customer?->kavling, 422, 'Data kavling customer belum tersedia.');
         $unit = $this->kavlingData($sppr->customer);
         $templatePath = public_path('templates/template_spr.docx');
+        if (!is_file($templatePath)) {
+            $templatePath = public_path('templates/template_sppr/template_sppr.docx');
+        }
         abort_unless(file_exists($templatePath), 404, 'Template SPR tidak ditemukan.');
         $lokasi = $sppr->customer->lokasi;
         $kavling = $sppr->customer->kavling;
@@ -201,11 +204,20 @@ class SPPRController extends Controller
         }
         $fmt = fn ($value) => number_format((int) $value, 0, ',', '.');
         $words = fn ($value) => mb_strtolower(DocumentDataContext::terbilang((int) $value));
+        $alamat = preg_replace('/\s+/u', ' ', trim($sppr->alamat ?: $sppr->customer->alamat_ktp ?: $sppr->customer->alamat_domisili ?: '-'));
+        $alamatLines = explode("\n", wordwrap($alamat, 55, "\n"));
+        $variables = $template->getVariables();
         $template->setValues([
             'no_surat' => $nomor,
             'nama' => $sppr->nama,
             'nama_ttd' => mb_strtoupper($sppr->nama),
-            'alamat' => preg_replace('/\s+/u', ' ', trim($sppr->alamat)),
+            'alamat' => $alamat,
+            // Placeholder pada template SPR versi lama.
+            'alamat_1' => $alamatLines[0] ?? '',
+            'alamat_2' => $alamatLines[1] ?? '',
+            'alamat_3' => implode(' ', array_slice($alamatLines, 2)),
+            'blok_no' => trim($unit['blok'] . ($unit['no'] !== '' ? '/' . $unit['no'] : '')),
+            'asumsi_plafon_kpr' => $fmt($sppr->asumsi_plafon_kpr),
             'nik' => $sppr->nik,
             'no_telp' => $sppr->no_telp,
             'luas_bangunan' => (string) $unit['luas_bangunan'],
@@ -240,10 +252,12 @@ class SPPRController extends Controller
             'history_kwitansi' => $payment->no_kwitansi ?: '-',
             'history_nominal' => 'Rp. ' . $fmt($payment->nominal),
         ])->all();
-        $template->cloneRowAndSetValues('history_no', $rows ?: [[
-            'history_no' => '-', 'history_tanggal' => '-', 'history_keterangan' => 'Belum ada pembayaran',
-            'history_kwitansi' => '-', 'history_nominal' => 'Rp. 0',
-        ]]);
+        if (in_array('history_no', $variables, true)) {
+            $template->cloneRowAndSetValues('history_no', $rows ?: [[
+                'history_no' => '-', 'history_tanggal' => '-', 'history_keterangan' => 'Belum ada pembayaran',
+                'history_kwitansi' => '-', 'history_nominal' => 'Rp. 0',
+            ]]);
+        }
         $banks = Bank::orderBy('id')->limit(3)->get();
         for ($i = 1; $i <= 3; $i++) {
             $bank = $banks->get($i - 1);

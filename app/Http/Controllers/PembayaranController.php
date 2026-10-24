@@ -548,7 +548,7 @@ class PembayaranController extends Controller
 
         $hargaJual = (int) ($nasabah->total_harga ?: ($kavling?->total_harga ?? 0));
         $terbilang = $this->terbilang($pembayaran->nominal) . ' Rupiah';
-        $logoMedia = PengaturanMedia::where('jenis_data', 'Logo Aplikasi')->where('stt_aktif', 1)->first();
+        $logoMedia = PengaturanMedia::where('jenis_data', 'Logo Login')->first();
         $logoData = null;
         if ($logoMedia?->nama_file) {
             $logoPath = public_path('config_media/' . $logoMedia->nama_file);
