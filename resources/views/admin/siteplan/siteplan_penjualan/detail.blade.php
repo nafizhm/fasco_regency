@@ -66,8 +66,8 @@
                     <ul class="nav nav-tabs unit-tabs" role="tablist">
                         <li class="nav-item"><a class="nav-link active" id="unitOverviewTab" href="#unitOverview" data-toggle="tab" role="tab" aria-controls="unitOverview" aria-selected="true">Unit & Harga</a></li>
                         <li class="nav-item"><a class="nav-link" id="unitCustomerTab" href="#unitCustomer" data-toggle="tab" role="tab" aria-controls="unitCustomer" aria-selected="false">Data Customer</a></li>
-                        <li class="nav-item"><a class="nav-link" id="unitPaymentsTab" href="#unitPayments" data-toggle="tab" role="tab" aria-controls="unitPayments" aria-selected="false">Tagihan & Pembayaran</a></li>
-                        <li class="nav-item"><a class="nav-link" id="unitUtilitiesTab" href="#unitUtilities" data-toggle="tab" role="tab" aria-controls="unitUtilities" aria-selected="false">Listrik & Air</a></li>
+
+
                     </ul>
                     <div class="tab-content">
                         <div class="tab-pane fade show active" id="unitOverview" role="tabpanel" aria-labelledby="unitOverviewTab">
@@ -95,14 +95,7 @@
                             </div>
                         </div>
                         <div class="tab-pane fade" id="unitCustomer" role="tabpanel" aria-labelledby="unitCustomerTab"><section class="detail-card"><h6 class="detail-heading"><i class="fas fa-user" aria-hidden="true"></i>Informasi Customer</h6><div id="customerEmpty" class="detail-empty d-none">Belum ada customer untuk unit ini.</div><dl class="detail-list" id="customerDetails"></dl></section></div>
-                        <div class="tab-pane fade" id="unitPayments" role="tabpanel" aria-labelledby="unitPaymentsTab">
-                            <section class="detail-card"><h6 class="detail-heading">Tagihan</h6><div class="table-responsive"><table class="table"><thead><tr><th>No</th><th>Deskripsi Tagihan</th><th class="text-right">Nominal</th></tr></thead><tbody id="unitBills"></tbody><tfoot><tr><th colspan="2">Total Tagihan</th><th id="unitBillTotal" class="text-right"></th></tr></tfoot></table></div></section>
-                            <section class="detail-card"><h6 class="detail-heading">Pembayaran Masuk</h6><div class="table-responsive"><table class="table"><thead><tr><th>No</th><th>Tanggal</th><th>Kategori</th><th>Deskripsi</th><th class="text-right">Nominal</th></tr></thead><tbody id="unitReceipts"></tbody><tfoot><tr><th colspan="4">Total Pembayaran</th><th id="unitReceiptTotal" class="text-right"></th></tr></tfoot></table></div></section>
-                        </div>
-                        <div class="tab-pane fade" id="unitUtilities" role="tabpanel" aria-labelledby="unitUtilitiesTab"><div class="row">
-                            <div class="col-md-6"><section class="detail-card"><h6 class="detail-heading"><i class="fas fa-bolt" aria-hidden="true"></i>Listrik</h6><dl class="detail-list mb-3" id="electricityDetails"></dl><div id="electricityPhotos"></div></section></div>
-                            <div class="col-md-6"><section class="detail-card"><h6 class="detail-heading"><i class="fas fa-tint" aria-hidden="true"></i>Air</h6><dl class="detail-list mb-3" id="waterDetails"></dl><div id="waterPhotos"></div></section></div>
-                        </div></div>
+
                     </div>
                 </div>
             </div>
@@ -132,32 +125,9 @@
             list.append(line);
         });
     }
-    function siteplanTable(selector, rows, columns) {
-        const body = $(selector).empty();
-        if (!rows.length) {
-            body.append($('<tr>').append($('<td class="detail-empty">').attr('colspan', columns).text('Belum ada data.')));
-        }
-        rows.forEach(values => {
-            const row = $('<tr>');
-            values.forEach((value, index) => $('<td>').text(siteplanValue(value)).toggleClass('text-right text-nowrap', index === columns - 1).appendTo(row));
-            body.append(row);
-        });
-    }
-    function siteplanPhotos(selector, photos) {
-        const container = $(selector).empty();
-        photos.forEach(([file, folder, label]) => {
-            if (!file) return;
-            const figure = $('<figure class="mb-3">');
-            $('<img class="utility-photo" loading="lazy">').attr({src: '/assets/legal/listrik_air/' + folder + '/' + encodeURIComponent(file), alt: label}).appendTo(figure);
-            $('<figcaption class="small text-muted mt-2">').text(label).appendTo(figure);
-            container.append(figure);
-        });
-        if (!container.children().length) container.append($('<div class="detail-empty">').text('Belum ada foto.'));
-    }
     function renderSiteplanUnit(response) {
         const unit = response.data;
         const customer = unit.customer;
-        const utilities = unit.listrik_air || response.listrik_air || {};
         selectedSiteplanUnit = unit;
         $('#unitConstructionHistory').remove();
         $('<button type="button" id="unitConstructionHistory" class="btn btn-outline-primary btn-sm mb-3">')
@@ -193,14 +163,6 @@
             ['Alamat KTP', customer.alamat_ktp], ['Alamat domisili', customer.alamat_domisili], ['NPWP', customer.npwp],
             ['Pekerjaan', customer.pekerjaan], ['Jenis pembelian', customer.jenis_pembelian], ['Marketing', customer.marketing?.nama_marketing]
         ] : []);
-        siteplanTable('#unitBills', (response.tagihan || []).map((item, i) => [i + 1, item.deskripsi, siteplanMoney(item.nominal)]), 3);
-        siteplanTable('#unitReceipts', (response.pemasukan || []).map((item, i) => [i + 1, siteplanDate(item.tanggal), item.kategori?.kategori, item.keterangan, siteplanMoney(item.nominal)]), 5);
-        $('#unitBillTotal').text(siteplanMoney(response.total_tagihan));
-        $('#unitReceiptTotal').text(siteplanMoney(response.total_pemasukan));
-        siteplanDetails('#electricityDetails', [['No. rekening listrik', utilities.norek_listrik], ['Daya listrik', siteplanMeasure(unit.daya_listrik, 'VA')]]);
-        siteplanDetails('#waterDetails', [['No. rekening air', utilities.norek_air]]);
-        siteplanPhotos('#electricityPhotos', [[utilities.foto_listrik, 'listrik_1', 'Foto listrik 1'], [utilities.foto_listrik_2, 'listrik_2', 'Foto listrik 2']]);
-        siteplanPhotos('#waterPhotos', [[utilities.foto_air, 'air_1', 'Foto air 1'], [utilities.foto_air_2, 'air_2', 'Foto air 2']]);
         $('#unitLoading').addClass('d-none');
         $('#unitDetailContent').removeClass('d-none');
         $('#btn-cetak').prop('disabled', false);
