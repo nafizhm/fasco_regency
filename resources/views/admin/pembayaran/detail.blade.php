@@ -203,7 +203,7 @@
                                     <h5>- Pemasukan -</h5>
                                 </div>
                                 <div>
-                                    <button class="btn btn-warning btn-sm mr-2" type="button" id="btnPencairanKpr" @disabled(!$akadSelesai) title="{{ $akadSelesai ? 'Catat pencairan bertahap' : 'Customer harus hadir/selesai akad terlebih dahulu' }}">
+                                    <button class="btn btn-warning btn-sm mr-2" type="button" id="btnPencairanKpr" @disabled(!$akadSelesai) title="{{ $akadSelesai ? 'Catat pencairan bertahap' : 'Customer harus selesai akad terlebih dahulu' }}">
                                         <i class="fa fa-university"></i> Pencairan KPR
                                     </button>
                                     <button class="btn btn-success btn-sm" data-toggle="modal" data-target="#modalPemasukan"><i
@@ -758,7 +758,7 @@
 
         $('#btnPencairanKpr').on('click', function() {
             if (!@json((bool) $akadSelesai)) {
-                toastr.warning('Customer harus hadir/selesai akad terlebih dahulu.');
+                toastr.warning('Customer harus selesai akad terlebih dahulu.');
                 return;
             }
             if (ringkasanKpr.sisa_plafon <= 0) {

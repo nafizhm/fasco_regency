@@ -15,11 +15,18 @@
         @endforeach
     </select>
     @if ($selectedLocation)
-        <a href="{{ route($printRoute . '.cetak.pdf', $selectedLocation->id) }}" target="_blank" rel="noopener" class="btn btn-danger btn-sm">
+        <a href="{{ route($printRoute . '.cetak.pdf', array_merge([$selectedLocation->id], $printRoute === 'siteplan-penjualan' && request()->boolean('ready_putih') ? ['ready_putih' => 1] : [])) }}" target="_blank" rel="noopener" class="btn btn-danger btn-sm">
             <i class="fas fa-file-pdf mr-1"></i> Cetak Denah PDF
         </a>
-        <a href="{{ route($printRoute . '.cetak.jpg', $selectedLocation->id) }}" target="_blank" rel="noopener" class="btn btn-primary btn-sm">
+        <a href="{{ route($printRoute . '.cetak.jpg', array_merge([$selectedLocation->id], $printRoute === 'siteplan-penjualan' && request()->boolean('ready_putih') ? ['ready_putih' => 1] : [])) }}" target="_blank" rel="noopener" class="btn btn-primary btn-sm">
             <i class="fas fa-file-image mr-1"></i> Download Denah JPG
         </a>
+    @endif
+    @if ($printRoute === 'siteplan-penjualan')
+        <div class="form-check ml-2">
+            <input type="checkbox" class="form-check-input" id="ready-putih" name="ready_putih" value="1"
+                @checked(request()->boolean('ready_putih')) onchange="this.form.submit()">
+            <label class="form-check-label" for="ready-putih">Ready warna putih</label>
+        </div>
     @endif
 </form>

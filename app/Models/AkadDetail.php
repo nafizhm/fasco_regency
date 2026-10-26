@@ -15,7 +15,6 @@ class AkadDetail extends Model
     protected $fillable = [
         'id_akad',
         'id_customer',
-        'id_persyaratan',
         'status',
         'keterangan',
         'jenis_akad',
@@ -24,11 +23,6 @@ class AkadDetail extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class, 'id_customer');
-    }
-
-    public function persyaratan()
-    {
-        return $this->belongsTo(PersyaratanLegal::class, 'id_persyaratan');
     }
 
 }

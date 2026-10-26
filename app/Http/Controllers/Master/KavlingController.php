@@ -422,13 +422,20 @@ class KavlingController extends Controller
             $query->where('id_lokasi', $id_lokasi);
         }
 
-        $data = $query->get();
+        $data = $query->get()->sort(function ($a, $b) {
+            foreach (['nama_cluster', 'blok', 'no', 'kode_kavling'] as $field) {
+                $comparison = strnatcasecmp(trim((string) $a->$field), trim((string) $b->$field));
+                if ($comparison !== 0) return $comparison;
+            }
+
+            return $a->id <=> $b->id;
+        })->values();
 
         // Ambil komponen biaya aktif sebagai referensi kolom dinamis
         $komponenBiaya = KomponenBiaya::aktif()->urut()->get();
         $namaBiayaList = KavlingCostNames::uniqueNames($komponenBiaya->pluck('nama'));
 
-        $staticCols = 7; // No, Perumahan, Kode Kavling, Panjang, Lebar, Luas
+        $staticCols = 8; // Identitas, dimensi, dan nama cluster
         $totalCols = $staticCols + count($namaBiayaList) + 1; // +1 untuk Total Harga
         $lastColLetter = Coordinate::stringFromColumnIndex($totalCols);
 
@@ -450,7 +457,7 @@ class KavlingController extends Controller
 
         // ── Baris 2: Header Kolom ───────────────────────────────
         $headers = array_merge(
-            ['No', 'Perumahan', 'Kode Kavling', 'Panjang', 'Lebar', 'Luas Tanah', 'Luas Bangunan'],
+            ['No', 'Perumahan', 'Nama Cluster', 'Kode Kavling', 'Panjang', 'Lebar', 'Luas Tanah', 'Luas Bangunan'],
             $namaBiayaList,
             ['Total Harga']
         );
@@ -472,17 +479,18 @@ class KavlingController extends Controller
             $namaLokasi = $row->lokasi?->nama_kavling ?? '-';
             $sheet->setCellValue("A{$rowNum}", $no++);
             $sheet->setCellValue("B{$rowNum}", $namaLokasi);
-            $sheet->setCellValue("C{$rowNum}", $row->kode_kavling ?? '-');
+            $sheet->setCellValueExplicit("C{$rowNum}", $row->nama_cluster ?? '', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValue("D{$rowNum}", $row->kode_kavling ?? '-');
 
-            foreach (['D' => 'panjang', 'E' => 'lebar', 'F' => 'luas_tanah', 'G' => 'luas_bangunan'] as $column => $field) {
+            foreach (['E' => 'panjang', 'F' => 'lebar', 'G' => 'luas_tanah', 'H' => 'luas_bangunan'] as $column => $field) {
                 $sheet->setCellValue($column . $rowNum, (float) ($row->$field ?? 0));
                 $sheet->getStyle($column . $rowNum)->getNumberFormat()->setFormatCode('General');
             }
-            $sheet->getStyle("A{$rowNum}:G{$rowNum}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+            $sheet->getStyle("A{$rowNum}:H{$rowNum}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
 
             $rincian = collect(KavlingCostNames::mergeValues($row->rincian_biaya ?? []))->keyBy('nama');
 
-            $firstColNum = 8;
+            $firstColNum = 9;
             $colNum = $firstColNum;
             foreach ($namaBiayaList as $nama) {
                 $nilai = (int) ($rincian->get($nama)['nilai'] ?? 0);
@@ -541,8 +549,26 @@ class KavlingController extends Controller
         // Row 0 = judul, Row 1 = header kolom, Row 2+ = data
         array_shift($rows); // skip judul
         $headers = array_shift($rows) ?? [];
+        $clusterColumn = null;
+        foreach ($headers as $index => $header) {
+            if (mb_strtolower(trim((string) $header)) === 'nama cluster') {
+                $clusterColumn = $index;
+                break;
+            }
+        }
         if (empty($rows)) {
             return back()->withErrors(['msg' => 'File Excel kosong.']);
+        }
+
+        // Pisahkan cluster berdasarkan header agar kedua posisi kolom dan file lama tetap didukung.
+        $clusterValues = [];
+        if ($clusterColumn !== null) {
+            array_splice($headers, $clusterColumn, 1);
+            foreach ($rows as $index => &$row) {
+                $clusterValues[$index] = trim((string) ($row[$clusterColumn] ?? ''));
+                array_splice($row, $clusterColumn, 1);
+            }
+            unset($row);
         }
 
         // Legacy numeric spreadsheets have four side columns; simplified exports have two dimensions.
@@ -701,6 +727,9 @@ class KavlingController extends Controller
                         if ($item['nama'] === 'Peningkatan Mutu') $peningkatanMutu = $item['nilai'];
                     }
 
+                    if ($clusterColumn !== null) {
+                        $kavling->nama_cluster = $clusterValues[$rowIndex];
+                    }
                     $kavling->update([
                         'panjang'    => $panjangKanan,
                         'lebar'      => $lebarDepan,

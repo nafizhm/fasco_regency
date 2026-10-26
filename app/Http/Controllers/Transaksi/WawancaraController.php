@@ -24,7 +24,7 @@ class WawancaraController extends Controller
     public function index(Request $request)
     {
         $permissions = HakAksesController::getUserPermissions();
-        app(AkadController::class)->refreshDeadlineAkad();
+        app(\App\Services\Sp3kExpiryService::class)->refresh();
 
         if ($request->ajax()) {
             $data = Wawancara::with(['customer', 'customer.lokasi', 'customer.kavling', 'bankKPR'])

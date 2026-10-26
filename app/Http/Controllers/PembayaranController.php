@@ -1095,7 +1095,7 @@ class PembayaranController extends Controller
             $summary = $service->summary($id);
             $message = null;
             if (!$akadDate || Carbon::parse($request->tanggal_pencairan)->lt(Carbon::parse($akadDate)->startOfDay())) {
-                $message = 'Pencairan hanya dapat diinput setelah customer hadir/selesai akad. Tanggal pencairan tidak boleh sebelum akad.';
+                $message = 'Pencairan hanya dapat diinput setelah customer selesai akad. Tanggal pencairan tidak boleh sebelum akad.';
             } elseif ($jumlahPencairan <= 0 || $summary['total_pencairan'] + $jumlahPencairan > $jumlahPlafon) {
                 $message = 'Jumlah pencairan harus lebih dari nol dan total seluruh pencairan tidak boleh melebihi plafon SP3K.';
             } elseif ($summary['total_pencairan'] + $jumlahPencairan + $totalRetensi !== $jumlahPlafon) {

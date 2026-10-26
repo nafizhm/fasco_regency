@@ -285,6 +285,15 @@ class CustomerController extends Controller
             'alamat_domisili' => 'required',
         ];
 
+        // Pembeli historis yang sudah akad boleh dilengkapi secara bertahap.
+        if ((int) $data->id_status_progres === 3) {
+            foreach (array_keys($rules) as $field) {
+                if ($field !== 'nama_lengkap') {
+                    $rules[$field] = $field === 'tgl_lahir' ? 'nullable|date' : 'nullable|string';
+                }
+            }
+        }
+
         $messages = [
             'nama_lengkap.required'    => 'Nama lengkap wajib diisi!',
             'nik.required'             => 'NIK wajib diisi!',

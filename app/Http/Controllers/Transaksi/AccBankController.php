@@ -21,7 +21,7 @@ class AccBankController extends Controller
     {
         $permissions = HakAksesController::getUserPermissions();
 
-        app(AkadController::class)->refreshDeadlineAkad();
+        app(\App\Services\Sp3kExpiryService::class)->refresh();
 
         if ($request->ajax()) {
             $data = WawancaraSp3k::with(

@@ -3,6 +3,8 @@
 @section('content')
     <style>
         .legend {
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
             position: fixed;
             top: 80px;
             right: 30px;
@@ -116,15 +118,7 @@
                                                 {{-- Loop kavling --}}
                                                 @foreach ($kav->kavlingPeta as $pt)
                                                     @php
-                                                        $warna = '#ffffff';
-
-                                                        if ($pt->customer) {
-                                                            $warna = $pt->customer->progres->warna ?? '#ffffff';
-                                                        } else {
-                                                            if ($pt->is_booked) {
-                                                                $warna = $holdColor;
-                                                            }
-                                                        }
+                                                        $warna = \App\Services\SiteplanColors::sales($pt, $holdColor, request()->boolean('ready_putih'));
                                                     @endphp
 
 
@@ -172,6 +166,23 @@
 
                     <!-- Tambahkan legenda -->
                     <div class="legend" id="legend">
+                        @if (request()->boolean('ready_putih'))
+                            <strong>Belum laku / Ready</strong>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #ffffff"></div>
+                                Putih
+                            </div>
+                        @else
+                        <strong>Belum laku / Ready: warna cluster</strong>
+                        @foreach (\App\Services\SiteplanColors::CLUSTERS as $cluster => $color)
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: {{ $color }}"></div>
+                                {{ $cluster }}
+                            </div>
+                        @endforeach
+                        @endif
+                        <hr>
+                        <strong>Progres Penjualan</strong>
                         @foreach ($legend as $item)
                             <div class="legend-item">
                                 <div class="legend-color" style="background-color: {{ $item->warna }}"></div>

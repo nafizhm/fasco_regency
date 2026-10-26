@@ -12,11 +12,6 @@ use App\Models\Pemasukan;
 
 class PublicSiteplanController extends Controller
 {
-    private const CLUSTER_COLORS = [
-        'JINGGA' => '#f97316', 'BIRU' => '#3b82f6', 'HIJAU' => '#22c55e',
-        'KUNING' => '#facc15', 'PUTIH' => '#ffffff', 'MERAH' => '#ef4444',
-    ];
-
     private function publicStatus(KavlingPeta $unit): string
     {
         if ($unit->customer) {
@@ -44,14 +39,14 @@ class PublicSiteplanController extends Controller
             (object) ['status_progres' => 'Hold', 'warna' => $holdColor],
             (object) ['status_progres' => 'Sold', 'warna' => '#4b5563'],
         ]);
-        $clusterColors = self::CLUSTER_COLORS;
+        $clusterColors = \App\Services\SiteplanColors::CLUSTERS;
         foreach ($lokasiKavling as $location) {
             foreach ($location->kavlingPeta as $unit) {
                 $unit->public_status = $this->publicStatus($unit);
                 $unit->public_color = match ($unit->public_status) {
                     'Sold' => '#4b5563',
                     'Hold' => $holdColor,
-                    default => $clusterColors[strtoupper(trim($unit->nama_cluster ?? ''))] ?? '#ffffff',
+                    default => \App\Services\SiteplanColors::cluster($unit),
                 };
             }
         }

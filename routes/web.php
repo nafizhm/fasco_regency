@@ -223,18 +223,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/sp3k/data', [AccBankController::class, 'getDataSp3k'])->name('sp3k.data');
 
         Route::resource('acc-bank', AccBankController::class);
-        Route::resource('akad', AkadController::class);
-        Route::post('akad/seleksi-customer/{id_akad}', [AkadController::class, 'seleksiCustomer'])->name('akad.seleksi-customer');
-        Route::get('akad/seleksi-customer/hadir/{id_detail}', [AkadController::class, 'showHadir'])->name('akad.seleksi-customer.get-hadir');
-        Route::post('akad/seleksi-customer/hadir/{id_detail}', [AkadController::class, 'updateHadir'])->name('akad.seleksi-customer.update-hadir');
-
-        Route::get('akad/detail-excel/{id}', [AkadController::class, 'cetakDetailExcel'])->name('akad.detail.excel');
-        Route::delete('akad/detail/{id}', [AkadController::class, 'destroyDetail'])->name('akad.detail.destroy');
-        Route::get('akad/detail-pdf/{id}', [AkadController::class, 'cetakDetailPDF'])->name('akad.detail.pdf');
-        Route::get('/akad/{id}/seleksi', [AkadController::class, 'seleksi'])->name('akad.detail.seleksi');
-        Route::get('akad/get-customer-detail/{id}', [AkadController::class, 'getCustomerDetail'])->name('akad.getCustomerDetail');
-        Route::get('akad/detail/data/{id}', [AkadController::class, 'detailData'])->name('akad.detail.data');
-        Route::get('/akad/download/{id}', [AkadController::class, 'downloadWord'])->name('akad.download');
+        Route::resource('akad', AkadController::class)->only(['index', 'store', 'edit', 'update', 'destroy']);
 
         Route::get('cetak-bast/{id_customer}', [BastController::class, 'cetakBast'])
             ->name('bast.cetak');

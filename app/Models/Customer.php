@@ -11,6 +11,8 @@ class Customer extends Model
     protected $fillable = [
         'kode_customer',
         'tanggal_verif',
+        'tgl_booking',
+        'id_bank_kpr',
         'id_lokasi',
         'id_kavling',
         'hrg_jual',
@@ -58,6 +60,11 @@ class Customer extends Model
     public function bank()
     {
         return $this->belongsTo(Bank::class, 'id_bank');
+    }
+
+    public function bankKPR()
+    {
+        return $this->belongsTo(BankKPR::class, 'id_bank_kpr');
     }
 
     public function lokasi()

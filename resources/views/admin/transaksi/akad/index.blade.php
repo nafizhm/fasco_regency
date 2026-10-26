@@ -20,7 +20,7 @@
                                         @if ($permissions['tambah'])
                                             <button class="btn btn-primary btn-sm" data-toggle="modal"
                                                 data-target="#modalForm"><i class="fas fa-plus"></i>
-                                                Tambah Jadwal</button>
+                                                Tambah Akad</button>
                                         @endif
                                     </div>
                                 </div>
@@ -30,8 +30,13 @@
                                     <thead>
                                         <tr>
                                             <th>No</th>
-                                            <th>Jadwal Akad</th>
-                                            <th>Total Akad</th>
+                                            <th>Tanggal Akad</th>
+                                            <th>Pembeli</th>
+                                            <th>Unit</th>
+                                            <th>Tanggal Booking</th>
+                                            <th>Bank KPR</th>
+                                            <th>Jenis Akad</th>
+                                            <th>Status</th>
                                             <th>Keterangan</th>
                                             <th class="text-center" width="15%">Action</th>
                                         </tr>
@@ -68,11 +73,28 @@
                     @csrf
                     <input type="hidden" id="primary_id" name="primary_id">
                     <div class="modal-body">
+                        <p class="text-muted">Catat akad yang sudah dilaksanakan untuk satu pembeli.</p>
+                        <div class="form-group">
+                            <label for="id_customer">Pembeli</label>
+                            <select id="id_customer" name="id_customer" class="form-control" required>
+                                <option value="">Pilih pembeli</option>
+                                @foreach ($customers as $customer)
+                                    <option value="{{ $customer->id }}">{{ $customer->nama_lengkap }} (#{{ $customer->id }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="jenis_akad">Jenis Akad</label>
+                            <select id="jenis_akad" name="jenis_akad" class="form-control" required>
+                                <option value="">Pilih jenis akad</option>
+                                <option value="AJB">AJB</option><option value="PPJB">PPJB</option>
+                            </select>
+                        </div>
                         <div class="form-group row mb-3">
                             <label for="tgl_akad" class="col-sm-4 col-form-label">Tanggal</label>
                             <div class="col-sm-8">
                                 <input type="date" id="tgl_akad" class="form-control" name="tgl_akad"
-                                    value="{{ \Carbon\Carbon::now()->format('Y-m-d') }}">
+                                    required max="{{ now('Asia/Jakarta')->toDateString() }}" value="{{ now('Asia/Jakarta')->toDateString() }}">
                             </div>
                         </div>
 
@@ -82,6 +104,30 @@
                                 <input type="text" id="keterangan" class="form-control" name="keterangan">
                             </div>
                         </div>
+
+                        <fieldset id="buyer-fields" disabled style="display: none;">
+                            <legend class="h6">Edit Data Pembeli</legend>
+                            @foreach (['nama_lengkap' => 'Nama Pembeli', 'nik' => 'NIK', 'no_telp' => 'Nomor Telepon', 'alamat_ktp' => 'Alamat', 'tgl_booking' => 'Tanggal Booking'] as $field => $label)
+                                <div class="form-group">
+                                    <label for="buyer-{{ $field }}">{{ $label }}</label>
+                                    <input type="{{ $field === 'tgl_booking' ? 'date' : 'text' }}" class="form-control" id="buyer-{{ $field }}" name="buyer[{{ $field }}]">
+                                </div>
+                            @endforeach
+                            <div class="form-group">
+                                <label for="buyer-id_bank_kpr">Bank KPR</label>
+                                <select class="form-control" id="buyer-id_bank_kpr" name="buyer[id_bank_kpr]">
+                                    <option value="">Belum diisi</option>
+                                    @foreach ($banks as $bank)<option value="{{ $bank->id }}">{{ $bank->nama }}</option>@endforeach
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="buyer-id_marketing">Marketing</label>
+                                <select class="form-control" id="buyer-id_marketing" name="buyer[id_marketing]">
+                                    <option value="">Belum diisi</option>
+                                    @foreach ($marketings as $marketing)<option value="{{ $marketing->id }}">{{ $marketing->nama_marketing }}</option>@endforeach
+                                </select>
+                            </div>
+                        </fieldset>
 
                     </div>
 
@@ -123,10 +169,25 @@
                         searchable: false
                     },
                     {
-                        data: 'total_akad',
-                        name: 'total_akad',
+                        data: 'nama_lengkap',
+                        name: 'nama_lengkap',
                         orderable: false,
-                        searchable: false
+                        searchable: true
+                    },
+                    {
+                        data: 'unit', name: 'unit'
+                    },
+                    {
+                        data: 'tgl_booking', name: 'tgl_booking', defaultContent: 'Belum diisi'
+                    },
+                    {
+                        data: 'bank_kpr', name: 'bank_kpr', defaultContent: 'Belum diisi'
+                    },
+                    {
+                        data: 'jenis_akad', name: 'jenis_akad'
+                    },
+                    {
+                        data: 'status_label', name: 'status_label'
                     },
                     {
                         data: 'keterangan',
@@ -157,6 +218,12 @@
             $.get(url, function(response) {
                 if (response.status === 'success') {
                     $('#primary_id').val(response.data.id);
+                    $('#id_customer').val(response.data.id_customer);
+                    $('#id_customer').prop('disabled', true);
+                    $('#buyer-fields').prop('disabled', false).show();
+                    Object.entries(response.data.buyer || {}).forEach(([key, value]) => $('#buyer-' + key).val(value));
+                    $('#tgl_akad').prop('required', !!response.data.tgl_akad);
+                    $('#jenis_akad').val(response.data.jenis_akad);
                     $('#tgl_akad').val(response.data.tgl_akad);
                     $('#keterangan').val(response.data.keterangan);
 
@@ -168,6 +235,9 @@
         $('#modalForm').on('hidden.bs.modal', function() {
             $('#formData')[0].reset();
             $('#primary_id').val('');
+            $('#id_customer').prop('disabled', false);
+            $('#buyer-fields').prop('disabled', true).hide();
+            $('#tgl_akad').prop('required', true);
             $('.is-invalid').removeClass('is-invalid');
             $('.invalid-feedback').remove();
 
@@ -200,6 +270,7 @@
             $('.invalid-feedback').remove();
 
             let formData = new FormData(this);
+            if (id) formData.set('id_customer', $('#id_customer').val());
             formData.append('_method', method);
 
             $.ajax({
@@ -219,6 +290,9 @@
                     $('.data-table').DataTable().ajax.reload();
                 },
                 error: function(xhr) {
+                    spinner.addClass('d-none');
+                    btnText.text('Simpan');
+                    submitBtn.prop('disabled', false);
                     if (xhr.status === 422) {
                         audio.play();
                         toastr.error("Ada inputan yang salah!", "GAGAL!", {
@@ -227,9 +301,10 @@
                             positionClass: "toast-bottom-right",
                         });
 
-                        let errors = xhr.responseJSON.errors;
+                        let errors = xhr.responseJSON.errors || {};
                         $.each(errors, function(key, val) {
-                            let input = $('#' + key);
+                            let input = document.getElementById(key.replace('buyer.', 'buyer-'));
+                            input = $(input);
                             input.addClass('is-invalid');
                             input.parent().find('.invalid-feedback').remove();
                             input.parent().append(
