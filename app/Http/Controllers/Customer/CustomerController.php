@@ -60,7 +60,9 @@ class CustomerController extends Controller
                 ->editColumn('id_lokasi', function ($row) {
                     $namaLokasi  = $row->lokasi->nama_kavling ?? '-';
                     $kodeKavling = $row->kavling->kode_kavling ?? '-';
-                    return '<strong>' . $namaLokasi . '</strong><br> ' . $kodeKavling;
+                    $cluster = trim($row->kavling->nama_cluster ?? '');
+                    $unit = trim($cluster . ' ' . $kodeKavling);
+                    return '<strong>' . e($namaLokasi) . '</strong><br> ' . e($unit);
                 })
 
                 ->editColumn('id_status_progres', function ($row) {
@@ -714,7 +716,9 @@ class CustomerController extends Controller
                 ->editColumn('id_lokasi', function ($row) {
                     $namaLokasi  = $row->lokasi->nama_kavling ?? '-';
                     $kodeKavling = $row->kavling->kode_kavling ?? '-';
-                    return '<strong>' . $namaLokasi . '</strong><br> ' . $kodeKavling;
+                    $cluster = trim($row->kavling->nama_cluster ?? '');
+                    $unit = trim($cluster . ' ' . $kodeKavling);
+                    return '<strong>' . e($namaLokasi) . '</strong><br> ' . e($unit);
                 })
 
                 ->editColumn('id_status_progres', function ($row) {

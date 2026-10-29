@@ -1,0 +1,290 @@
+[
+    {
+        "customer": {
+            "id": 6,
+            "nama_lengkap": "Ani Yunus",
+            "id_kavling": 65,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 20,
+            "nama_lengkap": "Siti Halimah",
+            "id_kavling": 69,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 16,
+            "nama_lengkap": "Venda",
+            "id_kavling": 121,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 10,
+            "nama_lengkap": "Anggie",
+            "id_kavling": 46,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 27,
+            "nama_lengkap": "Dinda",
+            "id_kavling": 67,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 22,
+            "nama_lengkap": "Robby",
+            "id_kavling": 117,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 13,
+            "nama_lengkap": "Haerman Sahputra",
+            "id_kavling": 45,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 18,
+            "nama_lengkap": "Devi",
+            "id_kavling": 66,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 15,
+            "nama_lengkap": "Bakhtiar",
+            "id_kavling": 70,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 11,
+            "nama_lengkap": "Surya Fajariyanto",
+            "id_kavling": 100,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 42,
+            "nama_lengkap": "Istin Guntaryo",
+            "id_kavling": 115,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 7,
+            "nama_lengkap": "Putra Sakti",
+            "id_kavling": 79,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 12,
+            "nama_lengkap": "Zidan",
+            "id_kavling": 90,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 41,
+            "nama_lengkap": "Mardha",
+            "id_kavling": 44,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 19,
+            "nama_lengkap": "Doris",
+            "id_kavling": 68,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 38,
+            "nama_lengkap": "Siti radiyah",
+            "id_kavling": 50,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 39,
+            "nama_lengkap": "Chusnul",
+            "id_kavling": 58,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 8,
+            "nama_lengkap": "Shofyan",
+            "id_kavling": 77,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 9,
+            "nama_lengkap": "Shofyan",
+            "id_kavling": 81,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 29,
+            "nama_lengkap": "Habibur",
+            "id_kavling": 48,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 30,
+            "nama_lengkap": "Wendrianto",
+            "id_kavling": 49,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 32,
+            "nama_lengkap": "Sibghatullah",
+            "id_kavling": 51,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 50,
+            "nama_lengkap": "Supriyadi",
+            "id_kavling": 47,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 37,
+            "nama_lengkap": "Dwi Agustin",
+            "id_kavling": 80,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 31,
+            "nama_lengkap": "Levina",
+            "id_kavling": 116,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 44,
+            "nama_lengkap": "Yuli Eka",
+            "id_kavling": 14,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 33,
+            "nama_lengkap": "Fransiscus",
+            "id_kavling": 43,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 35,
+            "nama_lengkap": "Sidiq",
+            "id_kavling": 26,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 59,
+            "nama_lengkap": "Liliana",
+            "id_kavling": 82,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 43,
+            "nama_lengkap": "I Gusti Gede",
+            "id_kavling": 119,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 45,
+            "nama_lengkap": "Nindya",
+            "id_kavling": 101,
+            "id_status_progres": 3
+        },
+        "bast": []
+    },
+    {
+        "customer": {
+            "id": 58,
+            "nama_lengkap": "Nindi",
+            "id_kavling": 120,
+            "id_status_progres": 3
+        },
+        "bast": []
+    }
+]

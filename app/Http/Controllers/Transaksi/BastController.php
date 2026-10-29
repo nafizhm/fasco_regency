@@ -44,7 +44,9 @@ class BastController extends Controller
                 ->addColumn('lokasi_rumah', function ($row) {
                     $lokasi  = $row->customer->lokasi->nama_kavling ?? '-';
                     $kavling = $row->customer->kavling->kode_kavling ?? '-';
-                    return '<strong>' . $lokasi . '</strong><br>' . $kavling;
+                    $cluster = trim($row->customer->kavling->nama_cluster ?? '');
+                    $unit = trim($cluster . ' ' . $kavling);
+                    return '<strong>' . e($lokasi) . '</strong><br>' . e($unit);
                 })
                 ->addColumn('action', function ($row) use ($permissions) {
                     $deleteUrl = route('bast.destroy', $row->id);

@@ -184,7 +184,7 @@
 
     .pipeline {
       display: grid;
-      grid-template-columns: repeat(4, minmax(145px, 1fr));
+      grid-template-columns: repeat(5, minmax(145px, 1fr));
       gap: 24px;
       overflow-x: auto;
       padding: 2px 5px 10px;
@@ -257,6 +257,7 @@
     .c-pink { --pipeline-accent:#db2777; color:#db2777; border-color:#f472b6; background:#fff5fb; }
     .c-purple { --pipeline-accent:#945500; color:#945500; border-color:#ffa619; background:#faf7ff; }
     .c-blue { --pipeline-accent:#1d4ed8; color:#1d4ed8; border-color:#60a5fa; background:#f5f9ff; }
+    .c-maroon { --pipeline-accent:#800040; color:#800040; border-color:#b34d80; background:#fff5fa; }
 
     .projects-table-wrap {
       overflow-x: hidden;
@@ -645,6 +646,12 @@
               <h3>Akad</h3>
               <div class="count">{{ $pipelineCounts['akad'] ?? 0 }}</div>
               <a class="pipeline-btn" href="{{ route('akad.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
+            </article>
+
+            <article class="pipeline-card c-maroon">
+              <h3>Serah Terima</h3>
+              <div class="count">{{ $pipelineCounts['bast'] ?? 0 }}</div>
+              <a class="pipeline-btn" href="{{ route('bast.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
 
           </div>
