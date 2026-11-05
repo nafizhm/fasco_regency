@@ -241,6 +241,10 @@
                                 </div>
                             </div>
 
+                            <div class="form-group row">
+                                <label class="col-sm-3 col-form-label">Harga Sebelum Diskon</label><div class="col-sm-4"><input type="text" id="tempo-harga-awal" class="form-control" readonly></div>
+                                <label class="col-sm-2 col-form-label">Diskon</label><div class="col-sm-3"><input type="text" id="tempo-diskon" class="form-control" readonly></div>
+                            </div>
                             <hr>
 
                             <div class="form-group row">
@@ -423,6 +427,8 @@
                         $('#id_kavling').val(data.id_kavling).trigger('change');
                     }, 500);
 
+                    $('#tempo-harga-awal').val(formatNumber(data.harga_jual_awal ?? Number(data.hrg_jual || 0) + Number(data.diskon || 0)));
+                    $('#tempo-diskon').val(formatNumber(data.diskon || 0) || '0');
                     $('#hrg_jual').val(formatNumber(data.hrg_jual));
                     $('#biaya_surat').val(formatNumber(data.biaya_surat));
                     $('#peningkatan_mutu').val(formatNumber(data.peningkatan_mutu));

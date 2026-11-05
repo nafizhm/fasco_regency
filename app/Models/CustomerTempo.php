@@ -17,6 +17,8 @@ class CustomerTempo extends Model
         'biaya_surat',
         'peningkatan_mutu',
         'total_harga',
+        'harga_jual_awal',
+        'diskon',
         'id_status_progres',
         'nama_lengkap',
         'nik',

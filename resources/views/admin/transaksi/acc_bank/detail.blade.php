@@ -85,7 +85,6 @@
                                             <th width="3%">No</th>
                                             <th>Bank KPR</th>
                                             <th>ACC Plafon</th>
-                                            <th>DP ke Bank</th>
                                             <th>Tgl SP3K</th>
                                             <th>Tgl Expired</th>
                                             <th>Sisa Hari</th>
@@ -134,9 +133,6 @@
                         name: 'acc_plafon',
                         orderable: false,
                         searchable: false
-                    },
-                    {
-                        data: 'dp_nilai', name: 'dp_nilai', orderable: false, searchable: false
                     },
                     {
                         data: 'tgl_terbit_sp3k',

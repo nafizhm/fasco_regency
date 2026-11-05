@@ -7,6 +7,11 @@
     const more = document.getElementById('build-history-more');
     const lightbox = document.getElementById('build-lightbox');
     const summary = document.getElementById('build-history-summary');
+    const printMode = document.getElementById('build-print-mode');
+    const printLink = document.getElementById('build-print-link');
+    const printHint = document.getElementById('build-print-hint');
+    const selectedReports = new Set();
+    let reportCount = 0;
     let controller, historyUnit, nextPage, uploading = false, loading = false;
     const size = bytes => (bytes / 1048576).toFixed(2) + ' MB';
     const date = value => new Date(value + 'T12:00:00').toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'});
@@ -29,11 +34,40 @@
     }));
     history.addEventListener('close', () => controller?.abort());
     lightbox.addEventListener('close', () => document.getElementById('build-lightbox-image').removeAttribute('src'));
+    function updatePrintOptions() {
+        const selected = printMode.value === 'selected';
+        document.querySelectorAll('.build-print-choice').forEach(label => { label.hidden = !selected; });
+        const enabled = reportCount > 0 && (!selected || selectedReports.size > 0);
+        printLink.setAttribute('aria-disabled', String(!enabled));
+        printHint.textContent = selected
+            ? selectedReports.size + ' laporan dipilih. Centang laporan yang diperlukan; gunakan Muat laporan sebelumnya untuk riwayat lama.'
+            : reportCount + ' laporan akan dicetak dari paling awal hingga terbaru, termasuk riwayat yang belum dimuat.';
+        if (!enabled) { printLink.removeAttribute('href'); return; }
+        const params = new URLSearchParams({mode: printMode.value});
+        if (selected) selectedReports.forEach(id => params.append('reports[]', id));
+        printLink.href = base + '/units/' + historyUnit + '/print?' + params;
+    }
+    printMode.addEventListener('change', updatePrintOptions);
+    printLink.addEventListener('click', event => {
+        if (printLink.getAttribute('aria-disabled') === 'true') event.preventDefault();
+    });
     function render(report, canDelete) {
         const article = node('article', 'build-timeline-entry');
         const heading = node('div', 'build-timeline-heading');
         heading.append(node('strong', '', date(report.reported_at)), node('span', 'build-percentage-badge', Number(report.percentage) + '%'));
-        article.append(heading);
+        const choice = node('label', 'build-print-choice');
+        choice.hidden = printMode.value !== 'selected';
+        const checkbox = node('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = report.id;
+        checkbox.checked = selectedReports.has(String(report.id));
+        checkbox.addEventListener('change', () => {
+            if (checkbox.checked) selectedReports.add(String(report.id));
+            else selectedReports.delete(String(report.id));
+            updatePrintOptions();
+        });
+        choice.append(checkbox, document.createTextNode(' Pilih untuk dicetak'));
+        article.append(choice, heading);
         const meter = node('div', 'build-meter');
         const fill = node('span');
         fill.style.width = Number(report.percentage) + '%';
@@ -97,6 +131,8 @@
                 summary.replaceChildren(info, node('span', '', data.reports.total + ' laporan tersimpan'));
                 if (!latest) items.append(node('p', 'build-history-empty', 'Belum ada laporan pembangunan untuk unit ini.'));
             }
+            reportCount = data.reports.total;
+            updatePrintOptions();
             data.reports.data.forEach(report => render(report, data.can_delete));
             nextPage = data.reports.next_page_url ? data.reports.current_page + 1 : null;
             more.hidden = !nextPage;
@@ -116,6 +152,10 @@
         controller?.abort();
         controller = new AbortController();
         historyUnit = unit;
+        selectedReports.clear();
+        reportCount = 0;
+        printMode.value = 'all';
+        updatePrintOptions();
         nextPage = null;
         summary.replaceChildren();
         more.hidden = true;

@@ -536,6 +536,7 @@ class PengajuanHoldController extends Controller
     public function bookingStore(Request $request)
     {
         $request->merge([
+            'diskon' => str_replace('.', '', (string) ($request->input('diskon') ?: 0)),
             'booking_fee' => $request->booking_fee ? str_replace('.', '', $request->booking_fee) : 0,
             'total_harga' => $request->total_harga ? str_replace('.', '', $request->total_harga) : 0,
         ]);
@@ -555,6 +556,7 @@ class PengajuanHoldController extends Controller
             'id_kavling'       => 'required|exists:kavling_peta,id',
             'nama_cluster'     => 'required|string|max:100',
             'total_harga'      => 'required|numeric|gt:0',
+            'diskon'           => 'required|integer|min:0',
             'id_marketing'     => 'required',
             'status_pernikahan'=> 'required',
             'booking_fee'      => 'required|gt:0',
@@ -638,6 +640,8 @@ class PengajuanHoldController extends Controller
         DB::beginTransaction();
         try {
             $kavling = KavlingPeta::lockForUpdate()->findOrFail($request->id_kavling);
+            $rincian = \App\Services\BookingPrice::breakdown($kavling, (int) $request->diskon);
+            $request->merge(['total_harga' => collect($rincian)->sum('nilai')]);
             if (! KavlingPeta::whereKey($kavling->id)->available()->exists()) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
                     'id_kavling' => 'Kavling sudah digunakan booking atau customer lain.',
@@ -669,6 +673,8 @@ class PengajuanHoldController extends Controller
 
             PengajuanHold::create([
                 'no_registrasi'     => $no_registrasi,
+                'diskon'           => (int) $request->diskon,
+                'rincian_biaya_penjualan' => $kavling->rincian_biaya,
                 'tgl_booking'       => $request->tanggal ?? Carbon::now()->format('Y-m-d'),
                 'nama_lengkap'      => $request->nama_lengkap,
                 'nik'               => $request->nik ?? '',
@@ -860,6 +866,9 @@ class PengajuanHoldController extends Controller
             'biaya_surat'       => collect($data->rincian_biaya ?? [])->firstWhere('nama', 'Biaya Surat')['nilai'] ?? 0,
             'peningkatan_mutu'  => collect($data->rincian_biaya ?? [])->firstWhere('nama', 'Peningkatan Mutu')['nilai'] ?? 0,
             'total_harga'       => $data->total_harga,
+            'harga_jual_awal'   => (int) (collect($data->rincian_biaya ?? [])->firstWhere('nama', 'Harga Rumah')['nilai'] ?? 0) + (int) $data->diskon,
+            'diskon'           => (int) $data->diskon,
+            'id_booking'       => $data->id,
             'nama_lengkap'      => $data->nama_lengkap,
             'nik'               => $data->nik,
             'jenis_kelamin'     => $data->jenis_kelamin,
@@ -1022,7 +1031,11 @@ class PengajuanHoldController extends Controller
                 throw \Illuminate\Validation\ValidationException::withMessages(['id_kavling' => 'Kavling tidak tersedia atau tidak sesuai lokasi.']);
             }
             $bookingValues = collect($validated)->except(array_merge($attachmentFields, ['stt_reg']))->all();
-            $bookingValues['total_harga'] = collect($kavling->rincian_biaya ?? [])->sum('nilai');
+            $saleItems = (int) $data->id_kavling === (int) $kavling->id
+                ? ($data->rincian_biaya_penjualan ?? $kavling->rincian_biaya ?? [])
+                : ($kavling->rincian_biaya ?? []);
+            $bookingValues['rincian_biaya_penjualan'] = $saleItems;
+            $bookingValues['total_harga'] = collect(\App\Services\BookingPrice::fromItems($saleItems, (int) $data->diskon))->sum('nilai');
             foreach ($attachmentFields as $field) {
                 if ($request->hasFile($field)) {
                     File::ensureDirectoryExists(public_path('assets/booking'));

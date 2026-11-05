@@ -122,9 +122,22 @@ Route::get('/hutang/sisa-bayar/{id}', [HutangController::class, 'getSisaBayar'])
 Route::get('/piutang/sisa-bayar/{id}', [PiutangController::class, 'getSisaBayar']);
 
 Route::middleware(['auth'])->group(function () {
+    Route::prefix('admin/keuangan/deposit-notaris')->name('notary-deposits.')->controller(\App\Http\Controllers\Keuangan\NotaryDepositController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{account}', 'show')->whereNumber('account')->name('show');
+        Route::post('/{account}/deposits', 'deposit')->whereNumber('account')->name('deposit');
+        Route::post('/{account}/bills', 'bill')->whereNumber('account')->name('bill');
+        Route::post('/{account}/payments', 'pay')->whereNumber('account')->name('pay');
+        Route::post('/entries/{entry}/reverse', 'reverse')->whereNumber('entry')->name('reverse');
+        Route::get('/entries/{entry}/attachment', 'attachment')->whereNumber('entry')->name('attachment');
+        Route::delete('/{account}/bills/{bill}', 'cancel')->whereNumber('account')->whereNumber('bill')->name('cancel');
+        Route::get('/{account}/statement', 'statement')->whereNumber('account')->name('statement');
+    });
     Route::prefix('admin/progres-pembangunan')->name('construction.')->controller(\App\Http\Controllers\ConstructionReportController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/units/{unit}/history', 'history')->name('history');
+        Route::get('/units/{unit}/print', 'printUnit')->whereNumber('unit')->name('print');
         Route::post('/uploads', 'begin')->name('begin');
         Route::post('/uploads/{id}/photos/{photo}', 'chunk')->whereNumber('photo')->name('chunk');
         Route::post('/uploads/{id}/finish', 'finish')->name('finish');
@@ -329,6 +342,8 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::prefix('admin/pengaturan')->group(function () {
+        Route::get('catatan-kwitansi-customer', [\App\Http\Controllers\Pengaturan\CustomerReceiptNoteController::class, 'index'])->name('customer-receipt-notes.index');
+        Route::put('catatan-kwitansi-customer/{customer}', [\App\Http\Controllers\Pengaturan\CustomerReceiptNoteController::class, 'update'])->whereNumber('customer')->name('customer-receipt-notes.update');
         Route::resource('pengaturan-profil', PengaturanProfilController::class);
         Route::resource('pengaturan-media', PengaturanMediaController::class);
         Route::put('pengaturan-pengguna/user-update/{id}', [PengaturanPenggunaController::class, 'updateUser'])->name('pengaturan-pengguna.update-user');

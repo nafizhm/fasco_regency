@@ -45,6 +45,8 @@ class PengajuanHold extends Model
         'id_lokasi',
         'id_kavling',
         'total_harga',
+        'diskon',
+        'rincian_biaya_penjualan',
         'jenis_perumahan',
         'jenis_pembelian',
         'pembayaran_cash',
@@ -61,9 +63,13 @@ class PengajuanHold extends Model
 
     public $timestamps = false;
 
+    protected $casts = ['rincian_biaya_penjualan' => 'array'];
+
     public function getRincianBiayaAttribute()
     {
-        return $this->kavling->rincian_biaya ?? [];
+        return $this->kavling
+            ? \App\Services\BookingPrice::fromItems($this->rincian_biaya_penjualan ?? $this->kavling->rincian_biaya ?? [], (int) $this->diskon)
+            : [];
     }
 
     public function marketing()

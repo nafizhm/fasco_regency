@@ -1,0 +1,454 @@
+{
+    "akad": [
+        {
+            "id": 3,
+            "keterangan": "Impor data historis Excel, baris 6"
+        },
+        {
+            "id": 4,
+            "keterangan": "Impor data historis Excel, baris 7"
+        },
+        {
+            "id": 5,
+            "keterangan": "Impor data historis Excel, baris 8"
+        },
+        {
+            "id": 6,
+            "keterangan": "Impor data historis Excel, baris 9"
+        },
+        {
+            "id": 7,
+            "keterangan": "Impor data historis Excel, baris 10"
+        },
+        {
+            "id": 8,
+            "keterangan": "Impor data historis Excel, baris 11"
+        },
+        {
+            "id": 9,
+            "keterangan": "Impor data historis Excel, baris 12"
+        },
+        {
+            "id": 10,
+            "keterangan": "Impor data historis Excel, baris 13"
+        },
+        {
+            "id": 11,
+            "keterangan": "Impor data historis Excel, baris 14"
+        },
+        {
+            "id": 12,
+            "keterangan": "Impor data historis Excel, baris 15"
+        },
+        {
+            "id": 13,
+            "keterangan": "Impor data historis Excel, baris 16"
+        },
+        {
+            "id": 14,
+            "keterangan": "Impor data historis Excel, baris 17"
+        },
+        {
+            "id": 15,
+            "keterangan": "Impor data historis Excel, baris 20"
+        },
+        {
+            "id": 16,
+            "keterangan": "Impor data historis Excel, baris 21"
+        },
+        {
+            "id": 17,
+            "keterangan": "Impor data historis Excel, baris 22"
+        },
+        {
+            "id": 18,
+            "keterangan": "Impor data historis Excel, baris 23"
+        },
+        {
+            "id": 19,
+            "keterangan": "Impor data historis Excel, baris 24"
+        },
+        {
+            "id": 20,
+            "keterangan": "Impor data historis Excel, baris 25"
+        },
+        {
+            "id": 21,
+            "keterangan": "Impor data historis Excel, baris 26"
+        },
+        {
+            "id": 22,
+            "keterangan": "Impor data historis Excel, baris 27; tanggal booking\/akad belum tersedia"
+        },
+        {
+            "id": 23,
+            "keterangan": "Impor data historis Excel, baris 28"
+        },
+        {
+            "id": 24,
+            "keterangan": "Impor data historis Excel, baris 31"
+        },
+        {
+            "id": 25,
+            "keterangan": "Impor data historis Excel, baris 32"
+        },
+        {
+            "id": 26,
+            "keterangan": "Impor data historis Excel, baris 33"
+        },
+        {
+            "id": 27,
+            "keterangan": "Impor data historis Excel, baris 34"
+        },
+        {
+            "id": 28,
+            "keterangan": "Impor data historis Excel, baris 35"
+        },
+        {
+            "id": 29,
+            "keterangan": "Impor data historis Excel, baris 36"
+        },
+        {
+            "id": 30,
+            "keterangan": "Impor data historis Excel, baris 37"
+        },
+        {
+            "id": 31,
+            "keterangan": "Impor data historis Excel, baris 38"
+        },
+        {
+            "id": 32,
+            "keterangan": "Impor data historis Excel, baris 39"
+        },
+        {
+            "id": 33,
+            "keterangan": "Impor data historis Excel, baris 40"
+        },
+        {
+            "id": 34,
+            "keterangan": "Impor data historis Excel, baris 41"
+        },
+        {
+            "id": 35,
+            "keterangan": "Impor data historis Excel, baris 44"
+        },
+        {
+            "id": 36,
+            "keterangan": "Impor data historis Excel, baris 45"
+        },
+        {
+            "id": 37,
+            "keterangan": "Impor data historis Excel, baris 46"
+        },
+        {
+            "id": 38,
+            "keterangan": "Impor data historis Excel, baris 47"
+        },
+        {
+            "id": 39,
+            "keterangan": "Impor data historis Excel, baris 48"
+        },
+        {
+            "id": 40,
+            "keterangan": "Impor data historis Excel, baris 49"
+        },
+        {
+            "id": 41,
+            "keterangan": "Impor data historis Excel, baris 50"
+        },
+        {
+            "id": 42,
+            "keterangan": "Impor data historis Excel, baris 51"
+        },
+        {
+            "id": 43,
+            "keterangan": "Impor data historis Excel, baris 52"
+        },
+        {
+            "id": 44,
+            "keterangan": "Impor data historis Excel, baris 53"
+        },
+        {
+            "id": 45,
+            "keterangan": "Impor data historis Excel, baris 54"
+        },
+        {
+            "id": 46,
+            "keterangan": "Impor data historis Excel, baris 55"
+        },
+        {
+            "id": 47,
+            "keterangan": "Impor data historis Excel, baris 58"
+        },
+        {
+            "id": 48,
+            "keterangan": "Impor data historis Excel, baris 59"
+        },
+        {
+            "id": 49,
+            "keterangan": "Impor data historis Excel, baris 60"
+        },
+        {
+            "id": 50,
+            "keterangan": "Impor data historis Excel, baris 61"
+        },
+        {
+            "id": 51,
+            "keterangan": "Impor data historis Excel, baris 62"
+        },
+        {
+            "id": 52,
+            "keterangan": "Impor data historis Excel, baris 63"
+        },
+        {
+            "id": 53,
+            "keterangan": "Impor data historis Excel, baris 66"
+        },
+        {
+            "id": 54,
+            "keterangan": "Impor data historis Excel, baris 67"
+        },
+        {
+            "id": 55,
+            "keterangan": "Impor data historis Excel, baris 68"
+        },
+        {
+            "id": 56,
+            "keterangan": "Impor data historis Excel, baris 69"
+        },
+        {
+            "id": 57,
+            "keterangan": "Impor data historis Excel, baris 70"
+        },
+        {
+            "id": 58,
+            "keterangan": "Impor data historis Excel, baris 71"
+        }
+    ],
+    "detail_akad": [
+        {
+            "id": 2,
+            "keterangan": "Impor data historis Excel, baris 6"
+        },
+        {
+            "id": 3,
+            "keterangan": "Impor data historis Excel, baris 7"
+        },
+        {
+            "id": 4,
+            "keterangan": "Impor data historis Excel, baris 8"
+        },
+        {
+            "id": 5,
+            "keterangan": "Impor data historis Excel, baris 9"
+        },
+        {
+            "id": 6,
+            "keterangan": "Impor data historis Excel, baris 10"
+        },
+        {
+            "id": 7,
+            "keterangan": "Impor data historis Excel, baris 11"
+        },
+        {
+            "id": 8,
+            "keterangan": "Impor data historis Excel, baris 12"
+        },
+        {
+            "id": 9,
+            "keterangan": "Impor data historis Excel, baris 13"
+        },
+        {
+            "id": 10,
+            "keterangan": "Impor data historis Excel, baris 14"
+        },
+        {
+            "id": 11,
+            "keterangan": "Impor data historis Excel, baris 15"
+        },
+        {
+            "id": 12,
+            "keterangan": "Impor data historis Excel, baris 16"
+        },
+        {
+            "id": 13,
+            "keterangan": "Impor data historis Excel, baris 17"
+        },
+        {
+            "id": 14,
+            "keterangan": "Impor data historis Excel, baris 20"
+        },
+        {
+            "id": 15,
+            "keterangan": "Impor data historis Excel, baris 21"
+        },
+        {
+            "id": 16,
+            "keterangan": "Impor data historis Excel, baris 22"
+        },
+        {
+            "id": 17,
+            "keterangan": "Impor data historis Excel, baris 23"
+        },
+        {
+            "id": 18,
+            "keterangan": "Impor data historis Excel, baris 24"
+        },
+        {
+            "id": 19,
+            "keterangan": "Impor data historis Excel, baris 25"
+        },
+        {
+            "id": 20,
+            "keterangan": "Impor data historis Excel, baris 26"
+        },
+        {
+            "id": 21,
+            "keterangan": "Impor data historis Excel, baris 27; tanggal booking\/akad belum tersedia"
+        },
+        {
+            "id": 22,
+            "keterangan": "Impor data historis Excel, baris 28"
+        },
+        {
+            "id": 23,
+            "keterangan": "Impor data historis Excel, baris 31"
+        },
+        {
+            "id": 24,
+            "keterangan": "Impor data historis Excel, baris 32"
+        },
+        {
+            "id": 25,
+            "keterangan": "Impor data historis Excel, baris 33"
+        },
+        {
+            "id": 26,
+            "keterangan": "Impor data historis Excel, baris 34"
+        },
+        {
+            "id": 27,
+            "keterangan": "Impor data historis Excel, baris 35"
+        },
+        {
+            "id": 28,
+            "keterangan": "Impor data historis Excel, baris 36"
+        },
+        {
+            "id": 29,
+            "keterangan": "Impor data historis Excel, baris 37"
+        },
+        {
+            "id": 30,
+            "keterangan": "Impor data historis Excel, baris 38"
+        },
+        {
+            "id": 31,
+            "keterangan": "Impor data historis Excel, baris 39"
+        },
+        {
+            "id": 32,
+            "keterangan": "Impor data historis Excel, baris 40"
+        },
+        {
+            "id": 33,
+            "keterangan": "Impor data historis Excel, baris 41"
+        },
+        {
+            "id": 34,
+            "keterangan": "Impor data historis Excel, baris 44"
+        },
+        {
+            "id": 35,
+            "keterangan": "Impor data historis Excel, baris 45"
+        },
+        {
+            "id": 36,
+            "keterangan": "Impor data historis Excel, baris 46"
+        },
+        {
+            "id": 37,
+            "keterangan": "Impor data historis Excel, baris 47"
+        },
+        {
+            "id": 38,
+            "keterangan": "Impor data historis Excel, baris 48"
+        },
+        {
+            "id": 39,
+            "keterangan": "Impor data historis Excel, baris 49"
+        },
+        {
+            "id": 40,
+            "keterangan": "Impor data historis Excel, baris 50"
+        },
+        {
+            "id": 41,
+            "keterangan": "Impor data historis Excel, baris 51"
+        },
+        {
+            "id": 42,
+            "keterangan": "Impor data historis Excel, baris 52"
+        },
+        {
+            "id": 43,
+            "keterangan": "Impor data historis Excel, baris 53"
+        },
+        {
+            "id": 44,
+            "keterangan": "Impor data historis Excel, baris 54"
+        },
+        {
+            "id": 45,
+            "keterangan": "Impor data historis Excel, baris 55"
+        },
+        {
+            "id": 46,
+            "keterangan": "Impor data historis Excel, baris 58"
+        },
+        {
+            "id": 47,
+            "keterangan": "Impor data historis Excel, baris 59"
+        },
+        {
+            "id": 48,
+            "keterangan": "Impor data historis Excel, baris 60"
+        },
+        {
+            "id": 49,
+            "keterangan": "Impor data historis Excel, baris 61"
+        },
+        {
+            "id": 50,
+            "keterangan": "Impor data historis Excel, baris 62"
+        },
+        {
+            "id": 51,
+            "keterangan": "Impor data historis Excel, baris 63"
+        },
+        {
+            "id": 52,
+            "keterangan": "Impor data historis Excel, baris 66"
+        },
+        {
+            "id": 53,
+            "keterangan": "Impor data historis Excel, baris 67"
+        },
+        {
+            "id": 54,
+            "keterangan": "Impor data historis Excel, baris 68"
+        },
+        {
+            "id": 55,
+            "keterangan": "Impor data historis Excel, baris 69"
+        },
+        {
+            "id": 56,
+            "keterangan": "Impor data historis Excel, baris 70"
+        },
+        {
+            "id": 57,
+            "keterangan": "Impor data historis Excel, baris 71"
+        }
+    ]
+}

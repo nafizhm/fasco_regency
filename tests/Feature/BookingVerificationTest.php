@@ -205,13 +205,26 @@ class BookingVerificationTest extends TestCase
         $this->assertNull(\App\Models\KavlingPeta::findOrFail(1)->customer);
     }
 
+    public function test_discount_survives_approval_and_reduces_customer_price_and_receivables(): void
+    {
+        DB::table('pengajuan_hold')->where('id', 1)->update(['diskon' => 10000000]);
+        $payload = $this->prepareApproval();
+        $this->mock(\App\Http\Controllers\GenerateNumberController::class)
+            ->shouldReceive('generateNomorDokumen')->andReturn('TEST-DISCOUNT');
+        $this->post('/_test/booking/1', $payload, ['Accept' => 'application/json'])->assertOk();
+        $this->assertDatabaseHas('pengajuan_hold', ['id' => 1, 'diskon' => 10000000, 'total_harga' => 140000000]);
+        $this->assertDatabaseHas('customer', ['hrg_jual' => 140000000, 'total_harga' => 140000000]);
+        $this->assertEquals(140000000, DB::table('piutang')->sum('nominal'));
+        $this->assertEquals(150000000, \App\Models\KavlingPeta::findOrFail(1)->total_harga);
+    }
+
     public function test_approval_uses_edited_customer_data_and_new_attachment(): void
     {
         $payload = $this->prepareApproval();
         $this->mock(\App\Http\Controllers\GenerateNumberController::class)
             ->shouldReceive('generateNomorDokumen')->once()->andReturn('TEST-001');
         $this->post('/_test/booking/1', $payload, ['Accept' => 'application/json'])->assertOk();
-        $this->assertDatabaseHas('customer', ['nama_lengkap' => 'Nama Diperbarui', 'nik' => '0012345678901234']);
+        $this->assertDatabaseHas('customer', ['nama_lengkap' => 'NAMA DIPERBARUI', 'nik' => '0012345678901234']);
         $data = PengajuanHold::findOrFail(1);
         $this->assertSame('2', $data->stt_reg);
         $this->assertFileExists(public_path('assets/customer/' . $data->foto_ktp));

@@ -228,37 +228,6 @@
                         </div>
 
                         <div class="form-group row">
-                            <label class="col-sm-2 col-form-label">DP ke Bank</label>
-                            <div class="col-sm-4">
-                                <select name="dp_mode" id="dp_mode" class="form-control">
-                                    <option value="persentase">Berdasarkan persentase (%)</option>
-                                    <option value="nominal">Berdasarkan nominal (Rp)</option>
-                                </select>
-                            </div>
-                            <div class="col-sm-4" id="dp_persen_group">
-                                <div class="input-group">
-                                    <input type="number" name="dp_persen" id="dp_persen" class="form-control"
-                                        min="0" max="100" step="0.0001" placeholder="Persentase DP">
-                                    <div class="input-group-append"><span class="input-group-text">%</span></div>
-                                </div>
-                            </div>
-                            <div class="col-sm-4 d-none" id="dp_nominal_group">
-                                <div class="input-group">
-                                    <div class="input-group-prepend"><span class="input-group-text">Rp.</span></div>
-                                    <input type="text" name="dp_nominal" id="dp_nominal"
-                                        class="form-control format-number" placeholder="Nominal DP" disabled>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group row">
-                            <label class="col-sm-2 col-form-label">Jumlah DP</label>
-                            <div class="col-sm-8">
-                                <input type="text" id="dp_hasil" class="form-control text-right" readonly>
-                                <small class="text-muted" id="dp_keterangan">Persentase dihitung dari Acc Plafon SP3K.</small>
-                            </div>
-                        </div>
-
-                        <div class="form-group row">
                             <label class="col-sm-2 col-form-label">Lampiran</label>
                             <div class="col-sm-8">
                                 <div id="dropzoneLampiran" class="dropzone-wrapper">
@@ -513,7 +482,6 @@
                     $('#id_wawancara').val(response.data.id);
                     $('#id_customer_acc').val(response.data.id_customer).trigger('change');
                     $('#id_bank_kpr_acc').val(response.data.id_bank_kpr).trigger('change');
-                    updateDpPreview();
 
                     $('#modalAcc').modal('show');
                 }
@@ -616,7 +584,6 @@
 
         $('#modalAcc').on('hidden.bs.modal', function() {
             $('#formAcc')[0].reset();
-            updateDpPreview();
             $('.is-invalid').removeClass('is-invalid');
             $('.invalid-feedback').remove();
             $('.dropzone-error').html('');
@@ -702,22 +669,6 @@
             });
         });
 
-        function updateDpPreview() {
-            const percentage = $('#dp_mode').val() === 'persentase';
-            $('#dp_persen_group').toggleClass('d-none', !percentage);
-            $('#dp_nominal_group').toggleClass('d-none', percentage);
-            $('#dp_persen').prop('disabled', !percentage).prop('required', percentage);
-            $('#dp_nominal').prop('disabled', percentage).prop('required', !percentage);
-            const rupiah = value => Number(String(value || '').replace(/\./g, '')) || 0;
-            const base = rupiah($('#acc_plafon').val());
-            const percent = Number($('#dp_persen').val()) || 0;
-            const amount = percentage ? Math.round(base * percent / 100) : rupiah($('#dp_nominal').val());
-            $('#dp_hasil').val('Rp ' + amount.toLocaleString('id-ID'));
-            $('#dp_keterangan').text(percentage
-                ? 'Persentase dihitung dari Acc Plafon SP3K: Rp ' + base.toLocaleString('id-ID')
-                : 'DP sesuai nominal yang dimasukkan.');
-        }
-        $(document).on('input change', '#dp_mode, #dp_persen, #dp_nominal, #acc_plafon', updateDpPreview);
 
         $('#formAcc').on('submit', function(e) {
             e.preventDefault();

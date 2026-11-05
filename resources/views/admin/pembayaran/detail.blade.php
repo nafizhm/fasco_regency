@@ -103,37 +103,6 @@
                             </div>
 
                             <div class="form-group row">
-                                <label class="control-label col-sm-4">DP ke Bank</label>
-                                <div class="col-sm-5">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text">Rp.</span>
-                                        </div>
-                                        <input class="form-control text-right format-number" type="text" id="dp_bank_sp3k"
-                                            value="{{ $sp3k?->dp_nilai !== null ? number_format($sp3k->dp_nilai, 0, ',', '.') : '' }}"
-                                            placeholder="DP belum diisi pada SP3K" readonly>
-
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-group row">
-                                <div class="offset-sm-4 col-sm-8 text-muted small">
-                                    @if ($sp3k?->dp_nilai !== null)
-                                        DP sesuai SP3K {{ $sp3k->no_sp3k }}
-                                        @if ($sp3k->dp_mode === 'persentase')
-                                            ({{ number_format($sp3k->dp_persen, 2, ',', '.') }}% dari plafon SP3K).
-                                        @else
-                                            (berdasarkan nominal).
-                                        @endif
-                                    @else
-                                        DP belum diisi pada SP3K.
-                                        <a href="{{ route('wawancara.index') }}">Lengkapi melalui input SP3K</a>.
-                                    @endif
-                                </div>
-                            </div>
-
-                            <div class="form-group row">
                                 <label class="control-label col-sm-4">Jumlah Bayar</label>
                                 <div class="col-sm-5">
                                     <div class="input-group">
@@ -465,10 +434,9 @@
                                 <select name="id_kategori_transaksi" id="id_kategori_transaksi"
                                     class="form-control select-kategori-transaksi">
                                     <option value=""></option>
-                                    <option value="4" data-kategori-kwitansi="Booking Fee">Booking Fee</option>
-                                    <option value="6" data-kategori-kwitansi="Biaya Proses">Biaya Proses</option>
-                                    <option value="8" data-kategori-kwitansi="DP/Uang Muka">DP/Uang Muka</option>
-                                    <option value="5" data-kategori-kwitansi="Pelunasan">Pelunasan</option>
+                                    @foreach ($kategoriTransaksiPemasukan as $kategori)
+                                        <option value="{{ $kategori->id }}" data-kategori-kwitansi="{{ $kategori->kategori }}">{{ $kategori->kategori }}</option>
+                                    @endforeach
                                 </select>
                                 <input type="hidden" name="keterangan_kategori" id="keterangan_kategori">
                             </div>
@@ -528,7 +496,7 @@
                         </div>
 
                         <div class="form-group row">
-                            <label class="col-sm-3 col-form-label">Bukti Pembayaran</label>
+                            <label class="col-sm-3 col-form-label">Bukti Pembayaran <small class="text-muted">(opsional)</small></label>
                             <div class="col-sm-4">
                                 <input type="file" class="mb-2" id="file" name="file"
                                     accept=".jpg, .jpeg, .png, .pdf">
@@ -684,11 +652,59 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="modalPaymentAttachment" tabindex="-1" role="dialog" aria-labelledby="paymentAttachmentTitle" aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-indigo">
+                    <h5 class="modal-title" id="paymentAttachmentTitle">Lampiran Pembayaran</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Tutup"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body bg-light text-center" id="paymentAttachmentPreview" style="min-height: 180px;"></div>
+                <div class="modal-footer">
+                    <a id="paymentAttachmentOriginal" class="btn btn-outline-primary" target="_blank" rel="noopener">Buka berkas asli</a>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
     <script>
         previewFile('file', 'previewLampiran');
+
+        $(document).on('click', '.view-payment-attachment', function() {
+            const url = this.dataset.url;
+            const name = this.dataset.name || 'Lampiran pembayaran';
+            const preview = document.getElementById('paymentAttachmentPreview');
+            preview.replaceChildren();
+            $('#paymentAttachmentOriginal').attr('href', url);
+            if (/\.pdf$/i.test(name)) {
+                const frame = document.createElement('iframe');
+                frame.src = url;
+                frame.title = 'Lampiran pembayaran PDF';
+                frame.style.cssText = 'width:100%;height:70vh;border:0;background:white;';
+                preview.append(frame);
+                const hint = document.createElement('p');
+                hint.className = 'text-muted small mt-2 mb-0';
+                hint.textContent = 'Jika PDF tidak tampil, gunakan Buka berkas asli.';
+                preview.append(hint);
+            } else {
+                const image = document.createElement('img');
+                image.src = url;
+                image.alt = name;
+                image.style.cssText = 'max-width:100%;max-height:70vh;object-fit:contain;';
+                image.addEventListener('error', () => {
+                    preview.textContent = 'Pratinjau tidak tersedia. Gunakan Buka berkas asli untuk melihat lampiran.';
+                }, {once: true});
+                preview.append(image);
+            }
+            $('#modalPaymentAttachment').modal('show');
+        });
+        $('#modalPaymentAttachment').on('hidden.bs.modal', function() {
+            document.getElementById('paymentAttachmentPreview').replaceChildren();
+            $('#paymentAttachmentOriginal').removeAttr('href');
+        });
 
         function recalcSisaBayar() {
             let totalTagihan = unformatNumber($('#total_tagihan_all').val());
@@ -707,9 +723,14 @@
         }
 
         $(document).ready(function() {
-            $('.select-kategori-transaksi').select2({
-                theme: "bootstrap4",
-                placeholder: "Pilih Kategori Transaksi",
+            $('.select-kategori-transaksi').each(function() {
+                $(this).select2({
+                    theme: "bootstrap4",
+                    placeholder: "Cari atau pilih kategori transaksi",
+                    minimumResultsForSearch: 0,
+                    dropdownParent: $(this).closest('.modal'),
+                    width: '100%'
+                });
             });
             $('.select-tagihan').select2({
                 theme: "bootstrap4",
@@ -978,7 +999,7 @@
 
             Swal.fire({
                 title: 'Yakin update harga rumah?',
-                text: "Harga akan disesuaikan dengan harga jual kavling!",
+                text: "Harga sebelum diskon mengikuti harga jual kavling. Diskon customer tetap diperhitungkan dan piutang dihitung ulang.",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonText: '<span class="swal-btn-text">Ya, Update</span>',
@@ -1477,7 +1498,7 @@
         previewFile('edit_file', 'editPreviewLampiran');
 
         $(document).ready(function() {
-            $('.select2-edit-pemasukan').select2({ theme: "bootstrap4", placeholder: "Pilih Kategori Transaksi" });
+            $('.select2-edit-pemasukan').select2({ theme: "bootstrap4", placeholder: "Cari atau pilih kategori transaksi", minimumResultsForSearch: 0, dropdownParent: $('#modalEditPemasukan'), width: '100%' });
             $('.select2-edit-rekening').select2({ theme: "bootstrap4", placeholder: "Pilih Rekening", minimumResultsForSearch: -1 });
             $('.select2-edit-metode').select2({ theme: "bootstrap4", placeholder: "Pilih Metode Bayar", minimumResultsForSearch: -1 });
         });

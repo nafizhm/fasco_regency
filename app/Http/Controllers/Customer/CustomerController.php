@@ -243,6 +243,7 @@ class CustomerController extends Controller
             ];
 
             $customer = Customer::create($data);
+            app(\App\Services\CustomerReceivableService::class)->ensureForCustomer($customer->id);
             $this->logCreate('Customer', $customer->id);
 
             PersyaratanLegal::create([
@@ -264,6 +265,8 @@ class CustomerController extends Controller
     public function edit($id)
     {
         $list = Customer::findOrFail($id);
+        $list->setAttribute('harga_jual_awal', $list->harga_jual_awal ?? ((int) $list->hrg_jual + (int) $list->diskon));
+        $list->setAttribute('biaya_lain_penjualan', max(0, (int) $list->total_harga - (int) $list->hrg_jual));
 
         return response()->json([
             'status' => 'success',
@@ -308,11 +311,26 @@ class CustomerController extends Controller
             'alamat_domisili.required' => 'Alamat Domisili wajib diisi!',
         ];
 
+        if ($request->has('harga_jual_awal')) {
+            foreach (['harga_jual_awal', 'diskon'] as $field) {
+                $raw = (string) ($request->input($field) ?? '0');
+                if (! preg_match('/^\d+(?:\.\d{3})*$/', $raw)) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([$field => 'Isi nominal rupiah yang valid dan tidak negatif.']);
+                }
+                $request->merge([$field => str_replace('.', '', $raw)]);
+            }
+            $rules['harga_jual_awal'] = 'required|integer|min:1|max:2147483647';
+            $rules['diskon'] = 'required|integer|min:0|lte:harga_jual_awal';
+        }
         $request->validate($rules, $messages);
 
         DB::beginTransaction();
         try {
+            $data = Customer::whereKey($id)->lockForUpdate()->firstOrFail();
             $user = Auth::user();
+            $price = $request->has('harga_jual_awal')
+                ? app(\App\Services\CustomerSalePrice::class)->values($data, (int) $request->harga_jual_awal, (int) $request->diskon)
+                : null;
 
             $updateData = [
                 'nama_lengkap'      => $request->nama_lengkap,
@@ -338,7 +356,7 @@ class CustomerController extends Controller
                 $existingData = $data->toArray();
                 unset($existingData['id']);
 
-                $tempoData = array_merge($existingData, $updateData, [
+                $tempoData = array_merge($existingData, $updateData, $price ?? [], [
                     'id_customer' => $data->id,
                     'id_user'     => $user->id,
                 ]);
@@ -352,6 +370,9 @@ class CustomerController extends Controller
                 ]);
             } else {
                 $data->update($updateData);
+                if ($price) {
+                    app(\App\Services\CustomerSalePrice::class)->sync($data, $price['harga_jual_awal'], $price['diskon']);
+                }
                 $this->logEdit('Customer', $data->id);
 
                 DB::commit();
@@ -362,6 +383,7 @@ class CustomerController extends Controller
             }
         } catch (\Exception $e) {
             DB::rollBack();
+            if ($e instanceof \Illuminate\Validation\ValidationException) throw $e;
             Log::info($e->getMessage());
             return response()->json([
                 'status' => 'error',
@@ -820,11 +842,18 @@ class CustomerController extends Controller
         $requestData = $data->toArray();
         $request->merge($requestData);
 
+        if ((int) Customer::findOrFail($data->id_customer)->id_status_progres === 3) {
+            foreach (array_keys($rules) as $field) {
+                if ($field !== 'nama_lengkap') $rules[$field] = $field === 'tgl_lahir' ? 'nullable|date' : 'nullable|string';
+            }
+        }
+
         $request->validate($rules, $messages);
 
         DB::beginTransaction();
         try {
-            $customer = Customer::findOrFail($data->id_customer);
+            $data = CustomerTempo::whereKey($id)->lockForUpdate()->firstOrFail();
+            $customer = Customer::whereKey($data->id_customer)->lockForUpdate()->firstOrFail();
 
             $updateData = [
                 'nama_lengkap'      => $data->nama_lengkap,
@@ -847,6 +876,9 @@ class CustomerController extends Controller
             ];
 
             $customer->update($updateData);
+            if ($data->harga_jual_awal !== null) {
+                app(\App\Services\CustomerSalePrice::class)->sync($customer, (int) $data->harga_jual_awal, (int) $data->diskon);
+            }
             $this->logEdit('Customer', $customer->id);
 
             $data->delete();
@@ -858,6 +890,7 @@ class CustomerController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+            if ($e instanceof \Illuminate\Validation\ValidationException) throw $e;
             Log::info($e->getMessage());
             return response()->json([
                 'status' => 'error',

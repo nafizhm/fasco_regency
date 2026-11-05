@@ -1,5 +1,24 @@
 @extends('admin.layout_admin')
 @section('content')
+    <style>
+        #modalForm .modal-dialog { max-width: 860px; }
+        #modalForm .modal-content { border: 0; border-radius: 12px; overflow: hidden; }
+        #modalForm .modal-header { padding: 20px 24px; }
+        #modalForm .modal-body { padding: 24px; background: #f4f6f9; max-height: calc(100vh - 210px); overflow-y: auto; }
+        #modalForm .akad-form-section { min-width: 0; padding: 20px; margin-bottom: 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; }
+        #modalForm .akad-form-section:last-child { margin-bottom: 0; }
+        #modalForm .akad-section-title { font-size: 15px; font-weight: 700; color: #334155; margin-bottom: 4px; }
+        #modalForm .akad-section-help { font-size: 13px; color: #64748b; margin-bottom: 18px; }
+        #modalForm label { font-size: 13px; margin-bottom: 6px; }
+        #modalForm .form-control { border-radius: 6px; }
+        #modalForm .modal-footer { padding: 16px 24px; background: #fff; }
+        #modalForm .modal-footer .btn { min-width: 100px; }
+        @media (max-width: 575.98px) {
+            #modalForm .modal-dialog { margin: 10px; }
+            #modalForm .modal-body { padding: 14px; }
+            #modalForm .akad-form-section { padding: 16px; }
+        }
+    </style>
     <div class="content-wrapper">
         <!-- Content Header (Page header) -->
         <section class="content-header">
@@ -61,10 +80,13 @@
     <!-- Modal -->
     <div class="modal fade" id="modalForm" tabindex="-1" role="dialog" aria-labelledby="modalFormLabel" aria-hidden="true"
         data-backdrop="static" data-keyboard="false">
-        <div class="modal-dialog modal-md" role="document">
+        <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header bg-indigo">
-                    <h5 class="modal-title text-white font-weight-bold" id="modalFormLabel">Form Akad</h5>
+                    <div>
+                        <h5 class="modal-title text-white font-weight-bold" id="modalFormLabel">Tambah Akad</h5>
+                        <div class="small text-white mt-1">Kelola akad dan informasi pembeli dalam satu form.</div>
+                    </div>
                     <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -73,62 +95,87 @@
                     @csrf
                     <input type="hidden" id="primary_id" name="primary_id">
                     <div class="modal-body">
-                        <p class="text-muted">Catat akad yang sudah dilaksanakan untuk satu pembeli.</p>
-                        <div class="form-group">
-                            <label for="id_customer">Pembeli</label>
-                            <select id="id_customer" name="id_customer" class="form-control" required>
-                                <option value="">Pilih pembeli</option>
-                                @foreach ($customers as $customer)
-                                    <option value="{{ $customer->id }}">{{ $customer->nama_lengkap }} (#{{ $customer->id }})</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="jenis_akad">Jenis Akad</label>
-                            <select id="jenis_akad" name="jenis_akad" class="form-control" required>
-                                <option value="">Pilih jenis akad</option>
-                                <option value="AJB">AJB</option><option value="PPJB">PPJB</option>
-                            </select>
-                        </div>
-                        <div class="form-group row mb-3">
-                            <label for="tgl_akad" class="col-sm-4 col-form-label">Tanggal</label>
-                            <div class="col-sm-8">
-                                <input type="date" id="tgl_akad" class="form-control" name="tgl_akad"
-                                    required max="{{ now('Asia/Jakarta')->toDateString() }}" value="{{ now('Asia/Jakarta')->toDateString() }}">
+                        <section class="akad-form-section" aria-labelledby="akad-detail-heading">
+                            <h6 class="akad-section-title" id="akad-detail-heading">Detail Akad</h6>
+                            <p class="akad-section-help">Catat akad yang sudah dilaksanakan untuk satu pembeli.</p>
+                            <div class="form-group">
+                                <label for="id_customer">Pembeli <span class="text-danger" aria-hidden="true">*</span></label>
+                                <select id="id_customer" name="id_customer" class="form-control" required>
+                                    <option value="">Pilih pembeli</option>
+                                    @foreach ($customers as $customer)
+                                        <option value="{{ $customer->id }}">{{ $customer->nama_lengkap }} (#{{ $customer->id }})</option>
+                                    @endforeach
+                                </select>
                             </div>
-                        </div>
-
-                        <div class="form-group row mb-3">
-                            <label for="keterangan" class="col-sm-4 col-form-label">Keterangan</label>
-                            <div class="col-sm-8">
-                                <input type="text" id="keterangan" class="form-control" name="keterangan">
-                            </div>
-                        </div>
-
-                        <fieldset id="buyer-fields" disabled style="display: none;">
-                            <legend class="h6">Edit Data Pembeli</legend>
-                            @foreach (['nama_lengkap' => 'Nama Pembeli', 'nik' => 'NIK', 'no_telp' => 'Nomor Telepon', 'alamat_ktp' => 'Alamat', 'tgl_booking' => 'Tanggal Booking'] as $field => $label)
-                                <div class="form-group">
-                                    <label for="buyer-{{ $field }}">{{ $label }}</label>
-                                    <input type="{{ $field === 'tgl_booking' ? 'date' : 'text' }}" class="form-control" id="buyer-{{ $field }}" name="buyer[{{ $field }}]">
+                            <div class="row">
+                                <div class="form-group col-md-6">
+                                    <label for="jenis_akad">Jenis Akad <span class="text-danger" aria-hidden="true">*</span></label>
+                                    <select id="jenis_akad" name="jenis_akad" class="form-control" required>
+                                        <option value="">Pilih jenis akad</option>
+                                        <option value="AJB">AJB</option>
+                                        <option value="PPJB">PPJB</option>
+                                    </select>
                                 </div>
-                            @endforeach
-                            <div class="form-group">
-                                <label for="buyer-id_bank_kpr">Bank KPR</label>
-                                <select class="form-control" id="buyer-id_bank_kpr" name="buyer[id_bank_kpr]">
-                                    <option value="">Belum diisi</option>
-                                    @foreach ($banks as $bank)<option value="{{ $bank->id }}">{{ $bank->nama }}</option>@endforeach
-                                </select>
+                                <div class="form-group col-md-6">
+                                    <label for="tgl_akad">Tanggal Akad</label>
+                                    <input type="date" id="tgl_akad" class="form-control" name="tgl_akad"
+                                        required max="{{ now('Asia/Jakarta')->toDateString() }}" value="{{ now('Asia/Jakarta')->toDateString() }}">
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="buyer-id_marketing">Marketing</label>
-                                <select class="form-control" id="buyer-id_marketing" name="buyer[id_marketing]">
-                                    <option value="">Belum diisi</option>
-                                    @foreach ($marketings as $marketing)<option value="{{ $marketing->id }}">{{ $marketing->nama_marketing }}</option>@endforeach
-                                </select>
+                            <div class="form-group mb-0">
+                                <label for="keterangan">Keterangan <span class="text-muted font-weight-normal">(opsional)</span></label>
+                                <textarea id="keterangan" class="form-control" name="keterangan" rows="2" maxlength="255" placeholder="Tambahkan catatan terkait akad jika diperlukan"></textarea>
+                            </div>
+                        </section>
+
+                        <fieldset id="buyer-fields" disabled style="display: none;" aria-labelledby="buyer-heading">
+                            <div class="akad-form-section">
+                                <h6 class="akad-section-title" id="buyer-heading">Data Pembeli</h6>
+                                <p class="akad-section-help">Perubahan di bagian ini juga memperbarui data customer.</p>
+                                <div class="row">
+                                    <div class="form-group col-md-6">
+                                        <label for="buyer-nama_lengkap">Nama Pembeli <span class="text-danger" aria-hidden="true">*</span></label>
+                                        <input type="text" class="form-control" id="buyer-nama_lengkap" name="buyer[nama_lengkap]" maxlength="100" required autocomplete="name" style="text-transform: uppercase;">
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label for="buyer-nik">NIK</label>
+                                        <input type="text" class="form-control" id="buyer-nik" name="buyer[nik]" maxlength="50" inputmode="numeric">
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label for="buyer-no_telp">Nomor Telepon</label>
+                                        <input type="tel" class="form-control" id="buyer-no_telp" name="buyer[no_telp]" maxlength="20" autocomplete="tel">
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label for="buyer-tgl_booking">Tanggal Booking</label>
+                                        <input type="date" class="form-control" id="buyer-tgl_booking" name="buyer[tgl_booking]" max="{{ now('Asia/Jakarta')->toDateString() }}">
+                                    </div>
+                                    <div class="form-group col-12 mb-0">
+                                        <label for="buyer-alamat_ktp">Alamat</label>
+                                        <textarea class="form-control" id="buyer-alamat_ktp" name="buyer[alamat_ktp]" rows="2" autocomplete="street-address"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="akad-form-section">
+                                <h6 class="akad-section-title" id="bank-marketing-heading">Bank &amp; Marketing</h6>
+                                <p class="akad-section-help">Pilih bank KPR dan marketing yang menangani pembeli.</p>
+                                <div class="row">
+                                    <div class="form-group col-md-6 mb-md-0">
+                                        <label for="buyer-id_bank_kpr">Bank KPR</label>
+                                        <select class="form-control" id="buyer-id_bank_kpr" name="buyer[id_bank_kpr]">
+                                            <option value="">Belum diisi</option>
+                                            @foreach ($banks as $bank)<option value="{{ $bank->id }}">{{ $bank->nama }}</option>@endforeach
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-md-6 mb-0">
+                                        <label for="buyer-id_marketing">Marketing</label>
+                                        <select class="form-control" id="buyer-id_marketing" name="buyer[id_marketing]">
+                                            <option value="">Belum diisi</option>
+                                            @foreach ($marketings as $marketing)<option value="{{ $marketing->id }}">{{ $marketing->nama_marketing }}</option>@endforeach
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                         </fieldset>
-
                     </div>
 
                     <div class="modal-footer">
@@ -217,6 +264,7 @@
             var url = $(this).data('url');
             $.get(url, function(response) {
                 if (response.status === 'success') {
+                    $('#modalFormLabel').text('Edit Akad');
                     $('#primary_id').val(response.data.id);
                     $('#id_customer').val(response.data.id_customer);
                     $('#id_customer').prop('disabled', true);
@@ -233,6 +281,7 @@
         });
 
         $('#modalForm').on('hidden.bs.modal', function() {
+            $('#modalFormLabel').text('Tambah Akad');
             $('#formData')[0].reset();
             $('#primary_id').val('');
             $('#id_customer').prop('disabled', false);

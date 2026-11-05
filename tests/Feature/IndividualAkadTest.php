@@ -49,12 +49,12 @@ class IndividualAkadTest extends TestCase
         $buyer = ['nama_lengkap' => 'Pembeli', 'nik' => null, 'no_telp' => '08123456789',
             'tgl_booking' => '2024-01-02', 'id_bank_kpr' => 1];
         $this->putJson('/test-akad/1', $this->input(['buyer' => $buyer, 'tgl_akad' => '2024-02-01']))->assertOk();
-        $this->assertDatabaseHas('customer', ['id' => 1, 'nama_lengkap' => 'Pembeli', 'id_bank_kpr' => 1, 'tgl_booking' => '2024-01-02']);
+        $this->assertDatabaseHas('customer', ['id' => 1, 'nama_lengkap' => 'PEMBELI', 'id_bank_kpr' => 1, 'tgl_booking' => '2024-01-02']);
         $this->getJson('/test-akad/1/edit')->assertOk()->assertJsonPath('data.buyer.id_bank_kpr', 1);
         $buyer['tgl_booking'] = '2024-03-01';
         $buyer['nama_lengkap'] = 'Tidak tersimpan';
         $this->putJson('/test-akad/1', $this->input(['buyer' => $buyer, 'tgl_akad' => '2024-02-01']))->assertUnprocessable();
-        $this->assertDatabaseHas('customer', ['id' => 1, 'nama_lengkap' => 'Pembeli']);
+        $this->assertDatabaseHas('customer', ['id' => 1, 'nama_lengkap' => 'PEMBELI']);
     }
 
     public function test_imported_akad_with_unknown_date_can_be_edited_then_completed(): void

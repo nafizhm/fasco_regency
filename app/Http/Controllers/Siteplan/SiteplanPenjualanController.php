@@ -83,7 +83,7 @@ class SiteplanPenjualanController extends Controller
 
         echo $lokasi->masterSvg->footer_svg;
 
-        return ob_get_clean();
+        return \App\Services\SiteplanSvg::normalize(ob_get_clean());
     }
 
     public function cetakJPG($id_lokasi)
@@ -120,7 +120,7 @@ class SiteplanPenjualanController extends Controller
 
         $jpgUrl = $data['jpg_url'];
 
-        $jpgContent  = Http::get($jpgUrl)->body();
+        $jpgContent  = Http::get($jpgUrl)->throw()->body();
         $jpgFilename = basename(parse_url($jpgUrl, PHP_URL_PATH));
 
         $jpgPath = public_path("hasil/{$jpgFilename}");
@@ -162,7 +162,7 @@ class SiteplanPenjualanController extends Controller
         }
 
         $jpgUrl      = $data['jpg_url'];
-        $jpgContent  = Http::get($jpgUrl)->body();
+        $jpgContent  = Http::get($jpgUrl)->throw()->body();
         $jpgFilename = basename(parse_url($jpgUrl, PHP_URL_PATH));
         $jpgPath     = public_path("hasil/{$jpgFilename}");
         if (! file_exists(dirname($jpgPath))) {
@@ -260,7 +260,7 @@ class SiteplanPenjualanController extends Controller
             'luas_tanah'    => $request->luas_tanah ?? '-',
             'luas_bangunan' => $request->luas_bangunan ?? '-',
             'daya_listrik'  => $request->daya_listrik ?? '-',
-            'harga'         => $kavling->total_harga,
+            'harga'         => $cust?->total_harga ?? $kavling->total_harga,
             'no_sertifikat' => $request->no_sertifikat ?? '-',
             'foto'          => null,
         ];

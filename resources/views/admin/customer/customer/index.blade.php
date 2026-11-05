@@ -252,8 +252,17 @@
                                 </div>
                             </div>
 
+                            <fieldset id="customer-sale-price" disabled class="border rounded p-3 mb-3">
+                                <legend class="h6 w-auto px-2 font-weight-bold">Harga Penjualan Customer</legend>
+                                <div class="row">
+                                    <div class="form-group col-md-6"><label for="harga_jual_awal">Harga Rumah Sebelum Diskon</label><div class="input-group"><div class="input-group-prepend"><span class="input-group-text">Rp.</span></div><input type="text" name="harga_jual_awal" id="harga_jual_awal" class="form-control format-number" inputmode="numeric" required></div></div>
+                                    <div class="form-group col-md-6"><label for="diskon_penjualan">Diskon Harga Rumah</label><div class="input-group"><div class="input-group-prepend"><span class="input-group-text">Rp.</span></div><input type="text" name="diskon" id="diskon_penjualan" class="form-control format-number" inputmode="numeric" required></div></div>
+                                </div>
+                                <p class="small text-muted mb-1">Harga rumah setelah diskon dan total harga dihitung otomatis. Biaya lain tetap mengikuti transaksi penjualan customer ini.</p>
+                                <p class="small text-muted mb-0">Perubahan memperbarui penjualan awal dan piutang setelah disimpan atau disetujui. Pembayaran yang sudah masuk tetap diperhitungkan.</p>
+                            </fieldset>
                             <div class="form-group row">
-                                <label class="control-label col-sm-3">Harga Rumah</label>
+                                <label class="control-label col-sm-3">Harga Rumah Setelah Diskon</label>
                                 <div class="col-sm-4">
                                     <div class="input-group">
                                         <div class="input-group-prepend">
@@ -443,6 +452,21 @@
         });
 
         let isEditMode = false;
+        $('#harga_jual_awal, #diskon_penjualan').on('input change keyup', function() {
+            const money = selector => Number(String($(selector).val() || '0').replace(/\./g, ''));
+            const gross = money('#harga_jual_awal');
+            const discount = money('#diskon_penjualan');
+            const total = gross - discount + Number($('#customer-sale-price').data('other-costs') || 0);
+            document.getElementById('diskon_penjualan').setCustomValidity(discount >= 0 && discount <= gross && total > 0 ? '' : 'Diskon tidak boleh melebihi harga rumah dan total akhir harus lebih dari Rp0.');
+            $('#hrg_jual').val(formatNumber(Math.max(0, gross - discount)));
+            $('#total_harga').val(formatNumber(Math.max(0, total)));
+        });
+        $('#modalForm').on('hidden.bs.modal', function() {
+            isEditMode = false;
+            $('#customer-sale-price').prop('disabled', true);
+            document.getElementById('diskon_penjualan').setCustomValidity('');
+        });
+
 
         $(document).on('click', '.edit-button', function() {
             isEditMode = true;
@@ -453,7 +477,7 @@
                     const data = response.data;
 
                     $('#primary_id').val(data.id);
-                    $('#tgl_booking').val(response.data.tgl_booking_formatted);
+                    $('#tgl_booking').val(data.tgl_booking);
                     $('#nama_lengkap').val(data.nama_lengkap);
                     $('#nik').val(data.nik);
                     $('#nik_p').val(data.nik_p);
@@ -473,11 +497,12 @@
                     $('#nama_saudara').val(data.nama_saudara);
                     $('#no_telp_saudara').val(data.no_telp_saudara);
 
+                    $('#id_kavling').data('selected', data.id_kavling);
                     $('#id_lokasi').val(data.id_lokasi).trigger('change');
-                    setTimeout(function() {
-                        $('#id_kavling').val(data.id_kavling).trigger('change');
-                    }, 500);
 
+                    $('#customer-sale-price').prop('disabled', false).data('other-costs', Number(data.biaya_lain_penjualan || 0));
+                    $('#harga_jual_awal').val(formatNumber(data.harga_jual_awal));
+                    $('#diskon_penjualan').val(formatNumber(data.diskon || 0) || '0');
                     $('#hrg_jual').val(formatNumber(data.hrg_jual));
                     $('#biaya_surat').val(formatNumber(data.biaya_surat));
                     $('#peningkatan_mutu').val(formatNumber(data.peningkatan_mutu));

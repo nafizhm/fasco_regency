@@ -92,18 +92,14 @@
     </table>
 
     <div class="closing">
-        <div class="notes"><strong style="color: #f00">Note :</strong>
-            <ol>
-                <li>Pembeli telah melakukan survey/ cek lokasi secara langsung<br>
-                    dan mendapat penjelasan yang cukup tentang ukuran tanah/bangunan serta skema pembayaran.</li>
-                <li>Ikatan Tanda Jadi Sebesar Rp. 11.000.000 (Biaya Admin Rp. 1.000.000)</li>
-                <li>Apabila mengudurkan diri secara sepihak uang tanda jadi tidak dapat diminta kembali.</li>
-                <li>Apabila transaksi berlanjut maka uang tanda jadi nya Rp. 10.000.000 diperhitungkan sebagai bagian dari uang muka</li>
-                <li>Untuk skema KPR : Sudah termasuk Biaya Realisasi KPR, Biaya Pajak/BPHTB<br>
-                    ( free Smartdoorlock, Kanopi ,keramik carport, pompa &amp; tandon air)</li>
-                <li>Biaya Kelebihan Tanah (Jika ada) adalah sebesar Rp. 4.000.000/m2</li>
-            </ol>
-        </div>
+        @php($receiptNotes = \App\Services\ReceiptNotes::lines($nasabah))
+        @if ($receiptNotes)
+            <div class="notes"><strong style="color: #f00">Note :</strong>
+                <ol>
+                    @foreach ($receiptNotes as $note)<li>{{ $note }}</li>@endforeach
+                </ol>
+            </div>
+        @endif
         <table class="signatures">
             <tr><td>User/Pembeli</td><td rowspan="3" style="width: 24%; vertical-align: middle">@if ($logoData)<img class="signature-logo" src="{{ $logoData }}" alt="Logo profil">@endif</td><td>{{ $perusahaan?->kota_penandatangan ?: '-' }}, {{ $date($pembayaran->tanggal) }}<br>
                 <strong style="color: #e98b19">{{ $perusahaan?->nama_perusahaan ?: '-' }}</strong><br>

@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Yajra\DataTables\Facades\DataTables;
 
 class BastController extends Controller
@@ -76,7 +77,8 @@ class BastController extends Controller
                 ->make(true);
         }
 
-        $customerList = Customer::all();
+        $customerList = Customer::whereNotIn('id', BAST::select('id_customer')->whereNotNull('id_customer'))
+            ->orderBy('nama_lengkap')->get();
 
         return view('admin.transaksi.bast.index', compact('permissions', 'customerList'));
     }
@@ -84,8 +86,8 @@ class BastController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'tanggal_bast' => 'required',
-            'id_customer'  => 'required',
+            'tanggal_bast' => 'required|date',
+            'id_customer'  => 'required|integer|exists:customer,id',
         ], [
             'tanggal_bast.required' => 'Tanggal BAST wajib diisi.',
             'id_customer.required'  => 'Customer wajib dipilih.',
@@ -97,6 +99,13 @@ class BastController extends Controller
             $customer = Customer::with('lokasi')
                 ->lockForUpdate()
                 ->findOrFail($request->id_customer);
+
+            // The customer lock serializes requests, including submissions from older open forms.
+            if (BAST::where('id_customer', $customer->id)->exists()) {
+                throw ValidationException::withMessages([
+                    'id_customer' => 'Customer ini sudah memiliki BAST. Pilih customer yang belum BAST.',
+                ]);
+            }
 
             $generator = new GenerateNumberController();
 
@@ -124,6 +133,9 @@ class BastController extends Controller
         } catch (\Exception $e) {
 
             DB::rollBack();
+            if ($e instanceof ValidationException) {
+                throw $e;
+            }
             Log::error($e->getMessage());
 
             return response()->json([

@@ -58,46 +58,14 @@ class Sp3kDpTest extends TestCase
         ], $dp);
     }
 
-    public function test_percentage_is_calculated_from_approved_plafon_and_stored(): void
+    public function test_sp3k_can_be_saved_without_bank_dp_and_ignores_old_dp_inputs(): void
     {
+        $this->postJson('/_test/sp3k-dp/1', $this->payload([]))->assertOk();
+        $this->assertDatabaseHas('wawancara_sp3k', ['acc_plafon' => 589000000, 'dp_nilai' => null]);
         $this->postJson('/_test/sp3k-dp/1', $this->payload([
-            'dp_mode' => 'persentase', 'dp_persen' => '10', 'dp_nilai' => 1,
+            'dp_mode' => 'persentase', 'dp_persen' => 10, 'dp_nilai' => 58900000,
         ]))->assertOk();
-        $this->assertDatabaseHas('wawancara_sp3k', [
-            'dp_mode' => 'persentase', 'dp_persen' => 10, 'dp_nilai' => 58900000, 'dp_dasar' => 589000000,
-        ]);
-    }
-
-    public function test_nominal_mode_ignores_percentage_and_saves_nominal(): void
-    {
-        $this->postJson('/_test/sp3k-dp/1', $this->payload([
-            'dp_mode' => 'nominal', 'dp_nominal' => '50.500.000', 'dp_persen' => '500',
-        ]))->assertOk();
-        $this->assertDatabaseHas('wawancara_sp3k', [
-            'dp_mode' => 'nominal', 'dp_nilai' => 50500000, 'dp_persen' => null, 'dp_dasar' => null,
-        ]);
-    }
-
-    public function test_decimal_percentage_and_zero_dp_are_supported(): void
-    {
-        $this->postJson('/_test/sp3k-dp/1', $this->payload([
-            'dp_mode' => 'persentase', 'dp_persen' => '2,5',
-        ]))->assertOk();
-        $this->assertEquals(14725000, WawancaraSp3k::firstOrFail()->dp_nilai);
-        $this->postJson('/_test/sp3k-dp/1', $this->payload([
-            'dp_mode' => 'nominal', 'dp_nominal' => '0',
-        ]))->assertOk();
-        $this->assertEquals(0, WawancaraSp3k::orderByDesc('id')->firstOrFail()->dp_nilai);
-    }
-
-    public function test_invalid_mode_percentage_and_negative_nominal_are_rejected(): void
-    {
-        foreach ([['dp_mode' => 'invalid'], ['dp_mode' => 'persentase', 'dp_persen' => 101],
-            ['dp_mode' => 'persentase', 'dp_persen' => -1], ['dp_mode' => 'nominal', 'dp_nominal' => '-10']] as $dp) {
-            $this->postJson('/_test/sp3k-dp/1', $this->payload($dp))->assertStatus(422);
-        }
-        $this->assertDatabaseCount('wawancara_sp3k', 0);
-        $this->assertFalse(Route::has('Pembayaran.update-sbum'));
+        $this->assertSame(0, WawancaraSp3k::whereNotNull('dp_nilai')->count());
     }
 
     private function prepareEdit(bool $allowed): void
@@ -121,9 +89,9 @@ class Sp3kDpTest extends TestCase
         Route::put('/_test/sp3k-edit/{id}', [\App\Http\Controllers\Transaksi\AccBankController::class, 'update']);
     }
 
-    public function test_edit_updates_plafon_and_dp_without_changing_disbursement_snapshot(): void
+    public function test_edit_updates_plafon_without_bank_dp_or_changing_disbursement_snapshot(): void
     {
-        $this->postJson('/_test/sp3k-dp/1', $this->payload(['dp_mode' => 'nominal', 'dp_nominal' => '50.500.000']))->assertOk();
+        $this->postJson('/_test/sp3k-dp/1', $this->payload([]))->assertOk();
         $oldFile = WawancaraSp3k::firstOrFail()->lampiran;
         $this->prepareEdit(true);
         Schema::create('pemasukan', function (Blueprint $table) {
@@ -133,9 +101,8 @@ class Sp3kDpTest extends TestCase
         $this->putJson('/_test/sp3k-edit/1', [
             'acc_plafon' => '600.000.000', 'tenor' => 20, 'tgl_terbit_sp3k' => '2026-10-07',
             'no_sp3k' => 'REVISED', 'id_bank_kpr' => 7, 'id_notaris' => 1,
-            'dp_mode' => 'persentase', 'dp_persen' => 10,
         ])->assertOk();
-        $this->assertDatabaseHas('wawancara_sp3k', ['id' => 1, 'acc_plafon' => 600000000, 'dp_nilai' => 60000000, 'dp_dasar' => 600000000, 'no_sp3k' => 'REVISED']);
+        $this->assertDatabaseHas('wawancara_sp3k', ['id' => 1, 'acc_plafon' => 600000000, 'dp_nilai' => null, 'no_sp3k' => 'REVISED']);
         $this->assertSame($oldFile, WawancaraSp3k::firstOrFail()->lampiran);
         $this->assertDatabaseHas('pemasukan', ['plafon_sp3k' => 589000000, 'no_sp3k' => 'TEST-DP']);
         $this->assertDatabaseHas('log_aktivitas_pengguna', ['id_user' => 1]);
@@ -143,7 +110,7 @@ class Sp3kDpTest extends TestCase
 
     public function test_edit_is_denied_without_edit_permission(): void
     {
-        $this->postJson('/_test/sp3k-dp/1', $this->payload(['dp_mode' => 'nominal', 'dp_nominal' => '0']))->assertOk();
+        $this->postJson('/_test/sp3k-dp/1', $this->payload([]))->assertOk();
         $this->prepareEdit(false);
         $this->putJson('/_test/sp3k-edit/1', [])->assertForbidden();
         $this->assertDatabaseHas('wawancara_sp3k', ['id' => 1, 'acc_plafon' => 589000000]);

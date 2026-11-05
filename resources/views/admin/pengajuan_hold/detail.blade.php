@@ -194,6 +194,12 @@
                                             </div>
                                         </div>
                                         <div class="form-group row">
+                                            <label class="col-sm-4 col-form-label">Diskon Harga Rumah</label>
+                                            <div class="col-sm-8"><input type="text" class="form-control" readonly value="Rp {{ number_format($data->diskon ?? 0, 0, ',', '.') }}">
+                                                <small class="text-muted">Sudah diperhitungkan dalam harga rumah dan total harga.</small>
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
                                             <label for="total_harga" class="col-sm-4 col-form-label">Total Harga</label>
                                             <div class="col-sm-8">
                                                 <div class="input-group">

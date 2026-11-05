@@ -313,6 +313,11 @@
                 contentType: false,
                 processData: false,
                 success: function(response) {
+                    if (!id) {
+                        const customerId = String(formData.get('id_customer'));
+                        $('#id_customer option').filter(function() { return this.value === customerId; }).remove();
+                        $('#id_customer').val('').trigger('change');
+                    }
                     $('#modalForm').modal('hide');
                     audio.play();
                     let msg = id ? "BAST berhasil diupdate!" : "BAST berhasil ditambahkan!";

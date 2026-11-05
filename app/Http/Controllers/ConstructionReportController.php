@@ -72,6 +72,29 @@ class ConstructionReportController extends Controller
         return response()->json(['unit' => $record, 'reports' => $reports, 'can_delete' => $this->allowed('hapus')]);
     }
 
+    public function printUnit(Request $request, int $unit)
+    {
+        $this->authorizeAccess();
+        $data = $request->validate([
+            'mode' => 'required|in:all,selected',
+            'reports' => 'required_if:mode,selected|array|min:1',
+            'reports.*' => 'required|integer|distinct',
+        ]);
+        $record = DB::table('kavling_peta as unit')->leftJoin('lokasi_kavling as location', 'location.id', '=', 'unit.id_lokasi')
+            ->where('unit.id', $unit)->select('unit.id', 'unit.kode_kavling', 'unit.nama_cluster', 'location.nama_kavling')->first();
+        abort_unless($record, 404);
+        $reports = DB::table('construction_reports')->where('unit_id', $unit)
+            ->when($data['mode'] === 'selected', fn ($query) => $query->whereIn('id', $data['reports']))
+            ->orderBy('reported_at')->orderBy('id')->get();
+        if ($data['mode'] === 'selected' && $reports->count() !== count($data['reports'])) {
+            throw ValidationException::withMessages(['reports' => 'Data progres tidak ditemukan atau bukan milik unit ini. Muat ulang riwayat dan pilih kembali.']);
+        }
+        abort_if($reports->isEmpty(), 422, 'Unit ini belum memiliki laporan progres untuk dicetak.');
+
+        return response()->view('admin.construction.print', compact('record', 'reports'))
+            ->header('Cache-Control', 'private, no-store');
+    }
+
     public function begin(Request $request)
     {
         $this->authorizeAccess('tambah');

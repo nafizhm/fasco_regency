@@ -647,6 +647,23 @@
                                 <div id="rincian-harga-container">
                                     <div class="text-muted">Pilih kavling terlebih dahulu untuk menampilkan rincian harga.</div>
                                 </div>
+                                <div class="form-group row">
+                                    <label for="diskon" class="control-label col-sm-3">Diskon Harga Rumah</label>
+                                    <div class="col-sm-4">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend"><span class="input-group-text">Rp.</span></div>
+                                            <input type="text" name="diskon" id="diskon" class="form-control format-number" value="0" inputmode="numeric" disabled aria-describedby="diskon-help">
+                                        </div>
+                                        <small class="text-muted" id="diskon-help">Opsional. Mengurangi harga rumah pada booking ini.</small>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label for="harga-setelah-diskon" class="control-label col-sm-3"><strong>Total Setelah Diskon</strong></label>
+                                    <div class="col-sm-4"><div class="input-group">
+                                        <div class="input-group-prepend"><span class="input-group-text">Rp.</span></div>
+                                        <input type="text" id="harga-setelah-diskon" class="form-control font-weight-bold" readonly value="0">
+                                    </div></div>
+                                </div>
                                 <input type="hidden" name="total_harga" id="total_harga" value="">
                             </div>
                             <hr>
@@ -954,7 +971,25 @@
             const routeGetKavling = "{{ route('booking.getKavling', ':id') }}";
             const routeGetHarga = "{{ route('booking.getHargaKavling', ':id') }}";
 
+            let hargaSebelumDiskon = 0;
+            let hargaRumah = 0;
+            function updateHargaDiskon() {
+                const input = document.getElementById('diskon');
+                const raw = input.value.replace(/\./g, '');
+                const discount = /^\d+$/.test(raw) ? Number(raw) : NaN;
+                const valid = Number.isSafeInteger(discount) && discount >= 0 && discount <= hargaRumah && hargaSebelumDiskon - discount > 0;
+                input.setCustomValidity(valid || input.disabled ? '' : 'Diskon harus berupa nominal antara Rp0 dan harga rumah, dengan total akhir lebih dari Rp0.');
+                const net = valid ? hargaSebelumDiskon - discount : 0;
+                $('#harga-setelah-diskon').val(net.toLocaleString('id-ID'));
+                $('#total_harga').val(net);
+            }
+            $('#diskon').on('input change keyup', updateHargaDiskon);
+
             function renderRincianHarga(rincian, total) {
+                hargaSebelumDiskon = Number(total) || 0;
+                hargaRumah = Number((rincian || []).find(item => item.nama === 'Harga Rumah')?.nilai) || 0;
+                $('#diskon').val('0').prop('disabled', !hargaSebelumDiskon);
+                updateHargaDiskon();
                 let container = $('#rincian-harga-container');
                 container.empty();
 
@@ -977,7 +1012,7 @@
                 });
 
                 html += '<div class="form-group row">';
-                html += '<label class="control-label col-sm-3"><strong>Total Harga</strong></label>';
+                html += '<label class="control-label col-sm-3"><strong>Total Sebelum Diskon</strong></label>';
                 html += '<div class="col-sm-4">';
                 html += '<div class="input-group">';
                 html += '<div class="input-group-prepend"><span class="input-group-text">Rp.</span></div>';

@@ -73,6 +73,52 @@ class ConstructionReportTest extends TestCase
         parent::tearDown();
     }
 
+    private function printableReports(): void
+    {
+        DB::table('kavling_peta')->insert(['id' => 2, 'id_lokasi' => 1, 'kode_kavling' => 'A-02']);
+        foreach ([
+            [1, 1, '2026-01-01', 10, 'Pondasi awal'],
+            [2, 1, '2026-02-01', 50, 'Pemasangan dinding'],
+            [3, 2, '2026-03-01', 80, 'Unit lain'],
+        ] as [$id, $unit, $date, $percentage, $notes]) {
+            DB::table('construction_reports')->insert([
+                'id' => $id, 'unit_id' => $unit, 'upload_id' => (string) \Illuminate\Support\Str::uuid(),
+                'user_id' => 1, 'reported_at' => $date, 'percentage' => $percentage,
+                'notes' => $notes, 'photos' => '[]',
+            ]);
+        }
+    }
+
+    public function test_print_all_contains_only_unit_history_in_chronological_order(): void
+    {
+        $this->printableReports();
+        $this->get(route('construction.print', ['unit' => 1, 'mode' => 'all']))
+            ->assertOk()->assertSeeInOrder(['Pondasi awal', 'Pemasangan dinding'])
+            ->assertDontSee('Unit lain')->assertSee('Cetak / Simpan PDF');
+    }
+
+    public function test_print_selected_only_contains_chosen_reports(): void
+    {
+        $this->printableReports();
+        $this->get(route('construction.print', ['unit' => 1, 'mode' => 'selected', 'reports' => [2]]))
+            ->assertOk()->assertSee('Pemasangan dinding')->assertDontSee('Pondasi awal');
+    }
+
+    public function test_print_rejects_empty_selection_and_reports_from_other_units(): void
+    {
+        $this->printableReports();
+        $this->getJson(route('construction.print', ['unit' => 1, 'mode' => 'selected']))
+            ->assertUnprocessable()->assertJsonValidationErrors('reports');
+        $this->getJson(route('construction.print', ['unit' => 1, 'mode' => 'selected', 'reports' => [3]]))
+            ->assertUnprocessable()->assertJsonValidationErrors('reports');
+    }
+
+    public function test_print_requires_construction_access(): void
+    {
+        DB::table('hak_akses')->update(['lihat' => 0]);
+        $this->get(route('construction.print', ['unit' => 1, 'mode' => 'all']))->assertForbidden();
+    }
+
     private function begin(array $changes = []): string
     {
         $response = $this->postJson(route('construction.begin'), array_replace([

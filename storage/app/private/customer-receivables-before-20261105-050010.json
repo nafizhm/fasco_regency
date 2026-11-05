@@ -1,0 +1,275 @@
+{
+    "customer": [
+        {
+            "id": 5,
+            "nama_lengkap": "Toni Kriwijaya"
+        },
+        {
+            "id": 6,
+            "nama_lengkap": "Ani Yunus"
+        },
+        {
+            "id": 7,
+            "nama_lengkap": "Putra Sakti"
+        },
+        {
+            "id": 8,
+            "nama_lengkap": "Shofyan"
+        },
+        {
+            "id": 9,
+            "nama_lengkap": "Shofyan"
+        },
+        {
+            "id": 10,
+            "nama_lengkap": "Anggie"
+        },
+        {
+            "id": 11,
+            "nama_lengkap": "Surya Fajariyanto"
+        },
+        {
+            "id": 12,
+            "nama_lengkap": "Zidan"
+        },
+        {
+            "id": 13,
+            "nama_lengkap": "Haerman Sahputra"
+        },
+        {
+            "id": 14,
+            "nama_lengkap": "Odie Harda"
+        },
+        {
+            "id": 15,
+            "nama_lengkap": "Bakhtiar"
+        },
+        {
+            "id": 16,
+            "nama_lengkap": "Venda"
+        },
+        {
+            "id": 17,
+            "nama_lengkap": "I Gusti Ayu"
+        },
+        {
+            "id": 18,
+            "nama_lengkap": "Devi"
+        },
+        {
+            "id": 19,
+            "nama_lengkap": "Doris"
+        },
+        {
+            "id": 20,
+            "nama_lengkap": "Siti Halimah"
+        },
+        {
+            "id": 21,
+            "nama_lengkap": "Korisa"
+        },
+        {
+            "id": 22,
+            "nama_lengkap": "Robby"
+        },
+        {
+            "id": 23,
+            "nama_lengkap": "Astrianie"
+        },
+        {
+            "id": 24,
+            "nama_lengkap": "Kantor"
+        },
+        {
+            "id": 25,
+            "nama_lengkap": "Oriea"
+        },
+        {
+            "id": 26,
+            "nama_lengkap": "Samrodin"
+        },
+        {
+            "id": 27,
+            "nama_lengkap": "Dinda"
+        },
+        {
+            "id": 28,
+            "nama_lengkap": "Deddy"
+        },
+        {
+            "id": 29,
+            "nama_lengkap": "Habibur"
+        },
+        {
+            "id": 30,
+            "nama_lengkap": "Wendrianto"
+        },
+        {
+            "id": 31,
+            "nama_lengkap": "Levina"
+        },
+        {
+            "id": 32,
+            "nama_lengkap": "Sibghatullah"
+        },
+        {
+            "id": 33,
+            "nama_lengkap": "Fransiscus"
+        },
+        {
+            "id": 34,
+            "nama_lengkap": "Sektian"
+        },
+        {
+            "id": 35,
+            "nama_lengkap": "Sidiq"
+        },
+        {
+            "id": 36,
+            "nama_lengkap": "Nida'an"
+        },
+        {
+            "id": 37,
+            "nama_lengkap": "Dwi Agustin"
+        },
+        {
+            "id": 38,
+            "nama_lengkap": "Siti radiyah"
+        },
+        {
+            "id": 39,
+            "nama_lengkap": "Chusnul"
+        },
+        {
+            "id": 40,
+            "nama_lengkap": "Sonia"
+        },
+        {
+            "id": 41,
+            "nama_lengkap": "Mardha"
+        },
+        {
+            "id": 42,
+            "nama_lengkap": "Istin Guntaryo"
+        },
+        {
+            "id": 43,
+            "nama_lengkap": "I Gusti Gede"
+        },
+        {
+            "id": 44,
+            "nama_lengkap": "Yuli Eka"
+        },
+        {
+            "id": 45,
+            "nama_lengkap": "Nindya"
+        },
+        {
+            "id": 46,
+            "nama_lengkap": "Roslina Lubis"
+        },
+        {
+            "id": 47,
+            "nama_lengkap": "Agus Juniati"
+        },
+        {
+            "id": 48,
+            "nama_lengkap": "Tri Ingga Dewi"
+        },
+        {
+            "id": 49,
+            "nama_lengkap": "Sherlyta"
+        },
+        {
+            "id": 50,
+            "nama_lengkap": "Supriyadi"
+        },
+        {
+            "id": 51,
+            "nama_lengkap": "yuki"
+        },
+        {
+            "id": 52,
+            "nama_lengkap": "Sefi"
+        },
+        {
+            "id": 53,
+            "nama_lengkap": "Alridha"
+        },
+        {
+            "id": 54,
+            "nama_lengkap": "Aden"
+        },
+        {
+            "id": 55,
+            "nama_lengkap": "Essenze"
+        },
+        {
+            "id": 56,
+            "nama_lengkap": "Zhevcho"
+        },
+        {
+            "id": 57,
+            "nama_lengkap": "Nurul Risma"
+        },
+        {
+            "id": 58,
+            "nama_lengkap": "Nindi"
+        },
+        {
+            "id": 59,
+            "nama_lengkap": "Liliana"
+        },
+        {
+            "id": 60,
+            "nama_lengkap": "precilia"
+        }
+    ],
+    "piutang": [
+        {
+            "id": 1,
+            "id_bank": 8,
+            "id_customer": 1,
+            "tanggal_piutang": "2026-10-24",
+            "deskripsi": "Harga Rumah tipe  FASCO RESIDENCE Blok 06",
+            "nominal": 689000000,
+            "lampiran": "",
+            "status": 1,
+            "terbayar": 5000000,
+            "sisa_bayar": 684000000,
+            "tgl_pelunasan": null,
+            "id_kategori_transaksi": 0,
+            "id_komponen_biaya": null
+        },
+        {
+            "id": 2,
+            "id_bank": 10,
+            "id_customer": 2,
+            "tanggal_piutang": "2026-10-24",
+            "deskripsi": "Harga Rumah tipe 65 FASCO REGENCY Blok 03",
+            "nominal": 689000000,
+            "lampiran": "",
+            "status": 1,
+            "terbayar": 5000000,
+            "sisa_bayar": 684000000,
+            "tgl_pelunasan": null,
+            "id_kategori_transaksi": 0,
+            "id_komponen_biaya": null
+        },
+        {
+            "id": 3,
+            "id_bank": 0,
+            "id_customer": 2,
+            "tanggal_piutang": "2026-10-24",
+            "deskripsi": "Tambah kanopi",
+            "nominal": 20000000,
+            "lampiran": "",
+            "status": 1,
+            "terbayar": 0,
+            "sisa_bayar": 20000000,
+            "tgl_pelunasan": null,
+            "id_kategori_transaksi": 7,
+            "id_komponen_biaya": null
+        }
+    ]
+}

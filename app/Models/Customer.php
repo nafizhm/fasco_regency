@@ -7,6 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 class Customer extends Model
 {
     use HasFactory;
+
+    public function setNamaLengkapAttribute($value): void
+    {
+        $this->attributes['nama_lengkap'] = $value === null ? null : mb_strtoupper($value, 'UTF-8');
+    }
+
     protected $table = 'customer';
     protected $fillable = [
         'kode_customer',
@@ -19,6 +25,9 @@ class Customer extends Model
         'biaya_surat',
         'peningkatan_mutu',
         'total_harga',
+        'harga_jual_awal',
+        'diskon',
+        'id_booking',
         'estimasi_plafon',
         'sbum',
         'id_status_progres',

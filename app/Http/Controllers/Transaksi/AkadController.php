@@ -28,7 +28,9 @@ class AkadController extends Controller
                 ->orderByDesc('d.id');
             return DataTables::of($data)->addIndexColumn()
                 ->editColumn('tgl_akad', fn ($row) => $row->tgl_akad ? Carbon::parse($row->tgl_akad)->locale('id')->translatedFormat('d F Y') : 'Belum diisi')
-                ->addColumn('status_label', fn ($row) => (int) $row->status === 2 ? 'Selesai akad' : 'Data jadwal lama (belum selesai)')
+                ->addColumn('status_label', fn ($row) => (int) $row->status === 2
+                    ? '<span class="badge badge-success">Selesai akad</span>'
+                    : '<span class="badge badge-warning">Data jadwal lama (belum selesai)</span>')
                 ->addColumn('unit', fn ($row) => trim(($row->nama_cluster ?? '').' '.($row->kode_kavling ?? '')))
                 ->addColumn('action', function ($row) use ($permissions) {
                     $btn = '';
@@ -39,7 +41,7 @@ class AkadController extends Controller
                         $btn .= '<form action="'.e(route('akad.destroy', $row->id)).'" method="POST" style="display:inline">'.csrf_field().method_field('DELETE').'<button class="delete-button btn btn-danger btn-xs">Hapus</button></form>';
                     }
                     return $btn;
-                })->rawColumns(['action'])->make(true);
+                })->rawColumns(['action', 'status_label'])->make(true);
         }
         $customers = Customer::orderBy('nama_lengkap')->get(['id', 'nama_lengkap']);
         $banks = \App\Models\BankKPR::orderBy('nama')->get();

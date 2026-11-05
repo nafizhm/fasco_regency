@@ -268,7 +268,6 @@ class WawancaraController extends Controller
         ]);
 
         $wawancara = Wawancara::with('customer')->findOrFail($id);
-        $dp = app(\App\Services\Sp3kDpService::class)->calculate($request);
         DB::beginTransaction();
         try {
             $tglTerbit  = Carbon::parse($request->tgl_terbit_sp3k);
@@ -285,7 +284,6 @@ class WawancaraController extends Controller
             }
 
             WawancaraSp3k::create([
-                ...$dp,
                 'id_wawancara'    => $id,
                 'id_bank_kpr'     => $wawancara->id_bank_kpr,
                 'acc_plafon'      => str_replace('.', '', $request->acc_plafon),

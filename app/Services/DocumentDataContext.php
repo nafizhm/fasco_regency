@@ -128,6 +128,11 @@ class DocumentDataContext
             self::fromKavlingPeta($kavling),
             self::fromLokasi($lokasi),
             self::fromPerusahaan($perusahaan),
+            $customer->hrg_jual !== null ? [
+                'harga_jual' => number_format($customer->hrg_jual, 0, ',', '.'),
+                'hrg_jual' => number_format($customer->hrg_jual, 0, ',', '.'),
+                'harga_jual_terbilang' => self::terbilang($customer->hrg_jual),
+            ] : [],
         );
     }
 

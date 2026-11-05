@@ -59,7 +59,6 @@ class AccBankController extends Controller
                         <span>' . number_format($row->acc_plafon, 0, ',', '.') . '</span>
                     </div>';
                 })
-                ->addColumn('dp_nilai', fn ($row) => $row->dp_nilai === null ? '-' : number_format($row->dp_nilai, 0, ',', '.'))
                 ->editColumn('tgl_terbit_sp3k', function ($row) {
                     return $row->tgl_terbit_sp3k ? Carbon::parse($row->tgl_terbit_sp3k)->translatedFormat('d F Y') : '-';
                 })
@@ -120,7 +119,6 @@ class AccBankController extends Controller
 
             return DataTables::of($data)
                 ->addIndexColumn()
-                ->addColumn('dp_nilai', fn ($row) => $row->dp_nilai === null ? '-' : number_format($row->dp_nilai, 0, ',', '.'))
                 ->addColumn('action', function ($row) {
                     return $this->canEditSp3k() ? '<a class="btn btn-info btn-sm" href="' . e(route('acc-bank.edit', $row->id)) . '">Edit</a>' : '-';
                 })
@@ -198,11 +196,10 @@ class AccBankController extends Controller
             'id_bank_kpr' => 'required|exists:bank_kpr,id', 'id_notaris' => 'required|exists:notaris,id',
             'catatan_acc' => 'nullable|string', 'lampiran' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
-        $dp = app(\App\Services\Sp3kDpService::class)->calculate($request);
         $issued = Carbon::parse($request->tgl_terbit_sp3k)->startOfDay();
         $expires = $issued->copy()->addDays(90);
         $values = [
-            ...$dp, 'acc_plafon' => (int) str_replace('.', '', $request->acc_plafon),
+            'acc_plafon' => (int) str_replace('.', '', $request->acc_plafon),
             'tenor' => $request->tenor, 'tgl_terbit_sp3k' => $issued, 'tgl_expired' => $expires,
             'no_sp3k' => $request->no_sp3k, 'id_bank_kpr' => $request->id_bank_kpr,
             'id_notaris' => $request->id_notaris, 'catatan_acc' => $request->catatan_acc ?? '',

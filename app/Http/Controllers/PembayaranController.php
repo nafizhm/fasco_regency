@@ -146,52 +146,98 @@ class PembayaranController extends Controller
         $customer = Customer::with([
             'piutangs',
             'pemasukans' => function ($q) {
-                $q->where('keterangan', 'NOT LIKE', 'Biaya ganti nama%');
+                $q->where(fn ($query) => $query->whereNull('keterangan')->orWhere('keterangan', 'NOT LIKE', 'Biaya ganti nama%'));
             }
         ])->findOrFail($id);
 
         $lokasi          = LokasiKavling::with('perusahaan')->find($customer->id_lokasi);
         $kavling         = KavlingPeta::with('perusahaan')->find($customer->id_kavling);
-        $perusahaan      = $kavling->perusahaan;
+        $perusahaan      = $kavling?->perusahaan;
         if (! $perusahaan && $lokasi) {
             $perusahaanId = $lokasi->perusahaan->first()->id_perusahaan ?? null;
             $perusahaan   = $perusahaanId ? Perusahaan::find($perusahaanId) : null;
         }
 
-        $kopPath          = public_path('assets/img/kop-surat-rekap.jpg');
-        $footerPath       = public_path('assets/img/foot-surat-rekap.jpg');
+        $profil = PengaturanProfil::first();
+        $namaProfil = $perusahaan?->nama_perusahaan ?: ($profil?->nama_perusahaan ?: '-');
+        $telpProfil = $perusahaan?->telp_perusahaan ?: ($profil?->telp ?: ($profil?->hape ?: '-'));
+        $kotaPenandatangan = $perusahaan?->kota_penandatangan ?: 'Malang';
 
-        abort_unless(file_exists($kopPath) && file_exists($footerPath), 500, 'Aset kop atau footer rekap tidak ditemukan.');
+        $logoPath = null;
+        $logoMedia = PengaturanMedia::where('jenis_data', 'Logo Login')->first();
+        if ($logoMedia?->nama_file) {
+            $candidate = public_path('config_media/' . $logoMedia->nama_file);
+            if (is_file($candidate) && ($info = @getimagesize($candidate)) && $info[0] * $info[1] <= 4000000) {
+                $logoPath = $candidate;
+            }
+        }
+        $letterhead = [
+            'logo' => $logoPath,
+            'company' => $perusahaan?->nama_perusahaan ?: ($lokasi?->nama_kavling ?: 'KWITANSI PEMBAYARAN'),
+            'address' => $perusahaan?->alamat_perusahaan ?: ($lokasi?->alamat ?: ''),
+            'phone' => $perusahaan?->telp_perusahaan ?: '',
+        ];
+        $footerPath = public_path('assets/img/foot-surat-rekap.jpg');
 
-        $pdf = new class($kopPath, $footerPath) extends TCPDF {
-            private string $kopSuratPath;
+        $pdf = new class($letterhead, $footerPath) extends TCPDF {
+            private array $letterhead;
             private string $footerSuratPath;
+            public float $contentTop = 42;
 
-            public function __construct(string $kopSuratPath, string $footerSuratPath)
+            public function __construct(array $letterhead, string $footerSuratPath)
             {
                 parent::__construct('P', 'mm', 'A4');
-                $this->kopSuratPath = $kopSuratPath;
+                $this->letterhead = $letterhead;
                 $this->footerSuratPath = $footerSuratPath;
             }
 
             public function Header(): void
             {
-                $this->Image($this->kopSuratPath, 10, 6, 190, 0, 'JPG', '', '', false, 150);
+                if ($this->letterhead['logo']) {
+                    $this->Image($this->letterhead['logo'], 10, 6, 18.5, 18.5, '', '', '', false, 150, '', false, false, 0, 'CM');
+                }
+                $this->SetXY(31, 6);
+                $this->SetTextColor(233, 139, 25);
+                $this->SetFont('times', 'B', 16);
+                $this->MultiCell(148, 8, $this->letterhead['company'], 0, 'C');
+                $this->SetX(31);
+                $this->SetFont('times', 'B', 8.25);
+                $this->Cell(148, 5, 'DEVELOPER DAN CONTRACTOR', 0, 1, 'C');
+                $this->SetTextColor(34, 34, 34);
+                $this->SetFont('times', '', 9);
+                if ($this->letterhead['address'] !== '') {
+                    $this->SetX(31);
+                    $this->MultiCell(148, 4.5, $this->letterhead['address'], 0, 'C');
+                }
+                if ($this->letterhead['phone'] !== '') {
+                    $this->SetX(31);
+                    $this->MultiCell(148, 4.5, 'No. HP: ' . $this->letterhead['phone'], 0, 'C');
+                }
+                $lineY = max(29, $this->GetY() + 3);
+                $this->SetDrawColor(34, 34, 34);
+                $this->SetLineWidth(0.25);
+                $this->Line(10, $lineY, 200, $lineY);
+                $this->Line(10, $lineY + 0.7, 200, $lineY + 0.7);
+                $this->contentTop = max(42, $lineY + 6);
+                $this->SetTopMargin($this->contentTop);
             }
 
             public function Footer(): void
             {
-                $this->Image($this->footerSuratPath, 10, 270, 190, 0, 'JPG', '', '', false, 150);
+                if (is_file($this->footerSuratPath)) {
+                    $this->Image($this->footerSuratPath, 10, 270, 190, 0, 'JPG', '', '', false, 150);
+                }
             }
         };
         $pdf->SetTitle('Rekap Pembayaran' . ' - ' . $customer->nama_lengkap);
-        $pdf->SetMargins(10, 38, 10);
+        $pdf->SetMargins(10, 42, 10);
         $pdf->SetHeaderMargin(0);
         $pdf->SetFooterMargin(0);
         $pdf->SetAutoPageBreak(true, 30);
         $pdf->setPrintHeader(true);
         $pdf->setPrintFooter(true);
         $pdf->AddPage();
+        $pdf->SetY($pdf->contentTop);
 
         $pdf->SetFont('Times', 'B', 10);
         $pdf->SetTextColor(218, 0, 0);
@@ -242,12 +288,12 @@ class PembayaranController extends Controller
         $pdf->SetX(90);
         $pdf->Cell(25, 6, 'Harga Rumah', 0, 0);
         $pdf->Cell(3, 6, ':', 0, 0);
-        $pdf->Cell(42, 6, 'Rp. ' . number_format($kavling->hrg_jual ?? 0, 0, ',', '.'), 0, 1);
+        $pdf->Cell(42, 6, 'Rp. ' . number_format($customer->hrg_jual ?? $kavling?->hrg_jual ?? 0, 0, ',', '.'), 0, 1);
 
         $pdf->SetX(90);
         $pdf->Cell(25, 6, 'Jenis Pembelian', 0, 0);
         $pdf->Cell(3, 6, ':', 0, 0);
-        $pdf->Cell(42, 6, ': ' . ($customer->jenis_pembelian ?? '-'), 0, 1);
+        $pdf->Cell(42, 6, $customer->jenis_pembelian ?? '-', 0, 1);
 
         $detailSectionBottomY = max($leftSectionBottomY, $pdf->GetY());
         $pdf->SetY($detailSectionBottomY);
@@ -272,14 +318,11 @@ class PembayaranController extends Controller
         $pdf->Cell($valueW, 6, number_format(app(\App\Services\Sp3kPlafonService::class)->latestForCustomer($customer->id)?->acc_plafon ?? 0, 0, ',', '.'), 0, 1, 'R');
 
         $pdf->SetX($labelX+5);
-        $pdf->Cell($labelW, 6, 'DP ke Bank', 0, 0);
-        $pdf->Cell(3, 6, ': Rp.', 0, 0);
-        $pdf->Cell($valueW, 6, number_format(app(\App\Services\Sp3kPlafonService::class)->latestForCustomer($customer->id)?->dp_nilai ?? 0, 0, ',', '.'), 0, 1, 'R');
-
-        $pdf->SetX($labelX+5);
         $pdf->Cell($labelW, 6, 'Sisa Bayar', 0, 0);
         $pdf->Cell(3, 6, ': Rp.', 0, 0);
         $pdf->Cell($valueW, 6, number_format($sisaRingkas, 0, ',', '.'), 0, 1, 'R');
+
+        $pdf->SetY(max($detailSectionBottomY, $pdf->GetY()));
 
         $colNo  = 8;
         $colTgl = 30;
@@ -302,11 +345,11 @@ class PembayaranController extends Controller
         $no   = 1;
         $sisa = $totalTagihan;
 
-        foreach ($customer->pemasukans->sortBy('id') as $byr) {
+        foreach ($customer->pemasukans->sortBy([['tanggal', 'asc'], ['id', 'asc']]) as $byr) {
 
             $sisa -= $byr->nominal;
 
-            $keterangan = explode('#', $byr->keterangan)[0] ?? '';
+            $keterangan = explode('#', $byr->keterangan ?? '')[0];
             $keteranganText = ($sisa <= 0) ? 'LUNAS' : $keterangan;
 
             $fill = ($no % 2 == 0)
@@ -345,21 +388,22 @@ class PembayaranController extends Controller
 
         $pdf->Ln(15);
         $tanggal = Carbon::now()->translatedFormat('j F Y');
-        $pdf->SetFont('helvetica', '', 10);
+        $pdf->SetFont('times', '', 9);
         $pdf->Cell(60, 6, 'Mengetahui,', 0, 0, 'C');
         $pdf->Cell(70, 6, '', 0, 0);
-        $pdf->Cell(60, 6, 'Jambi, ' . $tanggal, 0, 1, 'C');
+        $pdf->Cell(60, 6, $kotaPenandatangan . ', ' . $tanggal, 0, 1, 'C');
         $pdf->Cell(60, 6, 'Direktur', 0, 0, 'C');
         $pdf->Cell(70, 6, '', 0, 0);
         $pdf->Cell(60, 6, 'Admin', 0, 1, 'C');
         $pdf->Ln(20);
-        $pdf->SetFont('helvetica', '', 10);
+        $pdf->SetFont('times', 'B', 9);
         $pdf->Cell(60, 6, $perusahaan->nama_mengetahui ?? '....................', 'B', 0, 'C');
         $pdf->Cell(70, 6, '', 0, 0);
         $pdf->Cell(60, 6, $perusahaan->nama_penandatangan ?? 'ADMIN', 'B', 1, 'C');
 
-        $pdf->Output();
-        exit;
+        return response($pdf->Output('Rekap-Pembayaran-' . $customer->id . '.pdf', 'S'))
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="Rekap-Pembayaran-' . $customer->id . '.pdf"');
     }
 
     // public function cetak($id)
@@ -523,7 +567,7 @@ class PembayaranController extends Controller
     {
         $pembayaran = Pemasukan::with(['customer', 'metode', 'kategori'])
             ->where('id', $id)
-            ->where('keterangan', 'NOT LIKE', 'Biaya ganti nama%')
+            ->where(fn ($query) => $query->whereNull('keterangan')->orWhere('keterangan', 'NOT LIKE', 'Biaya ganti nama%'))
             ->firstOrFail();
 
         $nasabah = $pembayaran->customer;
@@ -552,7 +596,10 @@ class PembayaranController extends Controller
         $logoData = null;
         if ($logoMedia?->nama_file) {
             $logoPath = public_path('config_media/' . $logoMedia->nama_file);
-            if (is_file($logoPath) && ($imageInfo = @getimagesize($logoPath))) {
+            // Dompdf decodes PNG alpha at its source resolution, even when CSS displays a tiny logo.
+            // Keep unusually large uploads from exhausting PHP memory during receipt rendering.
+            if (is_file($logoPath) && ($imageInfo = @getimagesize($logoPath))
+                && $imageInfo[0] * $imageInfo[1] <= 4000000) {
                 $logoData = 'data:' . $imageInfo['mime'] . ';base64,' . base64_encode(file_get_contents($logoPath));
             }
         }
@@ -611,7 +658,7 @@ class PembayaranController extends Controller
         $metodeBayar                = MetodeBayar::all();
         $bankList                   = Bank::all();
         $kategoriTransaksiPemasukan = KategoriTransaksi::where('jenis_kategori', 'PEMASUKAN')
-            ->get();
+            ->orderBy('kategori')->get();
 
         $kategoriTransaksiTagihan = KategoriTransaksi::orderBy('kategori')->get();
 
@@ -768,23 +815,9 @@ class PembayaranController extends Controller
     {
         DB::beginTransaction();
         try {
-            $tagihan = Piutang::where('id_customer', $id)->first();
-            if (! $tagihan) {
-                throw new \Exception('Tagihan tidak ditemukan.');
-            }
-
-            $cust         = Customer::find($id);
-            $kav          = KavlingPeta::find($cust->id_kavling);
-            $nominal_baru = $kav->hrg_jual;
-
-            $terbayar_lama = $tagihan->terbayar;
-
-            $sisa_bayar_baru = $nominal_baru - $terbayar_lama;
-
-            $tagihan->update([
-                'nominal'    => $nominal_baru,
-                'sisa_bayar' => $sisa_bayar_baru,
-            ]);
+            $cust = Customer::whereKey($id)->lockForUpdate()->firstOrFail();
+            $unit = KavlingPeta::findOrFail($cust->id_kavling);
+            app(\App\Services\CustomerSalePrice::class)->sync($cust, (int) $unit->hrg_jual, (int) $cust->diskon);
 
             $totalTagihan = Piutang::where('id_customer', $id)->sum('nominal');
             $sisaBayar    = $this->getSisaBayarCustomer($id);
@@ -797,6 +830,7 @@ class PembayaranController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+            if ($e instanceof \Illuminate\Validation\ValidationException) throw $e;
             return response()->json([
                 'status' => 'error',
                 'error'  => $e->getMessage(),
@@ -838,30 +872,13 @@ class PembayaranController extends Controller
             $id_customer = $tagihan->id_customer;
             $nominalBaru = (int) str_replace(['.', ','], '', $request->nominal);
 
-            $tagihan->update([
-                'nominal'    => $nominalBaru,
-                'sisa_bayar' => $nominalBaru - $tagihan->terbayar,
-            ]);
-
-            $cust = Customer::find($id_customer);
-            if ($cust && $cust->id_kavling) {
-                $kavling = KavlingPeta::find($cust->id_kavling);
-                if ($kavling) {
-                    $deskripsi = $tagihan->deskripsi;
-                    $updateKav = [];
-                    if (str_contains($deskripsi, 'Harga Rumah')) {
-                        $updateKav['hrg_jual'] = $nominalBaru;
-                    }
-                    if (str_contains($deskripsi, 'Biaya Surat')) {
-                        $updateKav['biaya_surat'] = $nominalBaru;
-                    }
-                    if (str_contains($deskripsi, 'Peningkatan Mutu')) {
-                        $updateKav['peningkatan_mutu'] = $nominalBaru;
-                    }
-                    if (!empty($updateKav)) {
-                        $kavling->update($updateKav);
-                    }
-                }
+            $cust = Customer::whereKey($id_customer)->lockForUpdate()->first();
+            $tagihan->refresh();
+            if ($cust && str_contains(mb_strtolower($tagihan->deskripsi ?? ''), 'harga rumah')) {
+                $gross = (int) ($cust->harga_jual_awal ?? ((int) $cust->hrg_jual + (int) $cust->diskon));
+                app(\App\Services\CustomerSalePrice::class)->sync($cust, $gross + $nominalBaru - (int) $tagihan->nominal, (int) $cust->diskon);
+            } else {
+                $tagihan->update(['nominal' => $nominalBaru]);
             }
 
             $totalTagihan = Piutang::where('id_customer', $id_customer)->sum('nominal');
@@ -875,6 +892,7 @@ class PembayaranController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+            if ($e instanceof \Illuminate\Validation\ValidationException) throw $e;
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengupdate tagihan',
@@ -923,6 +941,13 @@ class PembayaranController extends Controller
                 <a class="btn btn-xs btn-primary" href="' . route('pembayaran.cetak', $item->id) . '" target="_blank">Cetak</a>
             ' . $action;
 
+                if ($item->lampiran) {
+                    $attachmentUrl = asset('assets/keuangan/pemasukan/' . rawurlencode(basename($item->lampiran)));
+                    $action .= ' <button type="button" class="btn btn-xs btn-secondary view-payment-attachment" data-url="'
+                        . e($attachmentUrl) . '" data-name="' . e(basename($item->lampiran))
+                        . '"><i class="fas fa-paperclip" aria-hidden="true"></i> Lampiran</button>';
+                }
+
                 $item->action = $action;
             }
 
@@ -947,25 +972,24 @@ class PembayaranController extends Controller
     {
         $rules = [
             'tanggal_pembayaran'    => 'required|date',
-            'id_kategori_transaksi' => 'required|in:4,5,6,8',
+            'id_kategori_transaksi' => ['required', 'integer', \Illuminate\Validation\Rule::exists('kategori_transaksi', 'id')->where('jenis_kategori', 'PEMASUKAN')],
             'id_bank'               => 'required',
             'id_metode_bayar'       => 'required',
             'id_tagihan'            => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('piutang', 'id')->where('id_customer', $id)],
             'nominal_bayar'         => 'required',
             'keterangan_pembayaran' => 'required',
-            'file'                  => 'required_if:id_metode_bayar,2|file|mimes:jpeg,png,jpg,webp,pdf|max:2048',
+            'file'                  => 'nullable|file|mimes:jpeg,png,jpg,webp,pdf|max:2048',
         ];
 
         $messages = [
             'tanggal_pembayaran.required'    => 'Tanggal Pembayaran wajib diisi.',
             'id_kategori_transaksi.required' => 'Kategori Transaksi wajib diisi.',
-            'id_kategori_transaksi.in'       => 'Kategori Transaksi tidak valid.',
+            'id_kategori_transaksi.exists'   => 'Pilih kategori keuangan berjenis pemasukan.',
             'id_bank.required'               => 'Bank wajib dipilih.',
             'id_metode_bayar.required'       => 'Metode Pembayaran wajib dipilih.',
             'id_tagihan.required_if'         => 'Tagihan wajib dipilih.',
             'nominal_bayar.required'         => 'Nominal wajib diisi.',
             'keterangan_pembayaran.required' => 'Keterangan wajib diisi.',
-            'file.required_if'               => 'Lampiran wajib diunggah.',
         ];
 
         $request->validate($rules, $messages);
@@ -991,12 +1015,7 @@ class PembayaranController extends Controller
                 );
             }
 
-            $kategoriKwitansi = [
-                4 => 'Booking Fee',
-                6 => 'Biaya Proses',
-                8 => 'DP/Uang Muka',
-                5 => 'Pelunasan',
-            ][(int) $request->id_kategori_transaksi];
+            $kategoriKwitansi = KategoriTransaksi::findOrFail($request->id_kategori_transaksi)->kategori;
 
             $pemasukan = Pemasukan::create([
                 'tanggal'               => $request->tanggal_pembayaran,
@@ -1309,7 +1328,7 @@ class PembayaranController extends Controller
             }
         }
         $rumahId         = $kavling->id_rumah_sikumbang ?? '-';
-        $hargaJual       = $kavling->hrg_jual ?? 0;
+        $hargaJual       = $nasabah->hrg_jual ?? $kavling?->hrg_jual ?? 0;
         $kotaTtd         = $lokasi->kota_penandatangan ?? '-';
         $tanggal         = $pembayaran->tanggal ? Carbon::parse($pembayaran->tanggal)->translatedFormat('d F Y') : '-';
         $jenisPembayaran = $pembayaran->kategori->kategori ?? 'Cicilan Pribadi';

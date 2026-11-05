@@ -169,6 +169,12 @@
                                         @endforeach
                                         </div>
                                         <div class="form-group row">
+                                            <label class="col-sm-4 col-form-label">Diskon Harga Rumah</label>
+                                            <div class="col-sm-8"><input type="text" class="form-control" readonly value="Rp {{ number_format($data->diskon ?? 0, 0, ',', '.') }}">
+                                                <small class="text-muted">Sudah diperhitungkan dalam harga rumah dan total harga.</small>
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
                                             <label class="col-sm-4 col-form-label"><strong>Total Harga</strong></label>
                                             <div class="col-sm-8">
                                                 <div class="input-group">
@@ -512,7 +518,10 @@
             });
             $('#id_kavling').on('change', function() {
                 const item = kavlings.find(item => String(item.id) === $(this).val());
-                const rincian = item ? (item.rincian_biaya || []) : [];
+                const discount = Number(@json((int) ($data->diskon ?? 0)));
+                const snapshot = @json($data->rincian_biaya_penjualan);
+                const costs = item && String(item.id) === @json((string) $data->id_kavling) && snapshot ? snapshot : (item?.rincian_biaya || []);
+                const rincian = costs.map(cost => ({...cost, nilai: Number(cost.nilai || 0) - (cost.nama === 'Harga Rumah' ? discount : 0)}));
                 const container = $('#rincian-biaya').empty();
                 let total = 0;
                 rincian.forEach(cost => {
