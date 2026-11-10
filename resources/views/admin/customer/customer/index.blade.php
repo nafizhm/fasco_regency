@@ -164,7 +164,7 @@
                                 <div class="col-sm-4">
                                     <input name="email" id="email" class="form-control" type="text">
                                 </div>
-                                <label class="control-label col-sm-2">NPWP <span style="color: red;">*</span></label>
+                                <label class="control-label col-sm-2">NPWP</label>
                                 <div class="col-sm-3">
                                     <input name="npwp" id="npwp" class="form-control" type="text">
                                 </div>
@@ -755,6 +755,12 @@
                 ordering: false,
                 responsive: true,
                 ajax: "{{ route('customer.index') }}",
+                drawCallback: function() {
+                    $(this.api().table().body()).find('[data-toggle="tooltip"]').tooltip({
+                        container: 'body',
+                        trigger: 'hover'
+                    });
+                },
                 columns: [{
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',

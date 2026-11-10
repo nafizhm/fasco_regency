@@ -99,12 +99,12 @@ class CustomerController extends Controller
                     $btn       = '<div class="text-center">';
 
                     if ($permissions['edit']) {
-                        $btn .= '<button class="btn btn-primary btn-sm edit-button" data-id="' . e($row->id) . '" data-url="' . e($editUrl) . '">Edit</button> ';
+                        $btn .= '<button class="btn btn-primary btn-sm edit-button" data-id="' . e($row->id) . '" data-url="' . e($editUrl) . '" data-toggle="tooltip" title="Edit" aria-label="Edit"><i class="fas fa-edit" aria-hidden="true"></i></button> ';
                     }
 
-                    $btn .= '<a href="' . e($uploadUrl) . '" class="btn btn-info btn-sm">Upload File</a>';
+                    $btn .= '<a href="' . e($uploadUrl) . '" class="btn btn-info btn-sm" data-toggle="tooltip" title="Upload File" aria-label="Upload File"><i class="fas fa-upload" aria-hidden="true"></i></a>';
 
-                    $btn .= '<a href="' . e(route('customer.cetak-detail', $row->id)) . '" target="_blank" rel="noopener" class="btn btn-dark btn-sm ml-1">Cetak PDF</a>';
+                    $btn .= '<a href="' . e(route('customer.cetak-detail', $row->id)) . '" target="_blank" rel="noopener" class="btn btn-dark btn-sm ml-1" data-toggle="tooltip" title="Cetak PDF" aria-label="Cetak PDF"><i class="fas fa-file-pdf" aria-hidden="true"></i></a>';
 
                     $btn .= '</div>';
                     return $btn;
@@ -281,7 +281,7 @@ class CustomerController extends Controller
         $rules = [
             'nama_lengkap'    => 'required',
             'nik'             => 'required',
-            'npwp'            => 'required',
+            'npwp'            => 'nullable|string',
             'tempat_lahir'    => 'required',
             'tgl_lahir'       => 'required|date',
             'no_telp'         => 'required',
@@ -302,7 +302,6 @@ class CustomerController extends Controller
         $messages = [
             'nama_lengkap.required'    => 'Nama lengkap wajib diisi!',
             'nik.required'             => 'NIK wajib diisi!',
-            'npwp.required'            => 'NPWP wajib diisi!',
             'tempat_lahir.required'    => 'Tempat lahir wajib diisi!',
             'tgl_lahir.required'       => 'Tanggal lahir wajib diisi!',
             'no_telp.required'         => 'No. Telp / WA wajib diisi!',
