@@ -1,6 +1,6 @@
 @extends('admin.layout_admin')
 @push('css')
-<link rel="stylesheet" href="{{ asset('css/construction.css') . '?v=' . filemtime(public_path('css/construction.css')) }}">
+<link rel="stylesheet" href="{{ asset('css/construction.css') . '?v=' . hash_file('sha256', public_path('css/construction.css')) }}">
 @endpush
 @section('content')
 <div class="content-wrapper build-page"><main class="build-shell">
@@ -33,5 +33,5 @@
 @include('admin.construction.history')
 @endsection
 @push('scripts')
-<script src="{{ asset('js/construction.js') . '?v=' . filemtime(public_path('js/construction.js')) }}"></script>
+<script src="{{ asset('js/construction.js') . '?v=' . hash_file('sha256', public_path('js/construction.js')) }}"></script>
 @endpush

@@ -591,7 +591,8 @@ class PembayaranController extends Controller
             ->orderBy('tanggal')->orderBy('id')->get();
 
         $hargaJual = (int) ($nasabah->total_harga ?: ($kavling?->total_harga ?? 0));
-        $terbilang = $this->terbilang($pembayaran->nominal) . ' Rupiah';
+        $jumlahKwitansi = app(\App\Services\ReceiptPaymentTotal::class)->total($pembayaran);
+        $terbilang = $this->terbilang($jumlahKwitansi) . ' Rupiah';
         $logoMedia = PengaturanMedia::where('jenis_data', 'Logo Login')->first();
         $logoData = null;
         if ($logoMedia?->nama_file) {
@@ -604,7 +605,7 @@ class PembayaranController extends Controller
             }
         }
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.pembayaran.kwitansi', compact(
-            'pembayaran', 'nasabah', 'lokasi', 'kavling', 'perusahaan', 'history', 'hargaJual', 'terbilang', 'logoData'
+            'pembayaran', 'nasabah', 'lokasi', 'kavling', 'perusahaan', 'history', 'hargaJual', 'terbilang', 'logoData', 'jumlahKwitansi'
         ))->setPaper('a4', 'portrait');
 
         $filename = 'Kwitansi-' . str_replace(['/', '\\'], '-', $pembayaran->no_kwitansi ?: 'draft') . '.pdf';
@@ -932,20 +933,20 @@ class PembayaranController extends Controller
                 $action = '<form action="' . e($deleteUrl) . '" method="POST" style="display:inline;">'
                     . csrf_field()
                     . method_field('DELETE')
-                    . '<button type="submit" class="delete-pemasukan btn btn-danger btn-xs">Hapus</button></form>';
+                    . '<button type="submit" class="delete-pemasukan btn btn-danger btn-xs" data-toggle="tooltip" title="Hapus" aria-label="Hapus"><i class="fas fa-trash" aria-hidden="true"></i></button></form>';
 
-                $action = '<button type="button" class="btn btn-xs btn-info edit-pemasukan-button" data-url="' . e($editUrl) . '">Edit</button> '
+                $action = '<button type="button" class="btn btn-xs btn-info edit-pemasukan-button" data-toggle="tooltip" title="Edit" aria-label="Edit" data-url="' . e($editUrl) . '"><i class="fas fa-edit" aria-hidden="true"></i></button> '
                     . $action;
 
                 $action = '
-                <a class="btn btn-xs btn-primary" href="' . route('pembayaran.cetak', $item->id) . '" target="_blank">Cetak</a>
+                <a class="btn btn-xs btn-primary" data-toggle="tooltip" title="Cetak" aria-label="Cetak" href="' . route('pembayaran.cetak', $item->id) . '" target="_blank"><i class="fas fa-print" aria-hidden="true"></i></a>
             ' . $action;
 
                 if ($item->lampiran) {
                     $attachmentUrl = asset('assets/keuangan/pemasukan/' . rawurlencode(basename($item->lampiran)));
                     $action .= ' <button type="button" class="btn btn-xs btn-secondary view-payment-attachment" data-url="'
                         . e($attachmentUrl) . '" data-name="' . e(basename($item->lampiran))
-                        . '"><i class="fas fa-paperclip" aria-hidden="true"></i> Lampiran</button>';
+                        . '" data-toggle="tooltip" title="Lampiran" aria-label="Lampiran"><i class="fas fa-paperclip" aria-hidden="true"></i></button>';
                 }
 
                 $item->action = $action;
@@ -1245,6 +1246,7 @@ class PembayaranController extends Controller
             'id_metode_bayar'       => 'required',
             'nominal_bayar'         => 'required',
             'keterangan_pembayaran' => 'required',
+            'catatan_pembayaran'    => 'nullable|string|max:5000',
         ]);
 
         DB::beginTransaction();
@@ -1276,6 +1278,7 @@ class PembayaranController extends Controller
             }
 
             $updateData = [
+                'catatan_pembayaran'    => $request->input('catatan_pembayaran'),
                 'tanggal'               => $request->tanggal_pembayaran,
                 'id_bank'               => $request->id_bank,
                 'id_kategori_transaksi' => $request->id_kategori_transaksi,

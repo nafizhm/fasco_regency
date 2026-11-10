@@ -1,6 +1,6 @@
 -- UPDATE SESI 5 NOVEMBER 2026 (Asia/Jakarta)
 -- Jalankan pada database aplikasi yang benar, setelah backup, saat maintenance.
--- MySQL 5.7+/8.x; tidak memakai JSON_TABLE atau ADD COLUMN IF NOT EXISTS.
+-- MySQL 5.7+/8.x; tanpa stored procedure, CALL, DELIMITER, atau JSON_TABLE.
 -- DDL melakukan implicit COMMIT. Hentikan jika ada error; jangan gunakan --force.
 -- SQL ini menggantikan empat migration 2026_11_05_* dan mencatatnya di migrations.
 -- Tidak mengimpor transaksi uji atau angka deposit notaris dari gambar.
@@ -8,43 +8,40 @@ SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 SET @nh_previous_timezone = @@session.time_zone;
 SET time_zone = '+07:00';
 
-DELIMITER $$
-DROP PROCEDURE IF EXISTS nh_20261105_require_parents$$
-CREATE PROCEDURE nh_20261105_require_parents()
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM menu WHERE route_name='pengaturan-profil.index' AND id_parent>0)
-       AND NOT EXISTS (SELECT 1 FROM menu WHERE title='Pengaturan') THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Menu induk Pengaturan tidak ditemukan; hentikan impor.';
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM menu WHERE route_name='pengeluaran.index' AND id_parent>0)
-       AND NOT EXISTS (SELECT 1 FROM menu WHERE title='Keuangan') THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Menu induk Keuangan tidak ditemukan; hentikan impor.';
-    END IF;
-END$$
-CALL nh_20261105_require_parents()$$
-DROP PROCEDURE nh_20261105_require_parents$$
-
-DROP PROCEDURE IF EXISTS nh_20261105_column$$
-CREATE PROCEDURE nh_20261105_column(IN p_table VARCHAR(64), IN p_column VARCHAR(64), IN p_definition TEXT)
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name=p_table AND column_name=p_column) THEN
-        SET @nh_ddl = CONCAT('ALTER TABLE `',p_table,'` ADD COLUMN `',p_column,'` ',p_definition);
-        PREPARE nh_stmt FROM @nh_ddl;
+-- Versi khusus phpMyAdmin: tanpa stored procedure, CALL, atau DELIMITER.
+-- 1. Struktur diskon, catatan kwitansi, dan snapshot harga penjualan.
+SET @nh_ddl = IF(EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='pengajuan_hold' AND column_name='diskon'), 'DO 0', 'ALTER TABLE `pengajuan_hold` ADD COLUMN `diskon` BIGINT UNSIGNED NOT NULL DEFAULT 0');
+PREPARE nh_stmt FROM @nh_ddl;
 EXECUTE nh_stmt;
 DEALLOCATE PREPARE nh_stmt;
-    END IF;
-END$$
-DELIMITER ;
-
--- 1. Struktur diskon, catatan kwitansi, dan snapshot harga penjualan.
-CALL nh_20261105_column('pengajuan_hold','diskon','BIGINT UNSIGNED NOT NULL DEFAULT 0');
-CALL nh_20261105_column('customer','catatan_kwitansi','TEXT NULL');
-CALL nh_20261105_column('customer','harga_jual_awal','BIGINT UNSIGNED NULL');
-CALL nh_20261105_column('customer','diskon','BIGINT UNSIGNED NOT NULL DEFAULT 0');
-CALL nh_20261105_column('customer_tempo','harga_jual_awal','BIGINT UNSIGNED NULL');
-CALL nh_20261105_column('customer_tempo','diskon','BIGINT UNSIGNED NOT NULL DEFAULT 0');
-CALL nh_20261105_column('customer','id_booking','BIGINT UNSIGNED NULL');
-CALL nh_20261105_column('pengajuan_hold','rincian_biaya_penjualan','JSON NULL');
+SET @nh_ddl = IF(EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='customer' AND column_name='catatan_kwitansi'), 'DO 0', 'ALTER TABLE `customer` ADD COLUMN `catatan_kwitansi` TEXT NULL');
+PREPARE nh_stmt FROM @nh_ddl;
+EXECUTE nh_stmt;
+DEALLOCATE PREPARE nh_stmt;
+SET @nh_ddl = IF(EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='customer' AND column_name='harga_jual_awal'), 'DO 0', 'ALTER TABLE `customer` ADD COLUMN `harga_jual_awal` BIGINT UNSIGNED NULL');
+PREPARE nh_stmt FROM @nh_ddl;
+EXECUTE nh_stmt;
+DEALLOCATE PREPARE nh_stmt;
+SET @nh_ddl = IF(EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='customer' AND column_name='diskon'), 'DO 0', 'ALTER TABLE `customer` ADD COLUMN `diskon` BIGINT UNSIGNED NOT NULL DEFAULT 0');
+PREPARE nh_stmt FROM @nh_ddl;
+EXECUTE nh_stmt;
+DEALLOCATE PREPARE nh_stmt;
+SET @nh_ddl = IF(EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='customer_tempo' AND column_name='harga_jual_awal'), 'DO 0', 'ALTER TABLE `customer_tempo` ADD COLUMN `harga_jual_awal` BIGINT UNSIGNED NULL');
+PREPARE nh_stmt FROM @nh_ddl;
+EXECUTE nh_stmt;
+DEALLOCATE PREPARE nh_stmt;
+SET @nh_ddl = IF(EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='customer_tempo' AND column_name='diskon'), 'DO 0', 'ALTER TABLE `customer_tempo` ADD COLUMN `diskon` BIGINT UNSIGNED NOT NULL DEFAULT 0');
+PREPARE nh_stmt FROM @nh_ddl;
+EXECUTE nh_stmt;
+DEALLOCATE PREPARE nh_stmt;
+SET @nh_ddl = IF(EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='customer' AND column_name='id_booking'), 'DO 0', 'ALTER TABLE `customer` ADD COLUMN `id_booking` BIGINT UNSIGNED NULL');
+PREPARE nh_stmt FROM @nh_ddl;
+EXECUTE nh_stmt;
+DEALLOCATE PREPARE nh_stmt;
+SET @nh_ddl = IF(EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='pengajuan_hold' AND column_name='rincian_biaya_penjualan'), 'DO 0', 'ALTER TABLE `pengajuan_hold` ADD COLUMN `rincian_biaya_penjualan` JSON NULL');
+PREPARE nh_stmt FROM @nh_ddl;
+EXECUTE nh_stmt;
+DEALLOCATE PREPARE nh_stmt;
 SET @nh_ddl = IF(EXISTS(SELECT 1 FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name='customer' AND index_name='customer_id_booking_index'), 'DO 0', 'ALTER TABLE customer ADD INDEX customer_id_booking_index (id_booking)');
 PREPARE nh_stmt FROM @nh_ddl;
 EXECUTE nh_stmt;
@@ -107,8 +104,11 @@ CREATE TABLE IF NOT EXISTS `notary_deposit_entries` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Membantu instalasi awal yang pernah memiliki tabel mutasi tanpa item_index.
-CALL nh_20261105_column('notary_deposit_entries','item_index','INT UNSIGNED NULL');
-DROP PROCEDURE nh_20261105_column;
+SET @nh_ddl = IF(EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='notary_deposit_entries' AND column_name='item_index'), 'DO 0', 'ALTER TABLE `notary_deposit_entries` ADD COLUMN `item_index` INT UNSIGNED NULL');
+PREPARE nh_stmt FROM @nh_ddl;
+EXECUTE nh_stmt;
+DEALLOCATE PREPARE nh_stmt;
+
 
 -- 3. Menu dan hak akses. ID mengikuti server, tidak memakai ID lokal.
 START TRANSACTION;
@@ -155,83 +155,134 @@ UPDATE customer SET nama_lengkap=UPPER(nama_lengkap) WHERE nama_lengkap IS NOT N
 COMMIT;
 DROP TEMPORARY TABLE nh_20261105_booking_links;
 
--- 5. Buat piutang hanya untuk customer aktif dengan unit valid dan BELUM memiliki piutang.
--- Nilai mengikuti harga customer; fallback ke rincian harga unit/kolom lama.
--- Pembayaran lama dialokasikan ke tagihan baru (linked dahulu, lalu umum),
--- sesuai CustomerReceivableService + PiutangPaymentService.
-DELIMITER $$
-DROP PROCEDURE IF EXISTS nh_20261105_complete_receivables$$
-CREATE PROCEDURE nh_20261105_complete_receivables()
-BEGIN
-    DECLARE done INT DEFAULT 0;
-    DECLARE v_customer BIGINT; DECLARE v_total BIGINT; DECLARE v_code VARCHAR(255);
-    DECLARE v_date DATE; DECLARE v_json LONGTEXT; DECLARE v_legacy BIGINT;
-    DECLARE v_i INT; DECLARE v_bill BIGINT; DECLARE v_remaining BIGINT;
-    DECLARE v_last_date DATE; DECLARE v_created INT DEFAULT 0;
-    DECLARE customers CURSOR FOR
-        SELECT c.id,COALESCE(c.total_harga,0),k.kode_kavling,
-          CASE WHEN c.tgl_booking>='1000-01-01' THEN DATE(c.tgl_booking)
-               WHEN c.tanggal_verif>='1000-01-01' THEN DATE(c.tanggal_verif) ELSE CURDATE() END,
-          k.rincian_biaya,COALESCE(k.hrg_jual,0)+COALESCE(k.biaya_surat,0)+COALESCE(k.peningkatan_mutu,0)
-        FROM customer c JOIN kavling_peta k ON k.id=c.id_kavling
-        WHERE COALESCE(c.stt_arsip,0)=0 AND c.id_kavling>0
-        AND NOT EXISTS(SELECT 1 FROM piutang p WHERE p.id_customer=c.id)
-        ORDER BY c.id;
-    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done=1;
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; RESIGNAL; END;
-    START TRANSACTION;
-    OPEN customers;
-    customer_loop: LOOP
-        FETCH customers INTO v_customer,v_total,v_code,v_date,v_json,v_legacy;
-        IF done=1 THEN LEAVE customer_loop; END IF;
-        IF v_total<=0 THEN
-            IF v_json IS NULL OR JSON_VALID(v_json)=0 THEN SET v_total=v_legacy;
-            ELSE
-                SET v_total=0; SET v_i=0;
-                WHILE v_i<JSON_LENGTH(v_json) DO
-                    SET v_total=v_total+COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(v_json,CONCAT('$[',v_i,'].nilai'))) AS SIGNED),0);
-                    SET v_i=v_i+1;
-                END WHILE;
-                IF v_total<=0 THEN SET v_total=0; END IF;
-            END IF;
-        END IF;
-        IF v_total>0 AND NOT EXISTS(SELECT 1 FROM piutang WHERE id_customer=v_customer) THEN
-            INSERT INTO piutang(id_customer,id_bank,tanggal_piutang,deskripsi,nominal,lampiran,status,terbayar,sisa_bayar,tgl_pelunasan,id_kategori_transaksi)
-            VALUES(v_customer,0,v_date,CONCAT('Harga Rumah Blok ',COALESCE(v_code,'')),v_total,'',1,0,v_total,NULL,0);
-            SET v_bill=LAST_INSERT_ID(); SET v_remaining=v_total; SET v_last_date=NULL;
-            BEGIN
-                DECLARE payment_done INT DEFAULT 0; DECLARE v_amount BIGINT; DECLARE v_pay_date DATE; DECLARE v_allocate BIGINT;
-                DECLARE payments CURSOR FOR
-                    SELECT GREATEST(COALESCE(nominal,0),0),DATE(tanggal) FROM pemasukan
-                    WHERE (id_customer=v_customer OR id_piutang=v_bill)
-                    AND (keterangan IS NULL OR keterangan NOT LIKE 'Biaya ganti nama%')
-                    AND (id_piutang IS NULL OR id_piutang=0 OR id_piutang=v_bill)
-                    ORDER BY CASE WHEN id_piutang=v_bill THEN 0 ELSE 1 END,tanggal,id;
-                DECLARE CONTINUE HANDLER FOR NOT FOUND SET payment_done=1;
-                OPEN payments;
-                payment_loop: LOOP
-                    FETCH payments INTO v_amount,v_pay_date;
-                    IF payment_done=1 OR v_remaining<=0 THEN LEAVE payment_loop; END IF;
-                    SET v_allocate=LEAST(v_amount,v_remaining);
-                    IF v_allocate>0 THEN
-                        SET v_remaining=v_remaining-v_allocate;
-                        IF v_pay_date IS NOT NULL THEN SET v_last_date=IF(v_last_date IS NULL,v_pay_date,GREATEST(v_last_date,v_pay_date)); END IF;
-                    END IF;
-                END LOOP;
-                CLOSE payments;
-            END;
-            UPDATE piutang SET terbayar=v_total-v_remaining,sisa_bayar=v_remaining,status=IF(v_remaining=0,2,1),
-              tgl_pelunasan=IF(v_remaining=0,v_last_date,NULL) WHERE id=v_bill;
-            SET v_created=v_created+1;
-        END IF;
-    END LOOP;
-    CLOSE customers;
-    COMMIT;
-    SELECT v_created AS tagihan_baru_dibuat;
-END$$
-CALL nh_20261105_complete_receivables()$$
-DROP PROCEDURE nh_20261105_complete_receivables$$
-DELIMITER ;
+-- 5. Piutang hanya untuk customer aktif yang belum mempunyai tagihan.
+-- Semua tabel pembantu TEMPORARY, tidak menulis transaksi pembayaran.
+START TRANSACTION;
+DROP TEMPORARY TABLE IF EXISTS nh_new_customers;
+CREATE TEMPORARY TABLE nh_new_customers AS
+SELECT c.id AS customer_id, COALESCE(c.total_harga,0) AS amount,k.kode_kavling,
+ CASE WHEN c.tgl_booking>='1000-01-01' THEN DATE(c.tgl_booking)
+ WHEN c.tanggal_verif>='1000-01-01' THEN DATE(c.tanggal_verif) ELSE CURDATE() END AS bill_date,
+ k.rincian_biaya AS costs,COALESCE(k.hrg_jual,0)+COALESCE(k.biaya_surat,0)+COALESCE(k.peningkatan_mutu,0) AS legacy_amount
+FROM customer c JOIN kavling_peta k ON k.id=c.id_kavling
+WHERE COALESCE(c.stt_arsip,0)=0 AND c.id_kavling>0
+ AND NOT EXISTS(SELECT 1 FROM piutang p WHERE p.id_customer=c.id);
+
+-- Deret indeks JSON dibangun tanpa JSON_TABLE agar kompatibel MySQL 5.7.
+SET @nh_max_costs = (SELECT COALESCE(MAX(JSON_LENGTH(CASE WHEN JSON_VALID(costs) THEN costs ELSE '[]' END)),0) FROM nh_new_customers WHERE amount<=0);
+DROP TEMPORARY TABLE IF EXISTS nh_cost_numbers;
+CREATE TEMPORARY TABLE nh_cost_numbers(n INT UNSIGNED PRIMARY KEY);
+INSERT INTO nh_cost_numbers VALUES(0);
+DROP TEMPORARY TABLE IF EXISTS nh_cost_numbers_copy;
+CREATE TEMPORARY TABLE nh_cost_numbers_copy AS SELECT n FROM nh_cost_numbers;
+INSERT INTO nh_cost_numbers SELECT n+1 FROM nh_cost_numbers_copy WHERE n+1<@nh_max_costs;
+DROP TEMPORARY TABLE IF EXISTS nh_cost_numbers_copy;
+CREATE TEMPORARY TABLE nh_cost_numbers_copy AS SELECT n FROM nh_cost_numbers;
+INSERT INTO nh_cost_numbers SELECT n+2 FROM nh_cost_numbers_copy WHERE n+2<@nh_max_costs;
+DROP TEMPORARY TABLE IF EXISTS nh_cost_numbers_copy;
+CREATE TEMPORARY TABLE nh_cost_numbers_copy AS SELECT n FROM nh_cost_numbers;
+INSERT INTO nh_cost_numbers SELECT n+4 FROM nh_cost_numbers_copy WHERE n+4<@nh_max_costs;
+DROP TEMPORARY TABLE IF EXISTS nh_cost_numbers_copy;
+CREATE TEMPORARY TABLE nh_cost_numbers_copy AS SELECT n FROM nh_cost_numbers;
+INSERT INTO nh_cost_numbers SELECT n+8 FROM nh_cost_numbers_copy WHERE n+8<@nh_max_costs;
+DROP TEMPORARY TABLE IF EXISTS nh_cost_numbers_copy;
+CREATE TEMPORARY TABLE nh_cost_numbers_copy AS SELECT n FROM nh_cost_numbers;
+INSERT INTO nh_cost_numbers SELECT n+16 FROM nh_cost_numbers_copy WHERE n+16<@nh_max_costs;
+DROP TEMPORARY TABLE IF EXISTS nh_cost_numbers_copy;
+CREATE TEMPORARY TABLE nh_cost_numbers_copy AS SELECT n FROM nh_cost_numbers;
+INSERT INTO nh_cost_numbers SELECT n+32 FROM nh_cost_numbers_copy WHERE n+32<@nh_max_costs;
+DROP TEMPORARY TABLE IF EXISTS nh_cost_numbers_copy;
+CREATE TEMPORARY TABLE nh_cost_numbers_copy AS SELECT n FROM nh_cost_numbers;
+INSERT INTO nh_cost_numbers SELECT n+64 FROM nh_cost_numbers_copy WHERE n+64<@nh_max_costs;
+DROP TEMPORARY TABLE IF EXISTS nh_cost_numbers_copy;
+CREATE TEMPORARY TABLE nh_cost_numbers_copy AS SELECT n FROM nh_cost_numbers;
+INSERT INTO nh_cost_numbers SELECT n+128 FROM nh_cost_numbers_copy WHERE n+128<@nh_max_costs;
+DROP TEMPORARY TABLE IF EXISTS nh_cost_numbers_copy;
+CREATE TEMPORARY TABLE nh_cost_numbers_copy AS SELECT n FROM nh_cost_numbers;
+INSERT INTO nh_cost_numbers SELECT n+256 FROM nh_cost_numbers_copy WHERE n+256<@nh_max_costs;
+DROP TEMPORARY TABLE IF EXISTS nh_cost_numbers_copy;
+CREATE TEMPORARY TABLE nh_cost_numbers_copy AS SELECT n FROM nh_cost_numbers;
+INSERT INTO nh_cost_numbers SELECT n+512 FROM nh_cost_numbers_copy WHERE n+512<@nh_max_costs;
+DROP TEMPORARY TABLE IF EXISTS nh_cost_numbers_copy;
+CREATE TEMPORARY TABLE nh_cost_numbers_copy AS SELECT n FROM nh_cost_numbers;
+INSERT INTO nh_cost_numbers SELECT n+1024 FROM nh_cost_numbers_copy WHERE n+1024<@nh_max_costs;
+DROP TEMPORARY TABLE IF EXISTS nh_cost_numbers_copy;
+CREATE TEMPORARY TABLE nh_cost_numbers_copy AS SELECT n FROM nh_cost_numbers;
+INSERT INTO nh_cost_numbers SELECT n+2048 FROM nh_cost_numbers_copy WHERE n+2048<@nh_max_costs;
+DROP TEMPORARY TABLE IF EXISTS nh_cost_numbers_copy;
+CREATE TEMPORARY TABLE nh_cost_numbers_copy AS SELECT n FROM nh_cost_numbers;
+INSERT INTO nh_cost_numbers SELECT n+4096 FROM nh_cost_numbers_copy WHERE n+4096<@nh_max_costs;
+DROP TEMPORARY TABLE IF EXISTS nh_cost_numbers_copy;
+CREATE TEMPORARY TABLE nh_cost_numbers_copy AS SELECT n FROM nh_cost_numbers;
+INSERT INTO nh_cost_numbers SELECT n+8192 FROM nh_cost_numbers_copy WHERE n+8192<@nh_max_costs;
+DROP TEMPORARY TABLE IF EXISTS nh_cost_numbers_copy;
+CREATE TEMPORARY TABLE nh_cost_numbers_copy AS SELECT n FROM nh_cost_numbers;
+INSERT INTO nh_cost_numbers SELECT n+16384 FROM nh_cost_numbers_copy WHERE n+16384<@nh_max_costs;
+DROP TEMPORARY TABLE IF EXISTS nh_cost_numbers_copy;
+CREATE TEMPORARY TABLE nh_cost_numbers_copy AS SELECT n FROM nh_cost_numbers;
+INSERT INTO nh_cost_numbers SELECT n+32768 FROM nh_cost_numbers_copy WHERE n+32768<@nh_max_costs;
+DROP TEMPORARY TABLE IF EXISTS nh_cost_numbers_copy;
+CREATE TEMPORARY TABLE nh_cost_numbers_copy AS SELECT n FROM nh_cost_numbers;
+INSERT INTO nh_cost_numbers SELECT n+65536 FROM nh_cost_numbers_copy WHERE n+65536<@nh_max_costs;
+DROP TEMPORARY TABLE IF EXISTS nh_cost_numbers_copy;
+CREATE TEMPORARY TABLE nh_cost_numbers_copy AS SELECT n FROM nh_cost_numbers;
+INSERT INTO nh_cost_numbers SELECT n+131072 FROM nh_cost_numbers_copy WHERE n+131072<@nh_max_costs;
+DROP TEMPORARY TABLE IF EXISTS nh_cost_numbers_copy;
+CREATE TEMPORARY TABLE nh_cost_numbers_copy AS SELECT n FROM nh_cost_numbers;
+INSERT INTO nh_cost_numbers SELECT n+262144 FROM nh_cost_numbers_copy WHERE n+262144<@nh_max_costs;
+DROP TEMPORARY TABLE IF EXISTS nh_cost_numbers_copy;
+CREATE TEMPORARY TABLE nh_cost_numbers_copy AS SELECT n FROM nh_cost_numbers;
+INSERT INTO nh_cost_numbers SELECT n+524288 FROM nh_cost_numbers_copy WHERE n+524288<@nh_max_costs;
+DROP TEMPORARY TABLE nh_cost_numbers_copy;
+DROP TEMPORARY TABLE IF EXISTS nh_unit_costs;
+CREATE TEMPORARY TABLE nh_unit_costs AS
+SELECT c.customer_id,SUM(COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(CASE WHEN JSON_VALID(c.costs) THEN c.costs ELSE '[]' END,CONCAT('$[',n.n,'].nilai'))) AS SIGNED),0)) AS amount
+FROM nh_new_customers c JOIN nh_cost_numbers n ON n.n<JSON_LENGTH(CASE WHEN JSON_VALID(c.costs) THEN c.costs ELSE '[]' END)
+WHERE c.amount<=0 GROUP BY c.customer_id;
+UPDATE nh_new_customers c LEFT JOIN nh_unit_costs u ON u.customer_id=c.customer_id
+SET c.amount=CASE WHEN c.costs IS NULL OR JSON_VALID(c.costs)=0 THEN c.legacy_amount ELSE COALESCE(u.amount,0) END
+WHERE c.amount<=0;
+INSERT INTO piutang(id_customer,id_bank,tanggal_piutang,deskripsi,nominal,lampiran,status,terbayar,sisa_bayar,tgl_pelunasan,id_kategori_transaksi)
+SELECT c.customer_id,0,c.bill_date,CONCAT('Harga Rumah Blok ',COALESCE(c.kode_kavling,'')),c.amount,'',1,0,c.amount,NULL,0
+FROM nh_new_customers c WHERE c.amount>0
+ AND NOT EXISTS(SELECT 1 FROM piutang p WHERE p.id_customer=c.customer_id);
+DROP TEMPORARY TABLE IF EXISTS nh_new_bills;
+CREATE TEMPORARY TABLE nh_new_bills AS
+SELECT p.id,p.id_customer,p.nominal FROM piutang p JOIN nh_new_customers c ON c.customer_id=p.id_customer WHERE c.amount>0;
+DROP TEMPORARY TABLE IF EXISTS nh_payments;
+CREATE TEMPORARY TABLE nh_payments AS
+SELECT b.id AS bill_id,b.nominal,p.id AS payment_id,GREATEST(COALESCE(p.nominal,0),0) AS amount,DATE(p.tanggal) AS paid_date,
+ CASE WHEN p.id_piutang=b.id THEN 0 ELSE 1 END AS priority
+FROM nh_new_bills b JOIN pemasukan p ON (p.id_customer=b.id_customer OR p.id_piutang=b.id)
+WHERE (p.keterangan IS NULL OR p.keterangan NOT LIKE 'Biaya ganti nama%')
+AND (p.id_piutang IS NULL OR p.id_piutang=0 OR p.id_piutang=b.id);
+DROP TEMPORARY TABLE IF EXISTS nh_payments_copy;
+CREATE TEMPORARY TABLE nh_payments_copy AS SELECT * FROM nh_payments;
+DROP TEMPORARY TABLE IF EXISTS nh_allocations;
+CREATE TEMPORARY TABLE nh_allocations AS
+SELECT p.bill_id,p.payment_id,p.paid_date,
+ LEAST(p.amount,GREATEST(0,p.nominal-COALESCE(SUM(q.amount),0))) AS allocated
+FROM nh_payments p LEFT JOIN nh_payments_copy q ON q.bill_id=p.bill_id AND
+ (q.priority<p.priority OR (q.priority=p.priority AND
+ (COALESCE(q.paid_date,'1000-01-01')<COALESCE(p.paid_date,'1000-01-01') OR
+ (COALESCE(q.paid_date,'1000-01-01')=COALESCE(p.paid_date,'1000-01-01') AND q.payment_id<p.payment_id))))
+GROUP BY p.bill_id,p.payment_id,p.paid_date,p.amount,p.nominal;
+DROP TEMPORARY TABLE IF EXISTS nh_paid_totals;
+CREATE TEMPORARY TABLE nh_paid_totals AS
+SELECT bill_id,SUM(allocated) AS paid,MAX(CASE WHEN allocated>0 THEN paid_date ELSE NULL END) AS last_paid
+FROM nh_allocations GROUP BY bill_id;
+UPDATE piutang p JOIN nh_new_bills b ON b.id=p.id LEFT JOIN nh_paid_totals t ON t.bill_id=p.id
+SET p.terbayar=COALESCE(t.paid,0),p.sisa_bayar=GREATEST(0,p.nominal-COALESCE(t.paid,0)),
+ p.status=IF(p.nominal<=COALESCE(t.paid,0),2,1),p.tgl_pelunasan=IF(p.nominal<=COALESCE(t.paid,0),t.last_paid,NULL);
+DROP TEMPORARY TABLE nh_paid_totals;
+DROP TEMPORARY TABLE nh_allocations;
+DROP TEMPORARY TABLE nh_payments_copy;
+DROP TEMPORARY TABLE nh_payments;
+DROP TEMPORARY TABLE nh_new_bills;
+DROP TEMPORARY TABLE nh_unit_costs;
+DROP TEMPORARY TABLE nh_cost_numbers;
+DROP TEMPORARY TABLE nh_new_customers;
+COMMIT;
 
 -- 6. Kosongkan hanya keterangan akad lama yang benar-benar dibersihkan pada sesi ini.
 -- Guard ID + teks lama mencegah penimpaan catatan baru yang telah diubah di server.
@@ -357,9 +408,6 @@ INSERT INTO migrations(migration,batch) SELECT '2026_11_05_110000_add_customer_r
 INSERT INTO migrations(migration,batch) SELECT '2026_11_05_120000_add_customer_sale_pricing',@nh_batch WHERE NOT EXISTS(SELECT 1 FROM migrations WHERE migration='2026_11_05_120000_add_customer_sale_pricing');
 INSERT INTO migrations(migration,batch) SELECT '2026_11_05_130000_create_notary_deposits',@nh_batch WHERE NOT EXISTS(SELECT 1 FROM migrations WHERE migration='2026_11_05_130000_create_notary_deposits');
 
--- 8. Pemeriksaan setelah impor.
-SELECT migration,batch FROM migrations WHERE migration LIKE '2026_11_05_%' ORDER BY migration;
-SELECT title,route_name FROM menu WHERE route_name IN('customer-receipt-notes.index','notary-deposits.index');
-SELECT COUNT(*) AS customer_aktif_tanpa_piutang FROM customer c JOIN kavling_peta k ON k.id=c.id_kavling
-WHERE COALESCE(c.stt_arsip,0)=0 AND c.total_harga>0 AND NOT EXISTS(SELECT 1 FROM piutang p WHERE p.id_customer=c.id);
+-- 8. Pemeriksaan dipisahkan agar impor tidak menghasilkan result set.
+-- Sesudah impor selesai, jalankan check_update_session_2026_11_05.sql secara terpisah.
 SET time_zone = @nh_previous_timezone;

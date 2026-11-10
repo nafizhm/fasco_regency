@@ -630,6 +630,13 @@
                         </div>
 
                         <div class="form-group row">
+                            <label for="edit_catatan_pembayaran" class="col-sm-3 col-form-label">Catatan Pembayaran</label>
+                            <div class="col-sm-7">
+                                <textarea name="catatan_pembayaran" id="edit_catatan_pembayaran" class="form-control" rows="3" maxlength="5000" placeholder="Ditampilkan pada bagian Untuk Pembayaran di kwitansi"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
                             <label class="col-sm-3 col-form-label">Bukti Pembayaran</label>
                             <div class="col-sm-4">
                                 <input type="file" class="mb-2" id="edit_file" name="file" accept=".jpg, .jpeg, .png, .pdf">
@@ -1187,6 +1194,10 @@
                     }
                 ],
                 drawCallback: function(settings) {
+                    $(this.api().table().body()).find('[data-toggle="tooltip"]').tooltip({
+                        container: 'body',
+                        trigger: 'hover'
+                    });
                     $('#total-pemasukan').html('<b>Rp. ' + settings.json.total_pemasukan_formatted +
                         '</b>');
                     $('#jumlah_bayar_all').val(settings.json.jumlah_bayar);
@@ -1524,6 +1535,7 @@
                     $('#edit_id_metode_bayar').val(data.id_metode_bayar).trigger('change');
                     $('#edit_nominal_bayar').val(formatNumber(data.nominal));
                     $('#edit_keterangan_pembayaran').val(data.keterangan);
+                    $('#edit_catatan_pembayaran').val(data.catatan_pembayaran || '');
 
                     let preview = $('#editPreviewLampiran');
                     if (data.lampiran) {

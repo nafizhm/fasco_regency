@@ -36,7 +36,8 @@
         .closing { page-break-inside: avoid; }
         .signatures { margin-top: 24px; text-align: center; }
         .signatures td { width: 38%; vertical-align: top; }
-        .signature-space { height: 48px; }
+        .signature-space { height: 96px; }
+        .payment-note { white-space: pre-line; }
         .signature-name { text-decoration: underline; font-weight: bold; }
     </style>
 </head>
@@ -62,10 +63,10 @@
         <tr><td>No KTP</td><td>:</td><td>{{ $nasabah->nik ?: '-' }}</td></tr>
         <tr><td>Alamat</td><td>:</td><td>{{ $nasabah->alamat_domisili ?: $nasabah->alamat_ktp ?: '-' }}</td></tr>
         <tr><td>No HP</td><td>:</td><td>{{ $nasabah->no_telp ?: '-' }}</td></tr>
-        <tr><td>Uang Sejumlah</td><td>:</td><td class="amount">{{ $money($pembayaran->nominal) }},-</td></tr>
+        <tr><td>Uang Sejumlah</td><td>:</td><td class="amount">{{ $money($jumlahKwitansi) }},-</td></tr>
         <tr><td>Terbilang</td><td>:</td><td class="words">{{ $terbilang }}</td></tr>
-        <tr><td>Untuk Pembayaran</td><td>:</td><td>Pembelian 1 Unit Rumah di {{ $lokasi?->nama_kavling ?: '-' }} dengan harga Jual {{ $money($hargaJual) }},-<br>
-            (harga rumah belum termasuk biaya admin Rp. 1.000.000,-)</td></tr>
+        <tr><td>Untuk Pembayaran</td><td>:</td><td>@if (filled($pembayaran->catatan_pembayaran))<span class="payment-note">{{ $pembayaran->catatan_pembayaran }}</span>@else Pembelian 1 Unit Rumah di {{ $lokasi?->nama_kavling ?: '-' }} dengan harga Jual {{ $money($hargaJual) }},-<br>
+            (harga rumah belum termasuk biaya admin Rp. 1.000.000,-)@endif</td></tr>
         <tr><td>Blok / LT</td><td>:</td><td>{{ $kavling?->nama_cluster ? ucfirst(strtolower($kavling->nama_cluster)) . ' Kav.' . ($kavling->no ?: $kavling->kode_kavling ?: '-') : ($kavling?->kode_kavling ?: '-') }} / {{ $kavling?->luas_tanah ?? '-' }} M<sup>2</sup></td></tr>
         <tr><td>Skema Pembayaran</td><td>:</td><td>{{ $nasabah->jenis_pembelian ?: '-' }}</td></tr>
     </table>
