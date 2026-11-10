@@ -20,4 +20,9 @@ class BarangMasukDetail extends Model
         'sub_total',
         'keterangan',
     ];
+
+    public function barang()
+    {
+        return $this->belongsTo(Barang::class, 'id_barang');
+    }
 }

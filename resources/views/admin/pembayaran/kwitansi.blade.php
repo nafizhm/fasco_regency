@@ -75,7 +75,7 @@
     <table class="history">
         <thead><tr>
             <th style="width: 5%">No.</th><th style="width: 17%">Tanggal</th>
-            <th style="width: 23%">No. Kwitansi</th><th style="width: 33%">Keterangan</th>
+            <th style="width: 23%">Jenis Pembayaran</th><th style="width: 33%">Keterangan</th>
             <th style="width: 22%">Nominal</th>
         </tr></thead>
         <tbody>
@@ -83,7 +83,7 @@
                 <tr class="{{ $item->id === $pembayaran->id ? 'current' : '' }}">
                     <td style="text-align: center">{{ $loop->iteration }}</td>
                     <td>{{ $date($item->tanggal) }}</td>
-                    <td>{{ $item->no_kwitansi ?: '-' }}</td>
+                    <td>{{ $item->keterangan ?: '-' }}</td>
                     <td>{{ $item->keterangan_kategori ?: $item->kategori?->kategori ?: $item->keterangan ?: 'Pembayaran' }}</td>
                     <td class="money">{{ $money($item->nominal) }}</td>
                 </tr>

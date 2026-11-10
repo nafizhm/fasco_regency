@@ -1,0 +1,771 @@
+{
+  "satuan": [
+    {
+      "id": 1,
+      "nama_satuan": "Pcs"
+    },
+    {
+      "id": 2,
+      "nama_satuan": "Set"
+    },
+    {
+      "id": 13,
+      "nama_satuan": "Unit"
+    },
+    {
+      "id": 14,
+      "nama_satuan": "Sak"
+    },
+    {
+      "id": 15,
+      "nama_satuan": "Kaleng"
+    },
+    {
+      "id": 16,
+      "nama_satuan": "Kilo"
+    },
+    {
+      "id": 17,
+      "nama_satuan": "Truk"
+    },
+    {
+      "id": 18,
+      "nama_satuan": "Pickup"
+    },
+    {
+      "id": 19,
+      "nama_satuan": "Batang"
+    },
+    {
+      "id": 20,
+      "nama_satuan": "Keping"
+    },
+    {
+      "id": 21,
+      "nama_satuan": "ember"
+    },
+    {
+      "id": 22,
+      "nama_satuan": "Dus"
+    },
+    {
+      "id": 23,
+      "nama_satuan": "Kotak"
+    },
+    {
+      "id": 24,
+      "nama_satuan": "Bungkus"
+    },
+    {
+      "id": 25,
+      "nama_satuan": "Roll"
+    },
+    {
+      "id": 26,
+      "nama_satuan": "Gulung"
+    },
+    {
+      "id": 27,
+      "nama_satuan": "Kodi"
+    },
+    {
+      "id": 28,
+      "nama_satuan": "Lembar"
+    }
+  ],
+  "barang": [
+    {
+      "id": 1,
+      "sku": null,
+      "nama": "Semen hitam",
+      "id_satuan": 14,
+      "stok_minimal": 5,
+      "harga_beli": 3238,
+      "deskripsi": null
+    },
+    {
+      "id": 2,
+      "sku": null,
+      "nama": "Semen putih/plamir",
+      "id_satuan": 14,
+      "stok_minimal": 2,
+      "harga_beli": 135000,
+      "deskripsi": null
+    },
+    {
+      "id": 3,
+      "sku": null,
+      "nama": "semen kornies",
+      "id_satuan": 14,
+      "stok_minimal": 5,
+      "harga_beli": 78000,
+      "deskripsi": null
+    },
+    {
+      "id": 4,
+      "sku": null,
+      "nama": "semen kasting",
+      "id_satuan": 14,
+      "stok_minimal": 3,
+      "harga_beli": 58000,
+      "deskripsi": null
+    },
+    {
+      "id": 5,
+      "sku": null,
+      "nama": "besi cincin",
+      "id_satuan": 19,
+      "stok_minimal": 5,
+      "harga_beli": 18000,
+      "deskripsi": null
+    },
+    {
+      "id": 6,
+      "sku": null,
+      "nama": "besi 10 inch",
+      "id_satuan": 19,
+      "stok_minimal": 5,
+      "harga_beli": 55000,
+      "deskripsi": null
+    },
+    {
+      "id": 7,
+      "sku": null,
+      "nama": "seng 2x4",
+      "id_satuan": 20,
+      "stok_minimal": 5,
+      "harga_beli": 25000,
+      "deskripsi": null
+    },
+    {
+      "id": 8,
+      "sku": null,
+      "nama": "perabung",
+      "id_satuan": 20,
+      "stok_minimal": 5,
+      "harga_beli": 18000,
+      "deskripsi": null
+    },
+    {
+      "id": 9,
+      "sku": null,
+      "nama": "pintu WC",
+      "id_satuan": 1,
+      "stok_minimal": 2,
+      "harga_beli": 230000,
+      "deskripsi": null
+    },
+    {
+      "id": 10,
+      "sku": null,
+      "nama": "closet",
+      "id_satuan": 1,
+      "stok_minimal": 3,
+      "harga_beli": 13000,
+      "deskripsi": null
+    },
+    {
+      "id": 11,
+      "sku": null,
+      "nama": "lisplank",
+      "id_satuan": 20,
+      "stok_minimal": 5,
+      "harga_beli": 38000,
+      "deskripsi": null
+    },
+    {
+      "id": 12,
+      "sku": null,
+      "nama": "reng baja",
+      "id_satuan": 19,
+      "stok_minimal": 5,
+      "harga_beli": 28500,
+      "deskripsi": null
+    },
+    {
+      "id": 13,
+      "sku": null,
+      "nama": "kanal baja",
+      "id_satuan": 19,
+      "stok_minimal": 5,
+      "harga_beli": 5351,
+      "deskripsi": null
+    },
+    {
+      "id": 14,
+      "sku": null,
+      "nama": "holow",
+      "id_satuan": 19,
+      "stok_minimal": 5,
+      "harga_beli": 0,
+      "deskripsi": null
+    },
+    {
+      "id": 15,
+      "sku": null,
+      "nama": "pipa listrik",
+      "id_satuan": 19,
+      "stok_minimal": 5,
+      "harga_beli": 7000,
+      "deskripsi": null
+    },
+    {
+      "id": 16,
+      "sku": null,
+      "nama": "pipa 4 inch",
+      "id_satuan": 19,
+      "stok_minimal": 0,
+      "harga_beli": 0,
+      "deskripsi": null
+    },
+    {
+      "id": 17,
+      "sku": null,
+      "nama": "pipa 3 inch",
+      "id_satuan": 19,
+      "stok_minimal": 4,
+      "harga_beli": 15556,
+      "deskripsi": null
+    },
+    {
+      "id": 18,
+      "sku": null,
+      "nama": "pipa 1½ inc",
+      "id_satuan": 19,
+      "stok_minimal": 4,
+      "harga_beli": 48000,
+      "deskripsi": null
+    },
+    {
+      "id": 19,
+      "sku": null,
+      "nama": "pipa ½inc",
+      "id_satuan": 19,
+      "stok_minimal": 5,
+      "harga_beli": 16000,
+      "deskripsi": null
+    },
+    {
+      "id": 20,
+      "sku": null,
+      "nama": "cat tembok",
+      "id_satuan": 21,
+      "stok_minimal": 2,
+      "harga_beli": 230000,
+      "deskripsi": null
+    },
+    {
+      "id": 21,
+      "sku": null,
+      "nama": "gypsum",
+      "id_satuan": 20,
+      "stok_minimal": 5,
+      "harga_beli": 66000,
+      "deskripsi": null
+    },
+    {
+      "id": 22,
+      "sku": null,
+      "nama": "keramik lantai utama",
+      "id_satuan": 22,
+      "stok_minimal": 5,
+      "harga_beli": 61000,
+      "deskripsi": null
+    },
+    {
+      "id": 23,
+      "sku": null,
+      "nama": "keramik teras",
+      "id_satuan": 22,
+      "stok_minimal": 4,
+      "harga_beli": 70951,
+      "deskripsi": null
+    },
+    {
+      "id": 24,
+      "sku": null,
+      "nama": "keramik lantai WC",
+      "id_satuan": 22,
+      "stok_minimal": 8,
+      "harga_beli": 71000,
+      "deskripsi": null
+    },
+    {
+      "id": 25,
+      "sku": null,
+      "nama": "keramik dinding WC",
+      "id_satuan": 22,
+      "stok_minimal": 5,
+      "harga_beli": 70000,
+      "deskripsi": null
+    },
+    {
+      "id": 26,
+      "sku": null,
+      "nama": "listmolding",
+      "id_satuan": 19,
+      "stok_minimal": 5,
+      "harga_beli": 9000,
+      "deskripsi": null
+    },
+    {
+      "id": 27,
+      "sku": null,
+      "nama": "Lbow ½inc",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 3000,
+      "deskripsi": null
+    },
+    {
+      "id": 28,
+      "sku": null,
+      "nama": "Lbow 1½inc",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 6000,
+      "deskripsi": null
+    },
+    {
+      "id": 29,
+      "sku": null,
+      "nama": "Sockdrat ½inc",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 4000,
+      "deskripsi": null
+    },
+    {
+      "id": 30,
+      "sku": null,
+      "nama": "Ldrat ½inc",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 4000,
+      "deskripsi": null
+    },
+    {
+      "id": 31,
+      "sku": null,
+      "nama": "Tee ½inc",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 5000,
+      "deskripsi": null
+    },
+    {
+      "id": 32,
+      "sku": null,
+      "nama": "Tutup Dop 4inc",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 3500,
+      "deskripsi": null
+    },
+    {
+      "id": 33,
+      "sku": null,
+      "nama": "Lbow 3inc",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 12000,
+      "deskripsi": null
+    },
+    {
+      "id": 34,
+      "sku": null,
+      "nama": "Lbow 4inc",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 22000,
+      "deskripsi": null
+    },
+    {
+      "id": 35,
+      "sku": null,
+      "nama": "Tee 3inc",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 25000,
+      "deskripsi": null
+    },
+    {
+      "id": 36,
+      "sku": null,
+      "nama": "Kassa plafon",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 8900,
+      "deskripsi": null
+    },
+    {
+      "id": 37,
+      "sku": null,
+      "nama": "Keran leher angsa",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 16550,
+      "deskripsi": null
+    },
+    {
+      "id": 38,
+      "sku": null,
+      "nama": "Floor drain",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 7500,
+      "deskripsi": null
+    },
+    {
+      "id": 39,
+      "sku": null,
+      "nama": "Sekrup hitam 1½inc",
+      "id_satuan": 23,
+      "stok_minimal": 5,
+      "harga_beli": 35000,
+      "deskripsi": null
+    },
+    {
+      "id": 40,
+      "sku": null,
+      "nama": "Paku beton 1½inc",
+      "id_satuan": 23,
+      "stok_minimal": 5,
+      "harga_beli": 15000,
+      "deskripsi": null
+    },
+    {
+      "id": 41,
+      "sku": null,
+      "nama": "Natt putih",
+      "id_satuan": 24,
+      "stok_minimal": 4,
+      "harga_beli": 20000,
+      "deskripsi": null
+    },
+    {
+      "id": 42,
+      "sku": null,
+      "nama": "Lem Fox",
+      "id_satuan": 24,
+      "stok_minimal": 3,
+      "harga_beli": 26000,
+      "deskripsi": null
+    },
+    {
+      "id": 43,
+      "sku": null,
+      "nama": "Selang elastis",
+      "id_satuan": 1,
+      "stok_minimal": 6,
+      "harga_beli": 16000,
+      "deskripsi": null
+    },
+    {
+      "id": 44,
+      "sku": null,
+      "nama": "Clear bata tempel",
+      "id_satuan": 15,
+      "stok_minimal": 3,
+      "harga_beli": 88000,
+      "deskripsi": null
+    },
+    {
+      "id": 45,
+      "sku": null,
+      "nama": "Cat minyak hitam",
+      "id_satuan": 15,
+      "stok_minimal": 5,
+      "harga_beli": 68000,
+      "deskripsi": null
+    },
+    {
+      "id": 46,
+      "sku": null,
+      "nama": "Hak angin",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 2941,
+      "deskripsi": null
+    },
+    {
+      "id": 47,
+      "sku": null,
+      "nama": "Engsel 3inc",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 3125,
+      "deskripsi": null
+    },
+    {
+      "id": 48,
+      "sku": null,
+      "nama": "Engsel 4inc",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 3666,
+      "deskripsi": null
+    },
+    {
+      "id": 49,
+      "sku": null,
+      "nama": "Grendel 2inc",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 6731,
+      "deskripsi": null
+    },
+    {
+      "id": 50,
+      "sku": null,
+      "nama": "Sink/Bak cuci piring",
+      "id_satuan": 13,
+      "stok_minimal": 3,
+      "harga_beli": 110000,
+      "deskripsi": null
+    },
+    {
+      "id": 51,
+      "sku": null,
+      "nama": "Handle pintu besar/Utama",
+      "id_satuan": 2,
+      "stok_minimal": 5,
+      "harga_beli": 75000,
+      "deskripsi": null
+    },
+    {
+      "id": 52,
+      "sku": null,
+      "nama": "Handle pintu kecil",
+      "id_satuan": 2,
+      "stok_minimal": 5,
+      "harga_beli": 58000,
+      "deskripsi": null
+    },
+    {
+      "id": 53,
+      "sku": null,
+      "nama": "Teedus",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 1144,
+      "deskripsi": null
+    },
+    {
+      "id": 54,
+      "sku": null,
+      "nama": "Mangkok listrik",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 12900,
+      "deskripsi": null
+    },
+    {
+      "id": 55,
+      "sku": null,
+      "nama": "Box MCB",
+      "id_satuan": 23,
+      "stok_minimal": 5,
+      "harga_beli": 2200,
+      "deskripsi": null
+    },
+    {
+      "id": 56,
+      "sku": null,
+      "nama": "MCB",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 5500,
+      "deskripsi": null
+    },
+    {
+      "id": 57,
+      "sku": null,
+      "nama": "Fitting lampu gantung",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 3350,
+      "deskripsi": null
+    },
+    {
+      "id": 58,
+      "sku": null,
+      "nama": "Fitting lampu plafon",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 1973,
+      "deskripsi": null
+    },
+    {
+      "id": 59,
+      "sku": null,
+      "nama": "Sakelar stop kontak",
+      "id_satuan": 1,
+      "stok_minimal": 10,
+      "harga_beli": 83300,
+      "deskripsi": null
+    },
+    {
+      "id": 60,
+      "sku": null,
+      "nama": "Sakelar engkel/tunggal",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 15509,
+      "deskripsi": null
+    },
+    {
+      "id": 61,
+      "sku": null,
+      "nama": "Sakelar seri",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 76700,
+      "deskripsi": null
+    },
+    {
+      "id": 62,
+      "sku": null,
+      "nama": "Isolasi listrik",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 5500,
+      "deskripsi": null
+    },
+    {
+      "id": 63,
+      "sku": null,
+      "nama": "Lampu gapura",
+      "id_satuan": 23,
+      "stok_minimal": 5,
+      "harga_beli": 68621,
+      "deskripsi": null
+    },
+    {
+      "id": 64,
+      "sku": null,
+      "nama": "Kabel NYA 1,5mm",
+      "id_satuan": 25,
+      "stok_minimal": 2,
+      "harga_beli": 180000,
+      "deskripsi": null
+    },
+    {
+      "id": 65,
+      "sku": null,
+      "nama": "Seng 7kaki",
+      "id_satuan": 20,
+      "stok_minimal": 5,
+      "harga_beli": 44000,
+      "deskripsi": null
+    },
+    {
+      "id": 66,
+      "sku": null,
+      "nama": "Benang",
+      "id_satuan": 26,
+      "stok_minimal": 5,
+      "harga_beli": 6000,
+      "deskripsi": null
+    },
+    {
+      "id": 67,
+      "sku": null,
+      "nama": "Besi 8 ksty",
+      "id_satuan": 19,
+      "stok_minimal": 5,
+      "harga_beli": 55000,
+      "deskripsi": null
+    },
+    {
+      "id": 68,
+      "sku": null,
+      "nama": "Papan 2x20x4",
+      "id_satuan": 20,
+      "stok_minimal": 0,
+      "harga_beli": 32000,
+      "deskripsi": null
+    },
+    {
+      "id": 69,
+      "sku": null,
+      "nama": "Granit hitam 60x60",
+      "id_satuan": 22,
+      "stok_minimal": 5,
+      "harga_beli": 190000,
+      "deskripsi": null
+    },
+    {
+      "id": 70,
+      "sku": null,
+      "nama": "Keran air biasa",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 7500,
+      "deskripsi": null
+    },
+    {
+      "id": 71,
+      "sku": null,
+      "nama": "No Drop",
+      "id_satuan": 15,
+      "stok_minimal": 1,
+      "harga_beli": 82000,
+      "deskripsi": null
+    },
+    {
+      "id": 72,
+      "sku": null,
+      "nama": "Alkali",
+      "id_satuan": 15,
+      "stok_minimal": 1,
+      "harga_beli": 175000,
+      "deskripsi": null
+    },
+    {
+      "id": 73,
+      "sku": null,
+      "nama": "Dempul kayu",
+      "id_satuan": 15,
+      "stok_minimal": 1,
+      "harga_beli": 30000,
+      "deskripsi": null
+    },
+    {
+      "id": 74,
+      "sku": null,
+      "nama": "Tutup Dop 3inc",
+      "id_satuan": 1,
+      "stok_minimal": 1,
+      "harga_beli": 10000,
+      "deskripsi": null
+    },
+    {
+      "id": 75,
+      "sku": null,
+      "nama": "Granit brown 60x60",
+      "id_satuan": 22,
+      "stok_minimal": 0,
+      "harga_beli": 220000,
+      "deskripsi": null
+    },
+    {
+      "id": 76,
+      "sku": null,
+      "nama": "Ampelas tempel P80",
+      "id_satuan": 28,
+      "stok_minimal": 20,
+      "harga_beli": 1666,
+      "deskripsi": null
+    },
+    {
+      "id": 77,
+      "sku": null,
+      "nama": "Grendel 4inc",
+      "id_satuan": 1,
+      "stok_minimal": 5,
+      "harga_beli": 8000,
+      "deskripsi": null
+    }
+  ]
+}

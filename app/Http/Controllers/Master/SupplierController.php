@@ -6,16 +6,17 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Pengaturan\HakAksesController;
 use App\Models\Supplier;
-use App\Traits\LogAktivitasTrait;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Yajra\DataTables\Facades\DataTables;
 
 
 class SupplierController extends Controller
 {
-    use LogAktivitasTrait;
+    use \App\Traits\InventoryAccess;
     public function index(Request $request)
     {
+        $this->authorizeInventory('supplier.index', 'lihat');
         $permissions = HakAksesController::getUserPermissions();
 
         if ($request->ajax()) {
@@ -67,6 +68,7 @@ class SupplierController extends Controller
 
     public function edit($id)
     {
+        $this->authorizeInventory('supplier.index', 'edit');
         $list = Supplier::findOrFail($id);
 
         return response()->json([
@@ -77,14 +79,16 @@ class SupplierController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'nama' => 'required|unique:supplier,nama',
-            'no_telp' => 'required|unique:supplier,no_telp',
-            'alamat' => 'required',
-            'keterangan' => 'nullable',
-            'status' => 'required',
+        $this->authorizeInventory('supplier.index', 'tambah');
+        $rules = [
+            'nama' => 'required|string|max:255|unique:supplier,nama',
+            'no_telp' => 'required|string|max:50|unique:supplier,no_telp',
+            'alamat' => 'required|string|max:5000',
+            'keterangan' => 'nullable|string|max:5000',
+            'status' => 'required|in:1,2',
+        ];
 
-        ], [
+        $messages = [
             'nama.required' => 'Nama wajib diisi.',
             'nama.unique' => 'Nama sudah digunakan.',
             'no_telp.required' => 'No Telepon wajib diisi.',
@@ -92,46 +96,61 @@ class SupplierController extends Controller
             'alamat.required' => 'Alamat wajib diisi.',
             'keterangan.required' => 'Keterangan wajib diisi.',
             'status.required' => 'Status wajib diisi.',
-        ]);
-
-        $latest = Supplier::where('kode', 'like', 'S-%')->orderBy('kode', 'desc')->first();
-
-        if ($latest) {
-            $lastNumber = (int) substr($latest->kode, 2);
-            $newNumber = $lastNumber + 1;
-        } else {
-            $newNumber = 1;
-        }
-
-        $kode = 'S-' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
-
-        $db = [
-            'kode' => $kode,
-            'nama' => $request->nama,
-            'no_telp' => $request->no_telp,
-            'alamat' => $request->alamat,
-            'keterangan' => $request->keterangan ?? '',
-            'status' => $request->status,
+            'status.in' => 'Status tidak valid.',
         ];
 
-        $sup = Supplier::create($db);
-        $this->logCreate('Supplier', $sup->id);
+        $request->validate($rules, $messages);
 
-        return response()->json(['status' => 'success']);
+        DB::beginTransaction();
+        try {
+            $latest = Supplier::where('kode', 'like', 'S-%')->orderBy('kode', 'desc')->first();
+
+            if ($latest) {
+                $lastNumber = (int) substr($latest->kode, 2);
+                $newNumber = $lastNumber + 1;
+            } else {
+                $newNumber = 1;
+            }
+
+            $kode = 'S-' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+
+            $db = [
+                'kode' => $kode,
+                'nama' => $request->nama,
+                'no_telp' => $request->no_telp,
+                'alamat' => $request->alamat,
+                'keterangan' => $request->keterangan ?? '',
+                'status' => $request->status,
+            ];
+
+            Supplier::create($db);
+
+            DB::commit();
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('SupplierController@store Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json(['status' => 'error', 'message' => 'Terjadi kesalahan saat menyimpan data.'], 500);
+        }
     }
 
     public function update(Request $request, $id)
     {
+        $this->authorizeInventory('supplier.index', 'edit');
         $data = Supplier::findOrFail($id);
 
-       $request->validate([
-            'nama' => 'required|unique:supplier,nama,' . $id . ',id',
-            'no_telp' => 'required|unique:supplier,no_telp,' . $id . ',id',
-            'alamat' => 'required',
-            'keterangan' => 'nullable',
-            'status' => 'required',
+        $rules = [
+            'nama' => 'required|string|max:255|unique:supplier,nama,' . $id . ',id',
+            'no_telp' => 'required|string|max:50|unique:supplier,no_telp,' . $id . ',id',
+            'alamat' => 'required|string|max:5000',
+            'keterangan' => 'nullable|string|max:5000',
+            'status' => 'required|in:1,2',
+        ];
 
-        ], [
+        $messages = [
             'nama.required' => 'Nama wajib diisi.',
             'nama.unique' => 'Nama sudah digunakan.',
             'no_telp.required' => 'No Telepon wajib diisi.',
@@ -139,29 +158,59 @@ class SupplierController extends Controller
             'alamat.required' => 'Alamat wajib diisi.',
             'keterangan.required' => 'Keterangan wajib diisi.',
             'status.required' => 'Status wajib diisi.',
-        ]);
-
-        $db = [
-            'nama' => $request->nama,
-            'no_telp' => $request->no_telp,
-            'alamat' => $request->alamat,
-            'keterangan' => $request->keterangan ?? '',
-            'status' => $request->status,
+            'status.in' => 'Status tidak valid.',
         ];
 
-        $data->update($db);
-        $this->logEdit('Supplier', $data->id);
+        $request->validate($rules, $messages);
 
-        return response()->json(['status' => 'success']);
+        DB::beginTransaction();
+        try {
+            $db = [
+                'nama' => $request->nama,
+                'no_telp' => $request->no_telp,
+                'alamat' => $request->alamat,
+                'keterangan' => $request->keterangan ?? '',
+                'status' => $request->status,
+            ];
+
+            $data->update($db);
+
+            DB::commit();
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('SupplierController@update Error: ' . $e->getMessage(), [
+                'id' => $id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json(['status' => 'error', 'message' => 'Terjadi kesalahan saat memperbarui data.'], 500);
+        }
     }
 
     public function destroy($id)
     {
-        $data = Supplier::findOrFail($id);
+        $this->authorizeInventory('supplier.index', 'hapus');
+        DB::beginTransaction();
+        try {
+            $data = Supplier::whereKey($id)->lockForUpdate()->firstOrFail();
+            if (DB::table('barang_masuk')->where('id_supplier', $id)->exists()) {
+                DB::rollBack();
+                return response()->json(['message' => 'Data sudah digunakan dan tidak dapat dihapus.'], 422);
+            }
 
-        $this->logDelete('Supplier', $data->id);
-        $data->delete();
+            $data->delete();
 
-        return response()->json(['status' => 'success']);
+            DB::commit();
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('SupplierController@destroy Error: ' . $e->getMessage(), [
+                'id' => $id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json(['status' => 'error', 'message' => 'Terjadi kesalahan saat menghapus data.'], 500);
+        }
     }
 }

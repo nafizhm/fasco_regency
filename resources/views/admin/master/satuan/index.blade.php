@@ -13,9 +13,9 @@
                         <div class="card">
                             <div class="card-header p-3">
                                 <div class="d-flex align-content-center justify-content-between">
-                                    <h3 class="font-weight-bold text-lg">Data Satuan</h3>
+                                    <h3 class="font-weight-bold text-xl">Data Satuan</h3>
                                     <div class="d-flex align-items-center">
-                                        @if ($permissions['tambah'])
+                                        @if (isset($permissions['tambah']) && $permissions['tambah'] == 1)
                                             <button type="button" class="btn btn-sm btn-primary" data-toggle="modal"
                                                 data-target="#modalForm">
                                                 <i class="fas fa-plus"></i> Tambah Satuan
@@ -45,9 +45,9 @@
 
         <div class="modal fade" id="modalForm" tabindex="-1" role="dialog" data-focus="false"
             aria-labelledby="modalFormLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
-            <div class="modal-dialog modal-md" role="document">
+            <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
-                    <div class="modal-header bg-indigo">
+                    <div class="modal-header bg-warning">
                         <h5 class="modal-title text-white font-weight-bold" id="modalFormLabel"></h5>
                         <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
@@ -57,17 +57,15 @@
                         @csrf
                         <input type="hidden" id="primary_id" name="primary_id">
                         <div class="modal-body">
-
                             <div class="form-group row">
                                 <label for="nama_satuan" class="col-sm-4 col-form-label">Nama Satuan</label>
                                 <div class="col-sm-8">
                                     <input type="text" name="nama_satuan" id="nama_satuan" class="form-control">
                                 </div>
                             </div>
-
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                            <button type="button" class="btn btn-danger" data-dismiss="modal">Batal</button>
                             <button type="submit" class="btn btn-primary ms-1" id="submitBtn">
                                 <span class="spinner-border spinner-border-sm mx-1 d-none" role="status"
                                     aria-hidden="true"></span>
@@ -87,14 +85,14 @@
             $('#modalFormLabel').text('Tambah Satuan');
         });
 
-        var audio = new Audio('{{ asset('audio/notification.ogg') }}');
+        
         var permissions = @json($permissions);
         var showActionColumn = (permissions['edit'] == 1 || permissions['hapus'] == 1);
 
         $(function() {
             var table = $('.data-table').DataTable({
                 processing: false,
-                serverSide: false,
+                serverSide: true,
                 ordering: false,
                 responsive: true,
                 ajax: "{{ route('satuan.index') }}",
@@ -143,11 +141,9 @@
 
         $('#modalForm').on('hidden.bs.modal', function() {
             $('#formData')[0].reset();
+            $('#primary_id').val('');
             $('.is-invalid').removeClass('is-invalid');
             $('.invalid-feedback').remove();
-
-            $('#primary_id').val('');
-            
             let submitBtn = $('#submitBtn');
             let spinner = submitBtn.find('.spinner-border');
             let btnText = submitBtn.find('.button-text');

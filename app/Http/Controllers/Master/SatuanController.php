@@ -6,16 +6,17 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Pengaturan\HakAksesController;
 use App\Models\Satuan;
-use App\Traits\LogAktivitasTrait;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Yajra\DataTables\Facades\DataTables;
 
 
 class SatuanController extends Controller
 {
-    use LogAktivitasTrait;
+    use \App\Traits\InventoryAccess;
     public function index(Request $request)
     {
+        $this->authorizeInventory('satuan.index', 'lihat');
         $permissions = HakAksesController::getUserPermissions();
 
         if ($request->ajax()) {
@@ -55,6 +56,7 @@ class SatuanController extends Controller
 
     public function edit($id)
     {
+        $this->authorizeInventory('satuan.index', 'edit');
         $list = Satuan::findOrFail($id);
 
         return response()->json([
@@ -65,53 +67,98 @@ class SatuanController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'nama_satuan' => 'required|unique:satuan,nama_satuan',
-
-        ], [
-            'nama_satuan.required' => 'Nama Satuan wajib diisi.',
-            'nama_satuan.unique' => 'Nama Satuan sudah digunakan.',
-        ]);
-
-        $db = [
-            'nama_satuan' => $request->nama_satuan,
+        $this->authorizeInventory('satuan.index', 'tambah');
+        $rules = [
+            'nama_satuan' => 'required|string|max:255|unique:satuan,nama_satuan',
         ];
 
-        $sat = Satuan::create($db);
-        $this->logCreate('Satuan', $sat->id);
+        $messages = [
+            'nama_satuan.required' => 'Nama Satuan wajib diisi.',
+            'nama_satuan.unique' => 'Nama Satuan sudah digunakan.',
+        ];
 
-        return response()->json(['status' => 'success']);
+        $request->validate($rules, $messages);
+
+        DB::beginTransaction();
+        try {
+            $db = [
+                'nama_satuan' => $request->nama_satuan,
+            ];
+
+            Satuan::create($db);
+
+            DB::commit();
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('SatuanController@store Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json(['status' => 'error', 'message' => 'Terjadi kesalahan saat menyimpan data.'], 500);
+        }
     }
 
     public function update(Request $request, $id)
     {
+        $this->authorizeInventory('satuan.index', 'edit');
         $data = Satuan::findOrFail($id);
 
-         $request->validate([
-            'nama_satuan' => 'required|unique:satuan,nama_satuan,' . $data->id . ',id',
-
-        ], [
-            'nama_satuan.required' => 'Nama Satuan wajib diisi.',
-            'nama_satuan.unique' => 'Nama Satuan sudah digunakan.',
-        ]);
-
-        $db = [
-            'nama_satuan' => $request->nama_satuan,
+        $rules = [
+            'nama_satuan' => 'required|string|max:255|unique:satuan,nama_satuan,' . $data->id . ',id',
         ];
 
-        $data->update($db);
-        $this->logEdit('Satuan', $data->id);
+        $messages = [
+            'nama_satuan.required' => 'Nama Satuan wajib diisi.',
+            'nama_satuan.unique' => 'Nama Satuan sudah digunakan.',
+        ];
 
-        return response()->json(['status' => 'success']);
+        $request->validate($rules, $messages);
+
+        DB::beginTransaction();
+        try {
+            $db = [
+                'nama_satuan' => $request->nama_satuan,
+            ];
+
+            $data->update($db);
+
+            DB::commit();
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('SatuanController@update Error: ' . $e->getMessage(), [
+                'id' => $id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json(['status' => 'error', 'message' => 'Terjadi kesalahan saat memperbarui data.'], 500);
+        }
     }
 
     public function destroy($id)
     {
-        $data = Satuan::findOrFail($id);
+        $this->authorizeInventory('satuan.index', 'hapus');
+        DB::beginTransaction();
+        try {
+            $data = Satuan::whereKey($id)->lockForUpdate()->firstOrFail();
+            if (DB::table('barang')->where('id_satuan', $id)->exists()) {
+                DB::rollBack();
+                return response()->json(['message' => 'Data sudah digunakan dan tidak dapat dihapus.'], 422);
+            }
 
-        $this->logDelete('Satuan', $data->id);
-        $data->delete();
+            $data->delete();
 
-        return response()->json(['status' => 'success']);
+            DB::commit();
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('SatuanController@destroy Error: ' . $e->getMessage(), [
+                'id' => $id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json(['status' => 'error', 'message' => 'Terjadi kesalahan saat menghapus data.'], 500);
+        }
     }
 }

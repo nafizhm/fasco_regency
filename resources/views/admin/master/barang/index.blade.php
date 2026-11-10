@@ -13,9 +13,9 @@
                         <div class="card">
                             <div class="card-header p-3">
                                 <div class="d-flex align-content-center justify-content-between">
-                                    <h3 class="font-weight-bold text-lg">Data Barang</h3>
+                                    <h3 class="font-weight-bold text-xl">Data Barang</h3>
                                     <div class="d-flex align-items-center">
-                                        @if ($permissions['tambah'])
+                                        @if (isset($permissions['tambah']) && $permissions['tambah'] == 1)
                                             <button type="button" class="btn btn-sm btn-primary" data-toggle="modal"
                                                 data-target="#modalForm">
                                                 <i class="fas fa-plus"></i> Tambah Barang
@@ -29,12 +29,11 @@
                                     <thead>
                                         <tr>
                                             <th width="50px">No</th>
-                                            <th>SKU</th>
                                             <th>Nama Barang</th>
                                             <th>Stok</th>
+                                            <th>Stok Minimal</th>
                                             <th>Satuan</th>
                                             <th>Harga Beli</th>
-                                            <th>Harga Jual</th>
                                             <th width="100px">Action</th>
                                         </tr>
                                     </thead>
@@ -48,11 +47,49 @@
             </div>
         </section>
 
+        <div class="modal fade" id="modalHistory" tabindex="-1" role="dialog" aria-labelledby="modalHistoryLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-info">
+                        <h5 class="modal-title text-white font-weight-bold" id="modalHistoryLabel">History Barang</h5>
+                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="font-weight-bold mb-1">Nama Barang</label>
+                            <div id="historyBarangName" class="form-control bg-light">-</div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th width="60">No</th>
+                                        <th>Tanggal</th>
+                                        <th class="text-center">Masuk</th>
+                                        <th class="text-center">Keluar</th>
+                                        <th class="text-center">Stok</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="historyTableBody">
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">Belum ada data history.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="modal fade" id="modalForm" tabindex="-1" role="dialog" data-focus="false"
             aria-labelledby="modalFormLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
-                    <div class="modal-header bg-indigo">
+                    <div class="modal-header bg-warning">
                         <h5 class="modal-title text-white font-weight-bold" id="modalFormLabel"></h5>
                         <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
@@ -64,86 +101,49 @@
                         <div class="modal-body">
                             <div class="form-group row">
                                 <label for="nama" class="col-sm-2 col-form-label">Nama Barang</label>
-                                <div class="col-sm-4">
+                                <div class="col-sm-10">
                                     <input type="text" name="nama" id="nama" class="form-control">
-                                </div>
-                                <label for="sku" class="col-sm-2 col-form-label">SKU</label>
-                                <div class="col-sm-4">
-                                    <input type="text" name="sku" id="sku" class="form-control">
                                 </div>
                             </div>
 
                             <div class="form-group row">
                                 <label for="id_satuan" class="col-sm-2 col-form-label">Satuan</label>
                                 <div class="col-sm-4">
-                                    <select name="id_satuan" id="id_satuan" class="form-control select-satuan">
+                                    <select name="id_satuan" id="id_satuan" class="form-select select-satuan">
                                         <option value=""></option>
                                         @foreach ($satuans as $satuan)
                                             <option value="{{ $satuan->id }}">{{ $satuan->nama_satuan }}</option>
                                         @endforeach
                                     </select>
                                 </div>
-                                <label for="id_supplier" class="col-sm-2 col-form-label">Supplier</label>
+                                <label for="stok" class="col-sm-2 col-form-label">Stok</label>
                                 <div class="col-sm-4">
-                                    <select name="id_supplier" id="id_supplier" class="form-control select-supplier">
-                                        <option value=""></option>
-                                        @foreach ($suppliers as $supplier)
-                                            <option value="{{ $supplier->id }}">{{ $supplier->nama }}</option>
-                                        @endforeach
-                                    </select>
+                                    <input type="text" name="stok" id="stok" class="form-control format-number">
+                                    <small class="text-muted">Stok awal dapat diisi saat menambah barang. Setelah ada transaksi, perubahan stok melalui transaksi gudang.</small>
                                 </div>
                             </div>
 
                             <div class="form-group row">
-                                <label for="stok" class="col-sm-2 col-form-label">Stok</label>
-                                <div class="col-sm-2">
-                                    <input type="text" name="stok" id="stok" class="form-control format-number">
-                                </div>
-                                <label for="stok_awal" class="col-sm-2 col-form-label">Stok Awal</label>
-                                <div class="col-sm-2">
-                                    <input type="text" name="stok_awal" id="stok_awal"
-                                        class="form-control format-number">
-                                </div>
                                 <label for="stok_minimal" class="col-sm-2 col-form-label">Stok Minimal</label>
-                                <div class="col-sm-2">
+                                <div class="col-sm-4">
                                     <input type="text" name="stok_minimal" id="stok_minimal"
                                         class="form-control format-number">
                                 </div>
                             </div>
 
-                            <div class="row mb-3 align-items-center">
+                            <div class="form-group row">
                                 <label for="harga_beli" class="col-sm-2 col-form-label">Harga Beli</label>
                                 <div class="col-sm-4">
                                     <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text">Rp.</span>
-                                        </div>
+                                        <span class="input-group-text">Rp.</span>
                                         <input type="text" class="form-control format-number" id="harga_beli"
                                             name="harga_beli">
                                     </div>
                                 </div>
-                                <label for="harga_jual" class="col-sm-2 col-form-label">Harga Jual</label>
-                                <div class="col-sm-4">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text">Rp.</span>
-                                        </div>
-                                        <input type="text" class="form-control format-number" id="harga_jual"
-                                            name="harga_jual">
-                                    </div>
-                                </div>
                             </div>
-
-                            <div class="form-group row">
-                                <label for="deskripsi" class="col-sm-2 col-form-label">Deskripsi</label>
-                                <div class="col-sm-10">
-                                    <textarea type="text" name="deskripsi" id="deskripsi" class="form-control"></textarea>
-                                </div>
-                            </div>
-
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                            <button type="button" class="btn btn-danger" data-dismiss="modal">Batal</button>
                             <button type="submit" class="btn btn-primary ms-1" id="submitBtn">
                                 <span class="spinner-border spinner-border-sm mx-1 d-none" role="status"
                                     aria-hidden="true"></span>
@@ -159,6 +159,8 @@
 @endsection
 @push('scripts')
     <script>
+        const stokMinimalRowColor = '#f8d7da';
+
         $(document).on('click', '[data-target="#modalForm"]', function() {
             $('#modalFormLabel').text('Tambah Barang');
         });
@@ -182,24 +184,20 @@
         $(document).ready(function() {
             $('.select-satuan').select2({
                 theme: "bootstrap4",
+                width: '100%',
                 minimumResultsForSearch: Infinity,
                 placeholder: "Pilih Satuan",
             });
-            $('.select-supplier').select2({
-                theme: "bootstrap4",
-                minimumResultsForSearch: Infinity,
-                placeholder: "Pilih Supplier",
-            });
         });
 
-        var audio = new Audio('{{ asset('audio/notification.ogg') }}');
+        
         var permissions = @json($permissions);
         var showActionColumn = (permissions['edit'] == 1 || permissions['hapus'] == 1);
 
         $(function() {
             var table = $('.data-table').DataTable({
                 processing: false,
-                serverSide: false,
+                serverSide: true,
                 ordering: false,
                 responsive: true,
                 ajax: "{{ route('barang.index') }}",
@@ -208,12 +206,6 @@
                         name: 'DT_RowIndex',
                         orderable: false,
                         searchable: false
-                    },
-                    {
-                        data: 'sku',
-                        name: 'sku',
-                        orderable: false,
-                        searchable: true
                     },
                     {
                         data: 'nama',
@@ -229,8 +221,15 @@
                         className: 'text-center'
                     },
                     {
-                        data: 'id_satuan',
-                        name: 'id_satuan',
+                        data: 'stok_minimal',
+                        name: 'stok_minimal',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center'
+                    },
+                    {
+                        data: 'satuan',
+                        name: 'satuan',
                         orderable: false,
                         searchable: false,
                         className: 'text-center'
@@ -238,13 +237,6 @@
                     {
                         data: 'harga_beli',
                         name: 'harga_beli',
-                        orderable: false,
-                        searchable: false,
-                        className: 'text-center'
-                    },
-                    {
-                        data: 'harga_jual',
-                        name: 'harga_jual',
                         orderable: false,
                         searchable: false,
                         className: 'text-center'
@@ -263,7 +255,13 @@
                     render: function(data, type, row, meta) {
                         return meta.row + meta.settings._iDisplayStart + 1;
                     }
-                }, ]
+                }, ],
+                createdRow: function(row) {
+                    if ($(row).hasClass('stok-minimal-row')) {
+                        $(row).css('background-color', stokMinimalRowColor);
+                        $(row).find('td').css('background-color', stokMinimalRowColor);
+                    }
+                }
             });
         });
 
@@ -275,20 +273,57 @@
                     $('#modalFormLabel').text('Edit Barang');
                     $('#primary_id').val(response.data.id);
                     $('#nama').val(response.data.nama);
-                    $('#sku').val(response.data.sku);
                     $('#id_satuan').val(response.data.id_satuan);
-                    $('#id_supplier').val(response.data.id_supplier);
-                    $('#stok_awal').val(numberFormat(response.data.stok_awal));
+                    $('#stok').val(numberFormat(response.data.stok));
                     $('#stok_minimal').val(numberFormat(response.data.stok_minimal));
                     $('#harga_beli').val(numberFormat(response.data.harga_beli));
-                    $('#harga_jual').val(numberFormat(response.data.harga_jual));
-                    $('#stok').val(numberFormat(response.data.stok));
-                    $('#deskripsi').val(response.data.deskripsi);
 
                     $('#id_satuan').trigger('change');
-                    $('#id_supplier').trigger('change');
                     $('#modalForm').modal('show');
                 }
+            });
+        });
+
+        $(document).on('click', '.history-button', function() {
+            var url = $(this).data('url');
+            var namaBarang = $(this).data('nama') || '-';
+
+            $('#historyBarangName').text(namaBarang);
+            $('#historyTableBody').html(
+                '<tr><td colspan="5" class="text-center text-muted">Memuat data...</td></tr>'
+            );
+            $('#modalHistory').modal('show');
+
+            $.get(url, function(response) {
+                if (response.status !== 'success') {
+                    return;
+                }
+
+                $('#historyBarangName').text(response.nama_barang || namaBarang);
+
+                if (!response.history || response.history.length === 0) {
+                    $('#historyTableBody').html(
+                        '<tr><td colspan="5" class="text-center text-muted">Belum ada data history.</td></tr>'
+                    );
+                    return;
+                }
+
+                var rows = '';
+                $.each(response.history, function(_, item) {
+                    rows += '<tr>' +
+                        '<td class="text-center">' + item.no + '</td>' +
+                        '<td>' + item.tanggal + '</td>' +
+                        '<td class="text-center">' + item.masuk + '</td>' +
+                        '<td class="text-center">' + item.keluar + '</td>' +
+                        '<td class="text-center">' + item.stok + '</td>' +
+                        '</tr>';
+                });
+
+                $('#historyTableBody').html(rows);
+            }).fail(function() {
+                $('#historyTableBody').html(
+                    '<tr><td colspan="5" class="text-center text-danger">Gagal memuat history barang.</td></tr>'
+                );
             });
         });
 
@@ -300,9 +335,8 @@
 
         $('#modalForm').on('hidden.bs.modal', function() {
             $('#formData')[0].reset();
+            $('#primary_id').val('');
             $('.select-satuan').val('').trigger('change');
-            $('.select-supplier').val('').trigger('change');
-            $('.select-stt').val('').trigger('change');
             $('.is-invalid').removeClass('is-invalid');
             $('.invalid-feedback').remove();
 

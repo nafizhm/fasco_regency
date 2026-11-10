@@ -16,9 +16,10 @@
                                     <h3 class="font-weight-bold text-lg">Data Barang Keluar</h3>
                                     <div class="d-flex align-items-center">
                                         @if ($permissions['tambah'])
-                                            <a href="{{ route('barang-keluar.create') }}"
-                                                class="btn btn-sm btn-primary mr-2"><i class="fas fa-plus"></i> Tambah
-                                                Barang Keluar</a>
+                                            <a href="{{ route('barang-keluar.create') }}" class="btn btn-sm btn-primary mr-2"><i
+                                                    class="fas fa-plus"></i> Barang Keluar Unit</a>
+                                            <a href="{{ route('barang-keluar.create', ['mode' => 'non-unit']) }}" class="btn btn-sm btn-success mr-2"><i
+                                                    class="fas fa-plus"></i> Barang Keluar Non Unit</a>
                                         @endif
                                     </div>
                                 </div>
@@ -29,6 +30,10 @@
                                         <tr>
                                             <th width="50px">No</th>
                                             <th>Tanggal</th>
+                                            <th>Perumahan</th>
+                                            <th>Unit / Proyek</th>
+                                            <th>Jenis</th>
+                                            <th>Tukang</th>
                                             <th>Jumlah Item</th>
                                             <th width="100px">Action</th>
                                         </tr>
@@ -46,28 +51,30 @@
 @endsection
 @push('scripts')
     <script>
-        var audio = new Audio('{{ asset('audio/notification.ogg') }}');
-
-        $(document).ready(function() {
-            const successMsg = sessionStorage.getItem('success');
-            if (successMsg) {
-                audio.play();
-                toastr.success(successMsg, "BERHASIL", {
-                    progressBar: true,
-                    timeOut: 3500,
-                    positionClass: "toast-bottom-right",
-                });
-                sessionStorage.removeItem('success');
-            }
-        });
+        
+        @if (session('success'))
+            audio.play();
+            toastr.success("{{ session('success') }}", "BERHASIL", {
+                progressBar: true,
+                timeOut: 3500,
+                positionClass: "toast-bottom-right",
+            });
+        @elseif (session('error'))
+            audio.play();
+            toastr.error("{{ session('error') }}", "GAGAL!", {
+                progressBar: true,
+                timeOut: 3500,
+                positionClass: "toast-bottom-right",
+            });
+        @endif
 
         var permissions = @json($permissions);
-        var showActionColumn = (permissions['edit'] == 1 || permissions['hapus'] == 1);
+        var showActionColumn = (permissions['hapus'] == 1);
 
         $(function() {
             var table = $('.data-table').DataTable({
                 processing: false,
-                serverSide: false,
+                serverSide: true,
                 ordering: false,
                 responsive: true,
                 ajax: "{{ route('barang-keluar.index') }}",
@@ -81,6 +88,26 @@
                         data: 'tanggal',
                         name: 'tanggal',
                         searchable: false
+                    },
+                    {
+                        data: 'lokasi',
+                        name: 'lokasi',
+                        searchable: true
+                    },
+                    {
+                        data: 'unit',
+                        name: 'unit',
+                        searchable: true
+                    },
+                    {
+                        data: 'jenis_pekerjaan',
+                        name: 'jenis_pekerjaan',
+                        searchable: true
+                    },
+                    {
+                        data: 'tukang',
+                        name: 'tukang',
+                        searchable: true
                     },
                     {
                         data: 'jum_item',

@@ -25,4 +25,13 @@ class Barang extends Model
         'harga_jual',
     ];
 
+    public function satuan()
+    {
+        return $this->belongsTo(Satuan::class, 'id_satuan');
+    }
+
+    public function history()
+    {
+        return $this->hasMany(HistoryBarang::class, 'id_barang');
+    }
 }

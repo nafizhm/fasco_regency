@@ -122,6 +122,7 @@ Route::get('/hutang/sisa-bayar/{id}', [HutangController::class, 'getSisaBayar'])
 Route::get('/piutang/sisa-bayar/{id}', [PiutangController::class, 'getSisaBayar']);
 
 Route::middleware(['auth'])->group(function () {
+    require __DIR__.'/inventory.php';
     Route::prefix('admin/keuangan/deposit-notaris')->name('notary-deposits.')->controller(\App\Http\Controllers\Keuangan\NotaryDepositController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->name('store');

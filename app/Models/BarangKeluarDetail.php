@@ -15,6 +15,18 @@ class BarangKeluarDetail extends Model
     protected $fillable = [
         'id_barang_keluar',
         'id_barang',
+        'id_master_project_pekerjaan',
         'jumlah',
+        'keterangan',
     ];
+
+    public function pekerjaan()
+    {
+        return $this->belongsTo(MasterProjectPekerjaan::class, 'id_master_project_pekerjaan');
+    }
+
+    public function barang()
+    {
+        return $this->belongsTo(Barang::class, 'id_barang');
+    }
 }
