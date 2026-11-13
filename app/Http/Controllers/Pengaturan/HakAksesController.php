@@ -122,6 +122,7 @@ class HakAksesController extends Controller
         }
 
         return DataTables::of($sorted)
+            ->skipPaging()
             ->addIndexColumn()
             ->addColumn('induk_menu', function ($row) {
                 if (! $row->menu) {

@@ -30,7 +30,7 @@
                                         <tr>
                                             <th width="50px">No</th>
                                             <th>Nama Tukang</th>
-                                            <th>Alamat</th>
+                                            <th>Gaji / Hari</th>
                                             <th>No Telp</th>
                                             <th width="100px">Action</th>
                                         </tr>
@@ -66,9 +66,9 @@
                             </div>
 
                             <div class="form-group row">
-                                <label for="alamat" class="col-sm-3 col-form-label">Alamat</label>
+                                <label for="gaji_per_hari" class="col-sm-3 col-form-label">Gaji / Hari (Rp)</label>
                                 <div class="col-sm-9">
-                                    <textarea name="alamat" id="alamat" class="form-control"></textarea>
+                                    <input type="number" name="gaji_per_hari" id="gaji_per_hari" class="form-control" min="0" max="1000000000" step="1" value="0" required>
                                 </div>
                             </div>
 
@@ -123,8 +123,9 @@
                         searchable: true
                     },
                     {
-                        data: 'alamat',
-                        name: 'alamat',
+                        data: 'gaji_per_hari',
+                        name: 'gaji_per_hari',
+                        render: function(data) { return 'Rp ' + new Intl.NumberFormat('id-ID').format(data || 0); },
                         orderable: false,
                         searchable: false
                     },
@@ -159,7 +160,7 @@
                     $('#modalFormLabel').text('Edit Tukang');
                     $('#primary_id').val(response.data.id);
                     $('#nama').val(response.data.nama);
-                    $('#alamat').val(response.data.alamat);
+                    $('#gaji_per_hari').val(response.data.gaji_per_hari || 0);
                     $('#no_telp').val(response.data.no_telp);
                     $('#modalForm').modal('show');
                 }

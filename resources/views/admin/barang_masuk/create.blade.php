@@ -83,7 +83,7 @@
                                                     <th width="140px">Jumlah</th>
                                                     <th width="160px">Satuan</th>
                                                     <th width="180px">Harga Beli</th>
-                                                    <th>Keterangan</th>
+                                                    <th width="200px">Total per Item</th>
                                                     <th width="90px">Aksi</th>
                                                 </tr>
                                             </thead>
@@ -159,7 +159,7 @@
                         <input type="text" name="harga_beli[]" class="form-control format-number" value="${item.harga_beli ?? ''}">
                     </td>
                     <td>
-                        <input type="text" name="keterangan[]" class="form-control" value="${item.keterangan ?? ''}">
+                        <input type="text" class="form-control total-item-field text-right" value="Rp 0" aria-label="Total per item" readonly>
                     </td>
                     <td class="text-center">
                         <button type="button" class="btn btn-danger btn-sm remove-row">Hapus</button>
@@ -211,7 +211,9 @@
             $('#barangTable tbody tr').each(function() {
                 const jumlah = parseFormattedNumber($(this).find('input[name="jumlah[]"]').val());
                 const harga = parseFormattedNumber($(this).find('input[name="harga_beli[]"]').val());
-                totalHarga += (jumlah * harga);
+                const totalItem = jumlah * harga;
+                $(this).find('.total-item-field').val('Rp ' + new Intl.NumberFormat('id-ID').format(totalItem));
+                totalHarga += totalItem;
             });
 
             $('#jumlah_item_display').val(new Intl.NumberFormat('id-ID').format(jumlahItem));

@@ -1,5 +1,12 @@
 @extends('admin.layout_admin')
 @section('content')
+    <style>
+        .data-table.table-striped tbody tr.menu-induk > td {
+            background-color: #dbeafe !important;
+            color: #1e3a8a;
+            font-weight: 700;
+        }
+    </style>
     <!-- Content Wrapper. Contains page content -->
     <div class="content-wrapper">
         <!-- Content Header (Page header) -->
@@ -128,11 +135,14 @@
 
         var table = $('.data-table').DataTable({
             processing: false,
-            serverSide: true,
+            serverSide: false,
             ordering: false,
             paging: false,
             lengthChange: false,
             responsive: true,
+            rowCallback: function(row, data) {
+                $(row).toggleClass('menu-induk', !!data.menu && Number(data.menu.id_parent) === 0);
+            },
             ajax: {
                 url: "{{ route('admin.getHakAkses') }}",
                 data: function(d) {
@@ -207,7 +217,8 @@
 
 
         $('#pilih-pengguna').change(function() {
-            table.draw();
+            hakAksesState = { lihat: {}, tambah: {}, edit: {}, hapus: {} };
+            table.ajax.reload();
         });
 
 
@@ -232,6 +243,26 @@
                 let type = match[1];
                 let id = match[2];
                 hakAksesState[type][id] = $(this).is(':checked') ? 1 : 0;
+
+                const checked = $(this).is(':checked');
+                const rows = table.rows().data().toArray();
+                const parent = rows.find(row => String(row.id) === id);
+                if (parent && parent.menu && Number(parent.menu.id_parent) === 0) {
+                    const types = type === 'lihat' ? ['lihat', 'tambah', 'edit', 'hapus'] : [type];
+                    rows.filter(row => String(row.id) === id ||
+                            (row.menu && String(row.menu.id_parent) === String(parent.id_menu)))
+                        .forEach(function(child) {
+                            types.forEach(function(permissionType) {
+                                const checkbox = $(table.rows().nodes())
+                                    .find('input[name="' + permissionType + '[' + child.id + ']"]')
+                                    .filter(':enabled');
+                                if (checkbox.length) {
+                                    checkbox.prop('checked', checked);
+                                    hakAksesState[permissionType][child.id] = checked ? 1 : 0;
+                                }
+                            });
+                        });
+                }
             }
         });
 
@@ -246,7 +277,7 @@
 
             var id_user = $('#pilih-pengguna').val();
 
-            $('.data-table tbody input[type="checkbox"]').each(function() {
+            $(table.rows().nodes()).find('input[type="checkbox"]').each(function() {
                 let name = $(this).attr('name');
                 let match = name.match(/(\w+)\[(\d+)\]/);
                 if (match) {

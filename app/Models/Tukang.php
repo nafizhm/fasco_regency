@@ -16,5 +16,6 @@ class Tukang extends Model
         'nama',
         'alamat',
         'no_telp',
+        'gaji_per_hari',
     ];
 }

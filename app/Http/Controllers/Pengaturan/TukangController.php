@@ -67,6 +67,7 @@ class TukangController extends Controller
             'nama' => 'required|unique:tukang,nama',
             'alamat' => 'nullable',
             'no_telp' => 'nullable',
+            'gaji_per_hari' => 'required|integer|min:0|max:1000000000',
         ];
 
         $messages = [
@@ -82,6 +83,7 @@ class TukangController extends Controller
                 'nama' => $request->nama,
                 'alamat' => $request->alamat,
                 'no_telp' => $request->no_telp,
+                'gaji_per_hari' => $request->gaji_per_hari,
             ]);
 
             DB::commit();
@@ -106,6 +108,7 @@ class TukangController extends Controller
             'nama' => 'required|unique:tukang,nama,' . $id . ',id',
             'alamat' => 'nullable',
             'no_telp' => 'nullable',
+            'gaji_per_hari' => 'required|integer|min:0|max:1000000000',
         ];
 
         $messages = [
@@ -119,8 +122,9 @@ class TukangController extends Controller
         try {
             $data->update([
                 'nama' => $request->nama,
-                'alamat' => $request->alamat,
+                'alamat' => $request->input('alamat', $data->alamat),
                 'no_telp' => $request->no_telp,
+                'gaji_per_hari' => $request->gaji_per_hari,
             ]);
 
             DB::commit();
@@ -140,6 +144,9 @@ class TukangController extends Controller
     public function destroy($id)
     {
         $this->authorizeInventory('tukang.index', 'hapus');
+        if (DB::table('absen_tukang_detail')->where('id_tukang', $id)->exists()) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['tukang' => 'Tukang sudah memiliki riwayat absensi dan tidak dapat dihapus.']);
+        }
         if (\App\Models\BarangKeluar::where('id_tukang', $id)->exists() || \App\Models\SettingProyek::where('id_tukang', $id)->exists()) {
             throw \Illuminate\Validation\ValidationException::withMessages(['tukang' => 'Tukang masih dipakai oleh transaksi atau setting proyek.']);
         }
