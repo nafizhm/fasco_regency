@@ -185,6 +185,12 @@
                 serverSide: true,
                 ordering: false,
                 responsive: true,
+                drawCallback: function() {
+                    $(this.api().table().body()).find('[data-toggle="tooltip"]').tooltip({
+                        container: 'body',
+                        trigger: 'hover'
+                    });
+                },
                 ajax: "{{ route('barang-masuk.index') }}",
                 columns: [{
                         data: 'DT_RowIndex',

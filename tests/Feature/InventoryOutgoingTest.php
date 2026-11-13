@@ -18,13 +18,14 @@ class InventoryOutgoingTest extends TestCase
         parent::setUp();
         $this->assertSame(':memory:', config('database.connections.sqlite.database'));
         (require database_path('migrations/2026_11_10_010000_restore_inventory_modules.php'))->up();
+        (require database_path('migrations/2026_11_10_050000_add_manual_work_type_to_barang_keluar_detail.php'))->up();
         Schema::create('menu', function (Blueprint $t) { $t->id(); $t->string('route_name'); });
         Schema::create('hak_akses', function (Blueprint $t) {
             $t->id(); $t->integer('id_user'); $t->integer('id_menu');
             foreach (['lihat', 'tambah', 'edit', 'hapus'] as $column) $t->integer($column)->default(1);
         });
         Schema::create('lokasi_kavling', function (Blueprint $t) { $t->id(); $t->string('nama_kavling')->nullable(); });
-        Schema::create('kavling_peta', function (Blueprint $t) { $t->id(); $t->integer('id_lokasi'); $t->string('kode_kavling'); });
+        Schema::create('kavling_peta', function (Blueprint $t) { $t->id(); $t->integer('id_lokasi'); $t->string('kode_kavling'); $t->string('nama_cluster')->nullable(); });
         foreach (['barang-keluar.index', 'setting-proyek.index'] as $i => $route) {
             DB::table('menu')->insert(['id' => $i+1, 'route_name' => $route]);
             DB::table('hak_akses')->insert(['id_user' => 1, 'id_menu' => $i+1]);
@@ -48,6 +49,41 @@ class InventoryOutgoingTest extends TestCase
     {
         return ['mode' => 'unit', 'tanggal' => '2026-11-10', 'id_lokasi' => 1, 'id_kavling' => 27,
             'id_tukang' => 1, 'id_barang' => [1], 'jumlah' => [$qty], 'id_master_project_pekerjaan' => [1]];
+    }
+
+    public function test_unit_options_include_clusters_to_distinguish_identical_unit_numbers(): void
+    {
+        DB::table('kavling_peta')->where('id', 27)->update(['kode_kavling' => '01', 'nama_cluster' => 'BIRU']);
+        DB::table('kavling_peta')->insert(['id' => 28, 'id_lokasi' => 1, 'kode_kavling' => '01', 'nama_cluster' => 'JINGGA']);
+        $response = $this->getJson(route('barang-keluar.unit-by-lokasi', ['id' => 1]))->assertOk();
+        $response->assertJsonFragment(['id_kavling' => 27, 'kode_kavling' => '01', 'nama_cluster' => 'BIRU']);
+        $response->assertJsonFragment(['id_kavling' => 28, 'kode_kavling' => '01', 'nama_cluster' => 'JINGGA']);
+    }
+
+    public function test_manual_work_does_not_require_project_settings(): void
+    {
+        DB::table('setting_proyek')->delete();
+        DB::table('master_project_pekerjaan')->delete();
+        DB::table('master_project')->delete();
+        $this->getJson(route('barang-keluar.unit-by-lokasi', ['id' => 1]))
+            ->assertOk()->assertJsonFragment(['id_kavling' => 27, 'kode_kavling' => '03']);
+        $payload = $this->payload();
+        unset($payload['id_master_project_pekerjaan']);
+        $payload['jenis_pekerjaan'] = ['Pemasangan granit'];
+        $this->postJson(route('barang-keluar.store'), $payload)->assertOk();
+        $id = DB::table('barang_keluar')->value('id');
+        $this->assertDatabaseHas('barang_keluar_detail', ['id_barang_keluar' => $id,
+            'jenis_pekerjaan' => 'Pemasangan granit', 'id_master_project_pekerjaan' => null]);
+        $payload['jenis_pekerjaan'] = ['Finishing dinding'];
+        $this->putJson(route('barang-keluar.update', $id), $payload)->assertOk();
+        $this->assertDatabaseHas('barang_keluar_detail', ['id_barang_keluar' => $id, 'jenis_pekerjaan' => 'Finishing dinding']);
+        $this->assertDatabaseHas('barang', ['id' => 1, 'stok' => 6]);
+        $payload['jenis_pekerjaan'] = [''];
+        $this->postJson(route('barang-keluar.store'), $payload)->assertUnprocessable();
+        $payload['jenis_pekerjaan'] = ['Pondasi'];
+        DB::table('lokasi_kavling')->insert(['id' => 2, 'nama_kavling' => 'Lokasi lain']);
+        $payload['id_lokasi'] = 2;
+        $this->postJson(route('barang-keluar.store'), $payload)->assertUnprocessable()->assertJsonValidationErrors('id_kavling');
     }
 
     public function test_outgoing_create_update_delete_recalculates_stock_and_history(): void

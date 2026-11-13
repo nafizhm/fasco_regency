@@ -193,7 +193,7 @@
                 <tr>
                     <td class="text-center">{{ $loop->iteration }}</td>
                     <td>{{ $det->barang?->nama ?? 'Barang #' . $det->id_barang }}</td>
-                    <td>{{ $det->pekerjaan?->nama_pekerjaan ?? '-' }}</td>
+                    <td>{{ $det->jenis_pekerjaan ?: ($det->pekerjaan?->nama_pekerjaan ?? '-') }}</td>
                     <td class="text-center">{{ number_format((float) $det->jumlah, 0, ',', '.') }}</td>
                     <td>{{ $det->keterangan ?? '-' }}</td>
                 </tr>

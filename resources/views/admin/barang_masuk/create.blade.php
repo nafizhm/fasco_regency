@@ -25,6 +25,14 @@
                                     </div>
 
                                     <div class="row mb-3">
+                                        <label for="jatuh_tempo" class="col-sm-2 col-form-label">Jatuh Tempo Pembayaran</label>
+                                        <div class="col-sm-3">
+                                            <input type="date" id="jatuh_tempo" name="jatuh_tempo" class="form-control"  aria-describedby="jatuh-tempo-help">
+                                            <small id="jatuh-tempo-help" class="form-text text-muted">Opsional. Isi sesuai kesepakatan pembayaran dengan supplier.</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-3">
                                         <label for="id_supplier" class="col-sm-2 col-form-label">Supplier</label>
                                         <div class="col-sm-4">
                                             <select class="form-select select-supplier" name="id_supplier" id="id_supplier">

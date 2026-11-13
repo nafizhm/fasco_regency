@@ -18,6 +18,7 @@ class InventoryTransactionsTest extends TestCase
         $this->assertSame(':memory:', config('database.connections.sqlite.database'));
         (require database_path('migrations/2026_11_10_010000_restore_inventory_modules.php'))->up();
         (require database_path('migrations/2026_11_10_030000_add_attachment_type_to_barang_masuk_lampiran.php'))->up();
+        (require database_path('migrations/2026_11_10_040000_add_jatuh_tempo_to_barang_masuk.php'))->up();
         Schema::create('menu', function (Blueprint $t) { $t->id(); $t->string('route_name'); });
         Schema::create('hak_akses', function (Blueprint $t) {
             $t->id(); $t->integer('id_user'); $t->integer('id_menu');
@@ -132,6 +133,46 @@ class InventoryTransactionsTest extends TestCase
         $this->get(route('barang-masuk.create'))->assertOk()->assertSee('Tambah Barang Masuk')->assertSee('Semen Gudang');
         $id = $this->createIncoming();
         $this->get(route('barang-masuk.show', $id))->assertOk()->assertSee('Petugas Gudang')->assertSee('Semen Gudang');
+    }
+
+    public function test_payment_due_date_is_optional_saved_editable_and_cannot_precede_receipt(): void
+    {
+        $payload = $this->payload();
+        $this->postJson(route('barang-masuk.store'), $payload + ['jatuh_tempo' => '2026-10-31'])
+            ->assertUnprocessable()->assertJsonValidationErrors('jatuh_tempo');
+        $this->postJson(route('barang-masuk.store'), $payload + ['jatuh_tempo' => '2026-11-30'])->assertOk();
+        $id = (int) BarangMasuk::latest('id')->value('id');
+        $this->assertDatabaseHas('barang_masuk', ['id' => $id, 'jatuh_tempo' => '2026-11-30']);
+        $this->get(route('barang-masuk.show', $id))->assertOk()->assertSee('2026-11-30');
+        $this->putJson(route('barang-masuk.update', $id), $payload + ['jatuh_tempo' => '2026-12-15'])->assertOk();
+        $this->assertDatabaseHas('barang_masuk', ['id' => $id, 'jatuh_tempo' => '2026-12-15']);
+        $this->putJson(route('barang-masuk.update', $id), $payload + ['jatuh_tempo' => ''])->assertOk();
+        $this->assertDatabaseHas('barang_masuk', ['id' => $id, 'jatuh_tempo' => null]);
+    }
+
+    public function test_list_orders_unpaid_by_due_date_then_settled_and_displays_remaining_days(): void
+    {
+        $this->travelTo(\Carbon\Carbon::parse('2026-11-10 12:00:00', 'Asia/Jakarta'));
+        foreach ([
+            ['Lunas', '2026-11-02', 100],
+            ['Nanti', '2026-11-13', 0],
+            ['Tanpa Tempo', null, 0],
+            ['Hari Ini', '2026-11-10', 0],
+            ['Terlambat', '2026-11-08', 0],
+        ] as [$name, $due, $paid]) {
+            DB::table('barang_masuk')->insert(['id_supplier' => 1, 'nama_penerima' => $name,
+                'tanggal' => '2026-11-01', 'total_harga' => 100, 'terbayar' => $paid, 'jatuh_tempo' => $due]);
+        }
+        $response = $this->getJson(route('barang-masuk.index'), ['X-Requested-With' => 'XMLHttpRequest'])->assertOk();
+        $rows = $response->json('data');
+        $this->assertSame(['Terlambat', 'Hari Ini', 'Nanti', 'Tanpa Tempo', 'Lunas'], array_column($rows, 'nama_penerima'));
+        $this->assertStringContainsString('Terlambat 2 hari', $rows[0]['status_pembayaran']);
+        $this->assertStringContainsString('Jatuh tempo hari ini', $rows[1]['status_pembayaran']);
+        $this->assertStringContainsString('3 hari lagi', $rows[2]['status_pembayaran']);
+        $this->assertStringContainsString('13 November 2026', $rows[2]['status_pembayaran']);
+        $this->assertStringNotContainsString('Terlambat', $rows[4]['status_pembayaran']);
+        $this->assertStringContainsString('aria-label="Pembayaran"', $rows[0]['action']);
+        $this->assertStringNotContainsString('>Pembayaran</button>', $rows[0]['action']);
     }
 
     public function test_optional_attachments_are_saved_with_their_category_and_shown_on_edit(): void

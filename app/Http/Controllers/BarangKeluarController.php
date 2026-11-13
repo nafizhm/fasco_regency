@@ -122,13 +122,13 @@ class BarangKeluarController extends Controller
     {
         $this->authorizeInventory('barang-keluar.index', 'lihat');
         $units = KavlingPeta::query()
-            ->join('setting_proyek as sp', 'kavling_peta.id', '=', 'sp.id_kavling')
+            ->leftJoin('setting_proyek as sp', 'kavling_peta.id', '=', 'sp.id_kavling')
             ->where('kavling_peta.id_lokasi', $id)
-            ->where('sp.id_lokasi', $id)
             ->orderBy('kode_kavling')
             ->get([
                 'kavling_peta.id as id_kavling',
                 'kavling_peta.kode_kavling',
+                'kavling_peta.nama_cluster',
                 'sp.id_master_project',
             ]);
 
@@ -167,9 +167,8 @@ class BarangKeluarController extends Controller
 
         if ($mode === 'unit' && $data->id_lokasi) {
             $unitList = KavlingPeta::query()
-                ->join('setting_proyek as sp', 'kavling_peta.id', '=', 'sp.id_kavling')
+                ->leftJoin('setting_proyek as sp', 'kavling_peta.id', '=', 'sp.id_kavling')
                 ->where('kavling_peta.id_lokasi', $data->id_lokasi)
-                ->where('sp.id_lokasi', $data->id_lokasi)
                 ->orderBy('kode_kavling')
                 ->get([
                     'kavling_peta.id as id_kavling',
@@ -351,7 +350,9 @@ class BarangKeluarController extends Controller
             'id_tukang' => 'required|exists:tukang,id',
             'id_barang' => 'required|array|min:1',
             'id_barang.*' => 'required|distinct|exists:barang,id',
-            'id_master_project_pekerjaan' => 'required|array|min:1',
+            'id_master_project_pekerjaan' => 'nullable|array|min:1',
+            'jenis_pekerjaan' => 'required_without:id_master_project_pekerjaan|array|min:1',
+            'jenis_pekerjaan.*' => 'required|string|max:255',
             'id_master_project_pekerjaan.*' => 'required|exists:master_project_pekerjaan,id',
             'jumlah' => 'required|array|min:1',
             'jumlah.*' => 'required|integer|min:1',
@@ -388,12 +389,18 @@ class BarangKeluarController extends Controller
             $jumlah = (int) str_replace('.', '', $request->jumlah[$index]);
             $idPekerjaan = $request->id_master_project_pekerjaan[$index] ?? null;
 
-            $this->validatePekerjaanBelongsToProject($payload['project_source_id'], $idPekerjaan);
+            $manualWork = $request->input('jenis_pekerjaan.' . $index);
+            if ($manualWork === null) {
+                $this->validatePekerjaanBelongsToProject($payload['project_source_id'], $idPekerjaan);
+            } else {
+                $idPekerjaan = null;
+            }
 
             BarangKeluarDetail::create([
                 'id_barang_keluar' => $data->id,
                 'id_barang' => $idBarang,
                 'id_master_project_pekerjaan' => $idPekerjaan,
+                'jenis_pekerjaan' => $manualWork,
                 'jumlah' => $jumlah,
                 'keterangan' => $request->keterangan_detail[$index] ?? '',
             ]);
@@ -445,20 +452,17 @@ class BarangKeluarController extends Controller
             ];
         }
 
-        $settingProyek = SettingProyek::where('id_lokasi', $request->id_lokasi)
-            ->where('id_kavling', $request->id_kavling)
-            ->first();
-
-        if (!$settingProyek) {
-            throw ValidationException::withMessages([
-                'id_kavling' => 'Lokasi unit hanya bisa dipilih dari unit yang sudah di setting pada menu Setting Proyek.',
-            ]);
+        $unit = KavlingPeta::whereKey($request->id_kavling)->where('id_lokasi', $request->id_lokasi)->first();
+        if (!$unit) {
+            throw ValidationException::withMessages(['id_kavling' => 'Unit harus berada di lokasi perumahan yang dipilih.']);
         }
+        $settingProyek = SettingProyek::where('id_lokasi', $request->id_lokasi)
+            ->where('id_kavling', $request->id_kavling)->first();
 
         return [
             'id_project' => null,
-            'id_kavling' => $settingProyek->id_kavling,
-            'project_source_id' => $settingProyek->id_master_project,
+            'id_kavling' => $unit->id,
+            'project_source_id' => $settingProyek?->id_master_project,
         ];
     }
 
@@ -489,8 +493,8 @@ class BarangKeluarController extends Controller
             }, $values)]);
         }
         $count = is_array($request->input('id_barang')) ? count($request->input('id_barang')) : 0;
-        foreach (['jumlah', 'harga_beli', 'id_master_project_pekerjaan'] as $field) {
-            if ($request->has($field) && (!is_array($request->input($field)) || count($request->input($field)) !== $count)) {
+        foreach (['jumlah', 'harga_beli', 'id_master_project_pekerjaan', 'jenis_pekerjaan'] as $field) {
+            if ($request->has($field) && (!is_array($request->input($field)) || array_keys($request->input($field)) !== array_keys($request->input('id_barang', [])))) {
                 throw \Illuminate\Validation\ValidationException::withMessages([$field => 'Setiap barang harus memiliki isian yang lengkap.']);
             }
         }

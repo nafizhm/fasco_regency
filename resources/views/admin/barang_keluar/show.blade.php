@@ -47,6 +47,13 @@
 
                                     @if ($mode === 'unit')
                                         <div class="row mb-3">
+                                            <label for="unit_cluster" class="col-sm-2 col-form-label">Cluster</label>
+                                            <div class="col-sm-4">
+                                                <select id="unit_cluster" class="form-control" disabled aria-describedby="unit-cluster-help"><option value=""></option></select>
+                                                <small id="unit-cluster-help" class="form-text text-muted">Pilih lokasi perumahan, lalu cluster untuk melihat unitnya.</small>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-3">
                                             <label for="id_kavling" class="col-sm-2 col-form-label">Lokasi Unit</label>
                                             <div class="col-sm-4">
                                                 <select class="form-select select-kavling" name="id_kavling" id="id_kavling">
@@ -142,6 +149,7 @@
 @endsection
 
 @push('scripts')
+    @include('admin.barang_keluar.unit_cluster_script')
     @php
         $barangOptions = $barangList
             ->map(function ($barang) {
@@ -158,6 +166,7 @@
                 return [
                     'id_barang' => $detail->id_barang,
                     'id_master_project_pekerjaan' => $detail->id_master_project_pekerjaan,
+                    'jenis_pekerjaan' => $detail->jenis_pekerjaan ?: $detail->pekerjaan?->nama_pekerjaan,
                     'jumlah' => number_format((int) $detail->jumlah, 0, ',', '.'),
                     'stok' => number_format(
                         (int) (optional($barangList->firstWhere('id', $detail->id_barang))->stok ?? 0),
@@ -216,9 +225,7 @@
                         </select>
                     </td>
                     <td>
-                        <select class="form-select select-pekerjaan" name="id_master_project_pekerjaan[]">
-                            ${pekerjaanSelectOptions(item.id_master_project_pekerjaan ?? '')}
-                        </select>
+<input type="text" class="form-control" name="jenis_pekerjaan[]" maxlength="255" placeholder="Contoh: Pemasangan pondasi" required>
                     </td>
                     <td class="text-center align-middle stok-cell">${item.stok ?? '-'}</td>
                     <td>
@@ -262,6 +269,7 @@
 
         function addRow(item = {}) {
             const row = $(renderRow(item));
+            row.find('[name="jenis_pekerjaan[]"]').val(item.jenis_pekerjaan ?? '');
             $('#barangTable tbody').append(row);
             initBarangSelect(row);
             if (item.id_barang) {
@@ -274,21 +282,7 @@
         }
 
         function loadKavlingOptions(lokasiId, selectedId = '') {
-            $('#id_kavling').empty().append('<option value=""></option>');
-            if (!lokasiId) {
-                $('#id_kavling').trigger('change');
-                return;
-            }
-
-            $.get('{{ route('barang-keluar.unit-by-lokasi', ['id' => ':id']) }}'.replace(':id', lokasiId), function(response) {
-                response.forEach(function(item) {
-                    const selected = String(selectedId) === String(item.id_kavling) ? 'selected' : '';
-                    $('#id_kavling').append(
-                        `<option value="${item.id_kavling}" data-project-id="${item.id_master_project || ''}" ${selected}>${item.kode_kavling}</option>`
-                    );
-                });
-                $('#id_kavling').trigger('change');
-            });
+            window.loadOutgoingUnits(lokasiId, selectedId);
         }
 
         function refreshPekerjaanOptions() {

@@ -16,6 +16,7 @@ class BarangKeluarDetail extends Model
         'id_barang_keluar',
         'id_barang',
         'id_master_project_pekerjaan',
+        'jenis_pekerjaan',
         'jumlah',
         'keterangan',
     ];

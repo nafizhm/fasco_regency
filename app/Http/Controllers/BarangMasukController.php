@@ -32,7 +32,11 @@ class BarangMasukController extends Controller
         $permissions = HakAksesController::getUserPermissions();
 
         if ($request->ajax()) {
-            $data = BarangMasuk::with('lampiran')->orderBy('id', 'desc');
+            $data = BarangMasuk::with('lampiran')
+                ->orderByRaw('CASE WHEN total_harga > 0 AND terbayar >= total_harga THEN 1 ELSE 0 END')
+                ->orderByRaw('CASE WHEN jatuh_tempo IS NULL THEN 1 ELSE 0 END')
+                ->orderBy('jatuh_tempo')
+                ->orderByDesc('id');
 
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -42,6 +46,8 @@ class BarangMasukController extends Controller
                 ->addColumn('supplier', function ($row) {
                     return Supplier::find($row->id_supplier)?->nama ?? 'Supplier Tidak Diketahui';
                 })
+                ->editColumn('jatuh_tempo', fn ($row) => $row->jatuh_tempo
+                    ? Carbon::parse($row->jatuh_tempo)->translatedFormat('d F Y') : '-')
                 ->addColumn('jum_item', function ($row) {
                     return number_format((int) $row->jum_item, 0, ',', '.');
                 })
@@ -49,15 +55,22 @@ class BarangMasukController extends Controller
                     return '<div class="d-flex justify-content-between"><span>Rp.</span><span>' . number_format((int) $row->total_harga, 0, ',', '.') . '</span></div>';
                 })
                 ->addColumn('status_pembayaran', function ($row) {
-                    if ((int) $row->terbayar <= 0) {
-                        return '<span class="badge badge-danger">Belum Dibayar</span>';
+                    $settled = (int) $row->total_harga > 0 && (int) $row->terbayar >= (int) $row->total_harga;
+                    $label = $settled ? 'Lunas' : ((int) $row->terbayar > 0 ? 'Belum Lunas' : 'Belum Dibayar');
+                    $color = $settled ? 'success' : ((int) $row->terbayar > 0 ? 'warning' : 'danger');
+                    $html = '<span class="badge badge-' . $color . '">' . $label . '</span>';
+                    if (!$row->jatuh_tempo) {
+                        return $html . '<div class="small text-muted mt-1">Jatuh tempo belum diisi</div>';
                     }
-
-                    if ((int) $row->terbayar < (int) $row->total_harga) {
-                        return '<span class="badge badge-warning">Belum Lunas</span>';
+                    $due = Carbon::parse($row->jatuh_tempo, 'Asia/Jakarta')->startOfDay();
+                    $html .= '<div class="small mt-1">Jatuh tempo: ' . e($due->translatedFormat('d F Y')) . '</div>';
+                    if (!$settled) {
+                        $days = (int) Carbon::now('Asia/Jakarta')->startOfDay()->diffInDays($due, false);
+                        $description = $days < 0 ? 'Terlambat ' . abs($days) . ' hari'
+                            : ($days === 0 ? 'Jatuh tempo hari ini' : $days . ' hari lagi');
+                        $html .= '<div class="small font-weight-bold ' . ($days <= 0 ? 'text-danger' : 'text-muted') . '">' . $description . '</div>';
                     }
-
-                    return '<span class="badge badge-primary">Lunas</span>';
+                    return $html;
                 })
                 ->addColumn('action', function ($row) use ($permissions) {
                     $showUrl = route('barang-masuk.show', $row->id);
@@ -69,23 +82,23 @@ class BarangMasukController extends Controller
 
                     if ($permissions['edit']) {
                         if ($isLunas) {
-                            $btn .= '<a href="' . e($showUrl) . '" class="btn btn-secondary btn-sm mx-1">View</a>';
+                            $btn .= '<a href="' . e($showUrl) . '" class="btn btn-secondary btn-sm mx-1" data-toggle="tooltip" title="Lihat detail" aria-label="Lihat detail"><i class="fas fa-eye" aria-hidden="true"></i></a>';
                         } else {
-                            $btn .= '<a href="' . e($showUrl) . '" class="btn btn-primary btn-sm mx-1">Edit</a>';
+                            $btn .= '<a href="' . e($showUrl) . '" class="btn btn-primary btn-sm mx-1" data-toggle="tooltip" title="Edit" aria-label="Edit"><i class="fas fa-edit" aria-hidden="true"></i></a>';
                             $btn .= '<button type="button" class="btn btn-success btn-sm mx-1 btn-open-payment"'
                                 . ' data-id="' . e($row->id) . '"'
                                 . ' data-payment-url="' . e($paymentUrl) . '"'
                                 . ' data-supplier="' . e(Supplier::find($row->id_supplier)?->nama ?? 'Supplier Tidak Diketahui') . '"'
                                 . ' data-total="' . e((string) $row->total_harga) . '"'
                                 . ' data-paid="' . e((string) $row->terbayar) . '"'
-                                . '>Pembayaran</button>';
+                                . ' data-toggle="tooltip" title="Pembayaran" aria-label="Pembayaran"><i class="fas fa-money-bill-wave" aria-hidden="true"></i></button>';
                         }
                     }
                     if ($permissions['hapus']) {
                         $btn .= '<form action="' . e($deleteUrl) . '" method="POST" style="display:inline;">'
                             . csrf_field()
                             . method_field('DELETE')
-                            . '<button type="submit" class="delete-button btn btn-danger btn-sm mx-1">Hapus</button></form>';
+                            . '<button type="submit" class="delete-button btn btn-danger btn-sm mx-1" data-toggle="tooltip" title="Hapus" aria-label="Hapus"><i class="fas fa-trash" aria-hidden="true"></i></button></form>';
                     }
 
                     $btn .= '</div>';
@@ -227,6 +240,7 @@ class BarangMasukController extends Controller
                 'id_po' => null,
                 'id_supplier' => $request->id_supplier,
                 'tanggal' => $request->tanggal,
+                'jatuh_tempo' => $request->input('jatuh_tempo'),
                 'nama_penerima' => $request->nama_penerima,
                 'total_harga' => $summary['total_harga'],
                 'jum_item' => $summary['jum_item'],
@@ -286,6 +300,7 @@ class BarangMasukController extends Controller
             $data->update([
                 'id_supplier' => $request->id_supplier,
                 'tanggal' => $request->tanggal,
+                'jatuh_tempo' => $request->input('jatuh_tempo'),
                 'nama_penerima' => $request->nama_penerima,
                 'id_po' => null,
                 'total_harga' => $summary['total_harga'],
@@ -460,6 +475,7 @@ class BarangMasukController extends Controller
             'id_supplier' => 'required|exists:supplier,id',
             'nama_penerima' => 'required|string|max:50',
             'tanggal' => 'required|date',
+            'jatuh_tempo' => 'nullable|date_format:Y-m-d|after_or_equal:tanggal',
             'id_barang' => 'required|array|min:1',
             'id_barang.*' => 'required|distinct|exists:barang,id',
             'jumlah' => 'required|array|min:1',
@@ -503,6 +519,8 @@ class BarangMasukController extends Controller
             'id_supplier.exists' => 'Supplier tidak ditemukan.',
             'nama_penerima.required' => 'Nama penerima harus diisi.',
             'tanggal.required' => 'Tanggal masuk harus diisi.',
+            'jatuh_tempo.date_format' => 'Tanggal jatuh tempo tidak valid.',
+            'jatuh_tempo.after_or_equal' => 'Jatuh tempo tidak boleh sebelum tanggal masuk.',
             'id_barang.required' => 'Minimal 1 barang harus diisi.',
             'id_barang.*.required' => 'Barang harus dipilih untuk setiap baris.',
             'id_barang.*.distinct' => 'Barang tidak boleh dipilih lebih dari satu kali.',

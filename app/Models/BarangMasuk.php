@@ -16,6 +16,7 @@ class BarangMasuk extends Model
         'id_po',
         'id_supplier',
         'tanggal',
+        'jatuh_tempo',
         'nama_penerima',
         'total_harga',
         'jum_item',

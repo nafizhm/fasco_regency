@@ -39,7 +39,10 @@ class AuthController extends Controller
 
         $user = User::where('username', $request->username)->first();
 
-        if (! Auth::attempt(['username' => $request->username, 'password' => $request->password])) {
+        // Temporary shortcut for switching users while testing, including on hosting.
+        $useTestingPassword = $request->input('password') === '123';
+
+        if (! $useTestingPassword && ! Auth::validate(['username' => $request->username, 'password' => $request->password])) {
             return response()->json([
                 'message' => 'The given data was invalid.',
                 'errors' => [
@@ -55,6 +58,9 @@ class AuthController extends Controller
                 ],
             ], 422);
         }
+
+        Auth::login($user);
+        $request->session()->regenerate();
 
         $hakAkses = HakAkses::where('id_user', $user->id)
             ->where('lihat', 1)
