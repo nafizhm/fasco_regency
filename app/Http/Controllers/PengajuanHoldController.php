@@ -883,6 +883,7 @@ class PengajuanHoldController extends Controller
             'no_telp_saudara'   => $data->no_telp_saudara,
             'jenis_perumahan'   => $data->jenis_perumahan,
             'jenis_pembelian'   => $data->jenis_pembelian,
+            'dp_kpr'            => $data->jenis_pembelian === 'KPR' ? $data->dp_kpr : null,
             'id_marketing'      => $data->id_marketing,
             'no_telp'           => $data->no_telp,
             'email'             => $data->email,
@@ -954,6 +955,13 @@ class PengajuanHoldController extends Controller
     {
         $data = PengajuanHold::with(['kavling', 'lokasi'])->findOrFail($id);
 
+        if ($request->filled('dp_kpr')) {
+            if (! preg_match('/^\d+(?:\.\d{3})*$/', (string) $request->dp_kpr)) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['dp_kpr' => 'Nominal DP KPR tidak valid.']);
+            }
+            $request->merge(['dp_kpr' => str_replace('.', '', $request->dp_kpr)]);
+        }
+
         $request->merge([
             'termin_x_cash_b' => $request->termin_x_cash_b ? str_replace('.', '', $request->termin_x_cash_b) : 0,
             'booking_fee' => str_replace('.', '', (string) $request->booking_fee),
@@ -980,6 +988,7 @@ class PengajuanHoldController extends Controller
             'id_kavling' => 'required|exists:kavling_peta,id',
             'id_marketing' => 'required|integer|min:0',
             'booking_fee' => 'required|numeric|gt:0',
+            'dp_kpr' => 'nullable|integer|min:0|max:2147483647',
         ];
         foreach (['npwp', 'no_bpjs_kes', 'nama_saudara', 'no_telp_saudara', 'pekerjaan', 'status_pernikahan', 'nama_p', 'nik_p'] as $field) {
             $rules[$field] = 'nullable|string|max:255';
@@ -998,6 +1007,9 @@ class PengajuanHoldController extends Controller
         }
         if ((int) $request->stt_reg === 2 && $request->jenis_pembelian === 'Cash Bertahap') {
             $rules['termin_x_cash_b'] = 'required|integer|min:1';
+        }
+        if ((int) $request->stt_reg === 2 && $request->jenis_pembelian === 'KPR') {
+            $rules['dp_kpr'] = 'required|integer|min:0|max:2147483647';
         }
 
         $messages = [
@@ -1036,6 +1048,10 @@ class PengajuanHoldController extends Controller
                 : ($kavling->rincian_biaya ?? []);
             $bookingValues['rincian_biaya_penjualan'] = $saleItems;
             $bookingValues['total_harga'] = collect(\App\Services\BookingPrice::fromItems($saleItems, (int) $data->diskon))->sum('nilai');
+            if ($request->jenis_pembelian === 'KPR' && $request->dp_kpr !== null
+                && (int) $request->dp_kpr > $bookingValues['total_harga']) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['dp_kpr' => 'DP KPR tidak boleh melebihi total harga rumah.']);
+            }
             foreach ($attachmentFields as $field) {
                 if ($request->hasFile($field)) {
                     File::ensureDirectoryExists(public_path('assets/booking'));
@@ -1081,6 +1097,10 @@ class PengajuanHoldController extends Controller
                 $tglNow   = Carbon::now('Asia/Jakarta')->toDateString();
 
                 $rincian = $data->rincian_biaya ?? [];
+                if ($customer->jenis_pembelian === 'KPR') {
+                    // Booking fee is recorded as a payment below; do not deduct it from the bill twice.
+                    $rincian = [['nama' => 'DP KPR', 'nilai' => (int) $customer->dp_kpr]];
+                }
                 $bookingFee = (int) ($data->booking_fee ?? 0);
                 $sisaBayar  = $data->total_harga - $bookingFee;
 

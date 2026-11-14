@@ -275,6 +275,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('customer/tempo', [CustomerController::class, 'getTempo'])->name('customer.tempo');
         Route::get('customer/tempo/{id}', [CustomerController::class, 'showTempo'])->name('customer.show-tempo');
         Route::put('customer/tempo/{id}', [CustomerController::class, 'postTempo'])->name('customer.post-tempo');
+        Route::get('customer/{customer}/dp-kpr', [\App\Http\Controllers\Customer\CustomerDpController::class, 'show'])->name('customer.dp-kpr.show');
+        Route::put('customer/{customer}/dp-kpr', [\App\Http\Controllers\Customer\CustomerDpController::class, 'update'])->name('customer.dp-kpr.update');
         Route::resource('customer', CustomerController::class);
 
         Route::resource('upload-file', UploudFileController::class);

@@ -440,6 +440,15 @@
                                         </div>
                                     </div>
 
+                                    <div id="trx_kpr" style="display:none;">
+                                        <div class="form-group row">
+                                            <label for="dp_kpr" class="col-sm-2 col-form-label">DP Wajib KPR (Rp)</label>
+                                            <div class="col-sm-5">
+                                                <input name="dp_kpr" id="dp_kpr" class="form-control format-number" inputmode="numeric" value="{{ $data->dp_kpr !== null ? number_format($data->dp_kpr, 0, ',', '.') : '' }}" disabled>
+                                                <small class="text-muted">Isi total DP sebelum dikurangi booking fee. Piutang KPR dihitung dari DP ini, bukan harga rumah.</small>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <!-- CASH ==================================> -->
                                     <hr class="hr-transaksi" style="display: none;">
                                     <div id="trx_cash" style="display: none;">
@@ -662,6 +671,8 @@
             function hideAllTransactionForms() {
                 $('#trx_cash').hide();
                 $('#trx_cash_bertahap').hide();
+                $('#trx_kpr').hide();
+                $('#dp_kpr').prop('disabled', true);
                 $('.hr-transaksi').hide();
             }
 
@@ -670,6 +681,10 @@
                 hideAllTransactionForms();
 
                 switch (selected) {
+                    case 'KPR':
+                        $('#trx_kpr').show();
+                        $('#dp_kpr').prop('disabled', false);
+                        break;
                     case 'Pembelian Cash':
                         $('#trx_cash').prev('.hr-transaksi').show();
                         $('#trx_cash').show();

@@ -51,7 +51,10 @@ class CustomerController extends Controller
                         ? '<div><small><strong>' . strtoupper($row->jenis_pembelian) . '</strong></small></div>'
                         : '';
 
-                    return "$tgl<br>$kode<br>$jenisPembelian";
+                    $dp = strtoupper(trim($row->jenis_pembelian ?? '')) === 'KPR'
+                        ? ($row->dp_kpr === null ? '<div><span class="badge badge-warning">DP belum ditentukan</span></div>'
+                            : '<div><small>DP: Rp '.number_format($row->dp_kpr, 0, ',', '.').'</small></div>') : '';
+                    return "$tgl<br>$kode<br>$jenisPembelian$dp";
                 })
                 ->editColumn('id_marketing', function ($row) {
                     return $row->marketing->nama_marketing ?? '<span class="badge bg-danger"> ' . 'None Marketing' . '</span>';
@@ -100,6 +103,9 @@ class CustomerController extends Controller
 
                     if ($permissions['edit']) {
                         $btn .= '<button class="btn btn-primary btn-sm edit-button" data-id="' . e($row->id) . '" data-url="' . e($editUrl) . '" data-toggle="tooltip" title="Edit" aria-label="Edit"><i class="fas fa-edit" aria-hidden="true"></i></button> ';
+                        if (strtoupper(trim($row->jenis_pembelian ?? '')) === 'KPR' && (int) Auth::user()->id_role !== 2) {
+                            $btn .= '<button type="button" class="btn btn-warning btn-sm dp-kpr-button" data-url="'.e(route('customer.dp-kpr.show', $row->id)).'">DP KPR</button> ';
+                        }
                     }
 
                     $btn .= '<a href="' . e($uploadUrl) . '" class="btn btn-info btn-sm" data-toggle="tooltip" title="Upload File" aria-label="Upload File"><i class="fas fa-upload" aria-hidden="true"></i></a>';
@@ -142,6 +148,12 @@ class CustomerController extends Controller
 
     public function store(Request $request)
     {
+        if ($request->filled('dp_kpr')) {
+            if (! preg_match('/^\d+(?:\.\d{3})*$/', (string) $request->dp_kpr)) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['dp_kpr' => 'Nominal DP KPR tidak valid.']);
+            }
+            $request->merge(['dp_kpr' => str_replace('.', '', $request->dp_kpr)]);
+        }
         $rules = [
             'nama_lengkap'        => 'required',
             'nik'                 => 'required',
@@ -154,6 +166,7 @@ class CustomerController extends Controller
             'id_kavling'          => 'required',
             'id_status_progres'   => 'required',
             'jenis_pembelian'     => 'required',
+            'dp_kpr'              => 'nullable|required_if:jenis_pembelian,KPR|integer|min:0|max:2147483647',
             'pembayaran_booking'  => 'required_if:jenis_pembelian,Booking',
             'tgl_batas_booking'   => 'required_if:jenis_pembelian,Booking',
             'pembayaran_cash'     => 'required_if:jenis_pembelian,Pembelian Cash',
@@ -226,6 +239,7 @@ class CustomerController extends Controller
                 'ket_cashback'        => $request->ket_cashback ?? '',
                 'id_marketing'        => $request->id_marketing ?? 0,
                 'jenis_pembelian'     => $request->jenis_pembelian,
+                'dp_kpr'              => $request->jenis_pembelian === 'KPR' ? $request->dp_kpr : null,
                 'pembayaran_booking'  => str_replace('.', '', $request->pembayaran_booking ?? 0),
                 'tgl_batas_booking'   => $request->tgl_batas_booking ?? null,
                 'ket_booking'         => $request->ket_booking ?? '',

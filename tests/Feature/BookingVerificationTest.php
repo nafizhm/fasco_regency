@@ -176,6 +176,7 @@ class BookingVerificationTest extends TestCase
         }
         return $this->payload([
             'stt_reg' => 2, 'jenis_pembelian' => 'KPR', 'id_bank' => 1, 'id_metode_bayar' => 1,
+            'dp_kpr' => '30.000.000',
             'foto_ktp' => UploadedFile::fake()->image('new.png'),
         ]);
     }
@@ -209,6 +210,8 @@ class BookingVerificationTest extends TestCase
     {
         DB::table('pengajuan_hold')->where('id', 1)->update(['diskon' => 10000000]);
         $payload = $this->prepareApproval();
+        $payload['jenis_pembelian'] = 'Pembelian Cash';
+        $payload['an_surat_cash'] = 'Pembeli Cash';
         $this->mock(\App\Http\Controllers\GenerateNumberController::class)
             ->shouldReceive('generateNomorDokumen')->andReturn('TEST-DISCOUNT');
         $this->post('/_test/booking/1', $payload, ['Accept' => 'application/json'])->assertOk();
@@ -225,6 +228,9 @@ class BookingVerificationTest extends TestCase
             ->shouldReceive('generateNomorDokumen')->once()->andReturn('TEST-001');
         $this->post('/_test/booking/1', $payload, ['Accept' => 'application/json'])->assertOk();
         $this->assertDatabaseHas('customer', ['nama_lengkap' => 'NAMA DIPERBARUI', 'nik' => '0012345678901234']);
+        $this->assertDatabaseHas('customer', ['dp_kpr' => 30000000, 'total_harga' => 150000000]);
+        $this->assertEquals(30000000, DB::table('piutang')->sum('nominal'));
+        $this->assertEquals(30000000 - (int) str_replace('.', '', $payload['booking_fee']), DB::table('piutang')->sum('sisa_bayar'));
         $data = PengajuanHold::findOrFail(1);
         $this->assertSame('2', $data->stt_reg);
         $this->assertFileExists(public_path('assets/customer/' . $data->foto_ktp));

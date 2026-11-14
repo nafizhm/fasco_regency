@@ -383,10 +383,51 @@
         </div>
     </div>
 
+    <div class="modal fade" id="modalDpKpr" tabindex="-1" aria-labelledby="dpKprTitle" aria-hidden="true">
+        <div class="modal-dialog"><div class="modal-content">
+            <form id="formDpKpr">
+                @csrf
+                <div class="modal-header"><h5 class="modal-title" id="dpKprTitle">Koreksi DP KPR</h5><button type="button" class="close" data-dismiss="modal" aria-label="Tutup">&times;</button></div>
+                <div class="modal-body">
+                    <p id="dp-kpr-customer" class="font-weight-bold"></p>
+                    <p>Total harga rumah: <strong id="dp-kpr-house-price"></strong></p>
+                    <div class="alert alert-info">Isi total DP yang wajib dibayar. Booking fee dan pembayaran yang sudah dicatat akan mengurangi DP secara otomatis.</div>
+                    <div class="form-group"><label for="dp-kpr-value">DP Wajib (Rp)</label><input class="form-control format-number" inputmode="numeric" id="dp-kpr-value" name="dp_kpr" required></div>
+                    <div id="dp-kpr-error" class="text-danger" role="alert"></div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button><button class="btn btn-primary" id="save-dp-kpr">Simpan DP &amp; Hitung Piutang</button></div>
+            </form>
+        </div></div>
+    </div>
 @endsection
 
 @push('scripts')
     <script>
+        $(document).on('click', '.dp-kpr-button', function() {
+            $('#dp-kpr-error').text('');
+            $.get($(this).data('url')).done(function(data) {
+                $('#dp-kpr-customer').text(data.nama);
+                $('#dp-kpr-house-price').text('Rp ' + new Intl.NumberFormat('id-ID').format(data.total_harga));
+                $('#dp-kpr-value').val(data.dp_kpr === null ? '' : new Intl.NumberFormat('id-ID').format(data.dp_kpr));
+                $('#formDpKpr').attr('action', data.url);
+                $('#modalDpKpr').modal('show');
+            }).fail(function() { toastr.error('Tidak dapat membuka DP KPR. Periksa hak akses.'); });
+        });
+        $('#formDpKpr').on('submit', function(e) {
+            e.preventDefault();
+            const button = $('#save-dp-kpr').prop('disabled', true).text('Menyimpan...');
+            $.ajax({url: this.action, method: 'PUT', data: $(this).serialize(), headers: {'Accept': 'application/json'},
+                success: function(data) {
+                    $('#modalDpKpr').modal('hide'); toastr.success(data.message);
+                    $('.data-table').DataTable().ajax.reload(null, false);
+                },
+                error: function(xhr) {
+                    const errors = xhr.responseJSON?.errors;
+                    $('#dp-kpr-error').text(errors ? Object.values(errors).flat().join(' ') : (xhr.responseJSON?.message || 'Gagal menyimpan DP.'));
+                },
+                complete: function() { button.prop('disabled', false).text('Simpan DP & Hitung Piutang'); }
+            });
+        });
         $(document).ready(function() {
             $('.select-lokasi').select2({
                 theme: "bootstrap4",

@@ -20,14 +20,17 @@ class CustomerReceivableService
             if (! $unit) return false;
 
             // Preserve the agreed customer price; use the unit price for older records without it.
-            $amount = (int) ($customer->total_harga ?: ($unit->total_harga ?: ($unit->hrg_jual + $unit->biaya_surat + $unit->peningkatan_mutu)));
-            if ($amount <= 0) return false;
+            $isKpr = strtoupper(trim($customer->jenis_pembelian ?? '')) === 'KPR';
+            if ($isKpr && $customer->dp_kpr === null) return false;
+            $amount = $isKpr ? (int) $customer->dp_kpr
+                : (int) ($customer->total_harga ?: ($unit->total_harga ?: ($unit->hrg_jual + $unit->biaya_surat + $unit->peningkatan_mutu)));
+            if ($amount < 0 || (! $isKpr && $amount === 0)) return false;
 
             Piutang::create([
                 'id_customer' => $customer->id,
                 'id_bank' => 0,
                 'tanggal_piutang' => $customer->tgl_booking ?: ($customer->tanggal_verif ?: now()->toDateString()),
-                'deskripsi' => 'Harga Rumah Blok '.$unit->kode_kavling,
+                'deskripsi' => ($isKpr ? 'DP KPR Blok ' : 'Harga Rumah Blok ').$unit->kode_kavling,
                 'nominal' => $amount,
                 'lampiran' => '',
                 'status' => 1,

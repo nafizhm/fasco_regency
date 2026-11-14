@@ -842,6 +842,9 @@ class PembayaranController extends Controller
     public function DeleteTagihan($id)
     {
         $tagihan     = Piutang::findOrFail($id);
+        if ($tagihan->customer?->jenis_pembelian === 'KPR' && str_starts_with(mb_strtolower($tagihan->deskripsi ?? ''), 'dp kpr')) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['tagihan' => 'Tagihan DP KPR dikelola melalui tombol DP KPR pada Data Customer.']);
+        }
         $id_customer = $tagihan->id_customer;
         $tagihan->delete();
 
@@ -875,6 +878,11 @@ class PembayaranController extends Controller
 
             $cust = Customer::whereKey($id_customer)->lockForUpdate()->first();
             $tagihan->refresh();
+            if ($cust && $cust->jenis_pembelian === 'KPR'
+                && (str_contains(mb_strtolower($tagihan->deskripsi ?? ''), 'harga rumah')
+                    || str_starts_with(mb_strtolower($tagihan->deskripsi ?? ''), 'dp kpr'))) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['nominal' => 'Ubah nominal DP melalui tombol DP KPR pada Data Customer agar piutang tetap sesuai.']);
+            }
             if ($cust && str_contains(mb_strtolower($tagihan->deskripsi ?? ''), 'harga rumah')) {
                 $gross = (int) ($cust->harga_jual_awal ?? ((int) $cust->hrg_jual + (int) $cust->diskon));
                 app(\App\Services\CustomerSalePrice::class)->sync($cust, $gross + $nominalBaru - (int) $tagihan->nominal, (int) $cust->diskon);

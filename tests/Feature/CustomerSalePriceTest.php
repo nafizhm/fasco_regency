@@ -53,6 +53,16 @@ class CustomerSalePriceTest extends TestCase
         return ['nama_lengkap' => 'Customer Baru', 'nik' => '123', 'harga_jual_awal' => '160.000.000', 'diskon' => '20.000.000'];
     }
 
+    public function test_kpr_price_edit_does_not_increase_dp_receivable(): void
+    {
+        DB::table('customer')->where('id', 1)->update(['jenis_pembelian' => 'KPR', 'dp_kpr' => 30000000]);
+        DB::table('piutang')->where('id', 1)->update(['deskripsi' => 'DP KPR Blok A1', 'nominal' => 30000000]);
+        $this->putJson('/_test/customer-sale/1', $this->payload())->assertOk();
+        $this->assertDatabaseHas('customer', ['id' => 1, 'dp_kpr' => 30000000, 'total_harga' => 145000000]);
+        $this->assertDatabaseHas('piutang', ['id' => 1, 'nominal' => 30000000, 'deskripsi' => 'DP KPR Blok A1']);
+        $this->putJson('/_test/customer-house-bill/1', ['nominal' => '50.000.000'])->assertUnprocessable();
+    }
+
     public function test_edit_updates_sale_and_receivables_preserves_payments_and_is_repeatable(): void
     {
         for ($i = 0; $i < 2; $i++) $this->putJson('/_test/customer-sale/1', $this->payload())->assertOk();

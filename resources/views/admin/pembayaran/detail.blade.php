@@ -23,6 +23,16 @@
                     <h3 class="font-weight-bold text-lg text-white">Detail Pembayaran</h3>
                 </div>
                 <div class="card-body">
+                    @if(strtoupper(trim($customer->jenis_pembelian ?? '')) === 'KPR')
+                        <div class="alert alert-{{ $customer->dp_kpr === null ? 'warning' : 'info' }}">
+                            @if($customer->dp_kpr === null)
+                                DP KPR belum ditentukan. Admin perlu mengisi nominal melalui tombol <strong>DP KPR</strong> pada Data Customer agar piutang tidak memakai harga rumah.
+                            @else
+                                DP wajib KPR: <strong>Rp {{ number_format($customer->dp_kpr, 0, ',', '.') }}</strong>. Booking fee dan pembayaran DP mengurangi tagihan ini.
+                            @endif
+                            <a class="alert-link" href="{{ route('customer.index') }}">Buka Data Customer</a>
+                        </div>
+                    @endif
 
                     <div class="row mt-2">
                         <div class="col col-7">

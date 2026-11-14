@@ -272,3 +272,28 @@ COMMIT;
 -- Perubahan login password testing, warna/centang Hak Akses, toggle Semua M,
 -- total per item Barang Masuk, separator Harga Satuan, dan cetak Word berada di file aplikasi.
 -- Perubahan-perubahan tersebut tidak membutuhkan SQL tambahan.
+
+-- 8. Piutang pembeli KPR memakai DP wajib. DP lama tetap NULL sampai ditentukan admin.
+SET @session_sql = IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'customer' AND COLUMN_NAME = 'dp_kpr') = 0,
+    'ALTER TABLE `customer` ADD COLUMN `dp_kpr` BIGINT UNSIGNED NULL',
+    'SELECT 1');
+PREPARE session_stmt FROM @session_sql;
+EXECUTE session_stmt;
+DEALLOCATE PREPARE session_stmt;
+
+SET @session_sql = IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pengajuan_hold' AND COLUMN_NAME = 'dp_kpr') = 0,
+    'ALTER TABLE `pengajuan_hold` ADD COLUMN `dp_kpr` BIGINT UNSIGNED NULL',
+    'SELECT 1');
+PREPARE session_stmt FROM @session_sql;
+EXECUTE session_stmt;
+DEALLOCATE PREPARE session_stmt;
+
+INSERT INTO `migrations` (`migration`, `batch`)
+SELECT '2026_11_14_030000_add_customer_dp_kpr', next_batch.batch
+FROM (SELECT COALESCE(MAX(`batch`), 0) + 1 AS batch FROM `migrations`) AS next_batch
+WHERE NOT EXISTS (SELECT 1 FROM `migrations` WHERE `migration` = '2026_11_14_030000_add_customer_dp_kpr');
+-- Tidak ada UPDATE nominal piutang massal: admin mengoreksi DP setiap customer melalui aplikasi.

@@ -32,9 +32,13 @@ class CustomerSalePrice
                 throw ValidationException::withMessages(['harga_jual_awal' => 'Harga customer arsip tidak dapat diubah.']);
             }
             $values = $this->values($customer, $gross, $discount);
+            if (strtoupper(trim($customer->jenis_pembelian ?? '')) === 'KPR' && $customer->dp_kpr !== null
+                && (int) $customer->dp_kpr > $values['total_harga']) {
+                throw ValidationException::withMessages(['harga_jual_awal' => 'Total harga rumah tidak boleh lebih kecil dari DP wajib KPR.']);
+            }
             $delta = $values['total_harga'] - (int) $customer->total_harga;
             $bills = Piutang::where('id_customer', $customer->id)->lockForUpdate()->get();
-            if ($delta !== 0 && $bills->isNotEmpty()) {
+            if ($delta !== 0 && $bills->isNotEmpty() && strtoupper(trim($customer->jenis_pembelian ?? '')) !== 'KPR') {
                 $houseBills = $bills->filter(fn ($bill) => str_contains(mb_strtolower($bill->deskripsi ?? ''), 'harga rumah'));
                 if ($houseBills->count() !== 1) {
                     throw ValidationException::withMessages(['harga_jual_awal' => 'Tagihan Harga Rumah harus berjumlah satu agar koreksi harga tidak mengubah tagihan lain. Periksa detail tagihan customer.']);
