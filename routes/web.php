@@ -160,6 +160,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::prefix('admin')->controller(DashboardController::class)->group(function () {
         Route::get('/dashboard', 'dashboard')->name('dashboard.index');
+        Route::get('/dashboard/piutang', 'piutang')->name('dashboard.piutang');
         Route::get('/dashboard/lokasi-penjualan/{id}', 'showLokasiPenjualan')->name('dashboard.lokasi-penjualan-show');
         Route::get('/dashboard/customer-status-progres/{id}', 'showCustomer')->name('dashboard.customer-status-progres-show');
         Route::get('/dashboard/customer-bank/{id}', 'showCustomer')->name('dashboard.customer-bank-show');

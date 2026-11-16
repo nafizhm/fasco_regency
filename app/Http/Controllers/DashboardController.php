@@ -16,6 +16,20 @@ use Yajra\DataTables\Facades\DataTables;
 
 class DashboardController extends Controller
 {
+    public function piutang(\App\Services\DashboardReceivableService $receivables)
+    {
+        $customers = $receivables->customers([
+            'lokasi', 'kavling',
+            'piutangs' => fn ($query) => $query->orderBy('tanggal_piutang')->orderBy('id'),
+            'pemasukans' => fn ($query) => $query
+                ->where(fn ($payment) => $payment->whereNull('keterangan')
+                    ->orWhere('keterangan', 'NOT LIKE', 'Biaya ganti nama%'))
+                ->orderBy('tanggal')->orderBy('id'),
+        ]);
+
+        return view('admin.dashboard.piutang', compact('customers'));
+    }
+
     public function dashboard()
     {
         if (! Auth::check()) {

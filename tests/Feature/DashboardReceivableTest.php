@@ -42,7 +42,13 @@ class DashboardReceivableTest extends TestCase
         }
 
         $this->assertSame(['piutang' => 1200, 'piutang_customer' => 2], app(DashboardReceivableService::class)->summary());
+        $customers = app(DashboardReceivableService::class)->customers();
+        $this->assertSame([1, 4], $customers->pluck('id')->all());
+        $this->assertSame([1000, 200], $customers->pluck('sisa_piutang')->all());
+        $this->assertSame(1500, (int) $customers->first()->total_tagihan);
+        $this->assertSame(500, (int) $customers->first()->total_bayar);
         DB::table('pemasukan')->insert(['id_customer' => 1, 'nominal' => 1000, 'keterangan' => 'Pelunasan']);
         $this->assertSame(['piutang' => 200, 'piutang_customer' => 1], app(DashboardReceivableService::class)->summary());
+        $this->assertSame([4], app(DashboardReceivableService::class)->customers()->pluck('id')->all());
     }
 }

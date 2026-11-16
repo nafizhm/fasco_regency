@@ -598,14 +598,15 @@
           </div>
         </article>
 
-        <article class="kpi-card">
+        <a href="{{ route('dashboard.piutang') }}" class="kpi-card" style="color:inherit;text-decoration:none" aria-label="Lihat detail piutang">
           <div class="kpi-icon purple"><i class="fa-regular fa-credit-card"></i></div>
           <div>
             <div class="kpi-label">Piutang</div>
             <div class="kpi-value money" style="color:#a25e00">Rp {{ number_format($summaryMetrics['piutang'] ?? 0, 0, ',', '.') }}</div>
             <div class="kpi-note">Total {{ $summaryMetrics['piutang_customer'] ?? 0 }} customer</div>
+            <div class="kpi-note">Lihat detail &rarr;</div>
           </div>
-        </article>
+        </a>
 
         <article class="kpi-card">
           <div class="kpi-icon red"><i class="fa-regular fa-clock"></i></div>

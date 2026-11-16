@@ -8,24 +8,29 @@ class DashboardReceivableService
 {
     public function summary(): array
     {
-        $customers = Customer::where('stt_arsip', 0)
+        $customers = $this->customers();
+
+        return [
+            'piutang' => (int) $customers->sum('sisa_piutang'),
+            'piutang_customer' => $customers->count(),
+        ];
+    }
+
+    public function customers(array $relations = []): \Illuminate\Database\Eloquent\Collection
+    {
+        return Customer::where('stt_arsip', 0)
+            ->with($relations)
             ->withSum('piutangs as total_tagihan', 'nominal')
             ->withSum(['pemasukans as total_bayar' => function ($query) {
                 $query->where(fn ($payment) => $payment->whereNull('keterangan')
                     ->orWhere('keterangan', 'NOT LIKE', 'Biaya ganti nama%'));
             }], 'nominal')
-            ->get(['id']);
-
-        $total = 0;
-        $count = 0;
-        foreach ($customers as $customer) {
-            $remaining = max((int) $customer->total_tagihan - (int) $customer->total_bayar, 0);
-            if ($remaining > 0) {
-                $total += $remaining;
-                $count++;
-            }
-        }
-
-        return ['piutang' => $total, 'piutang_customer' => $count];
+            ->get()
+            ->each(function ($customer) {
+                $customer->sisa_piutang = max((int) $customer->total_tagihan - (int) $customer->total_bayar, 0);
+            })
+            ->filter(fn ($customer) => $customer->sisa_piutang > 0)
+            ->sortByDesc('sisa_piutang')
+            ->values();
     }
 }
