@@ -506,6 +506,16 @@
                         </div>
 
                         <div class="form-group row">
+                            <label class="col-sm-3 col-form-label" for="gunakan_ttd">Tanda Tangan</label>
+                            <div class="col-sm-7 pt-2">
+                                <div class="form-check">
+                                    <input type="checkbox" name="gunakan_ttd" id="gunakan_ttd" value="1" class="form-check-input">
+                                    <label class="form-check-label" for="gunakan_ttd">Gunakan TTD pada kwitansi pembayaran ini</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
                             <label class="col-sm-3 col-form-label">Bukti Pembayaran <small class="text-muted">(opsional)</small></label>
                             <div class="col-sm-4">
                                 <input type="file" class="mb-2" id="file" name="file"
@@ -643,6 +653,16 @@
                             <label for="edit_catatan_pembayaran" class="col-sm-3 col-form-label">Catatan Pembayaran</label>
                             <div class="col-sm-7">
                                 <textarea name="catatan_pembayaran" id="edit_catatan_pembayaran" class="form-control" rows="3" maxlength="5000" placeholder="Ditampilkan pada bagian Untuk Pembayaran di kwitansi"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-sm-3 col-form-label" for="edit_gunakan_ttd">Tanda Tangan</label>
+                            <div class="col-sm-7 pt-2">
+                                <div class="form-check">
+                                    <input type="checkbox" name="gunakan_ttd" id="edit_gunakan_ttd" value="1" class="form-check-input">
+                                    <label class="form-check-label" for="edit_gunakan_ttd">Gunakan TTD pada kwitansi pembayaran ini</label>
+                                </div>
                             </div>
                         </div>
 
@@ -1546,6 +1566,7 @@
                     $('#edit_nominal_bayar').val(formatNumber(data.nominal));
                     $('#edit_keterangan_pembayaran').val(data.keterangan);
                     $('#edit_catatan_pembayaran').val(data.catatan_pembayaran || '');
+                    $('#edit_gunakan_ttd').prop('checked', Boolean(data.gunakan_ttd));
 
                     let preview = $('#editPreviewLampiran');
                     if (data.lampiran) {

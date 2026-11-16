@@ -130,25 +130,17 @@ class SpkController extends Controller
     public function destroy(Spk $spk)
     {
         $this->authorizeInventory('spk.index', 'hapus');
-        DB::transaction(function () use ($spk) {
+        $proofs = DB::transaction(function () use ($spk) {
             $locked = Spk::lockForUpdate()->findOrFail($spk->id);
-            if ($locked->pembayaran()->exists()) throw ValidationException::withMessages(['spk' => 'SPK yang sudah memiliki pembayaran tidak dapat dihapus.']);
+            $proofs = $locked->pembayaran()->whereNotNull('bukti_bayar')->pluck('bukti_bayar')->all();
+            $locked->pembayaran()->delete();
             $locked->delete();
+
+            return $proofs;
         });
+        if ($proofs) Storage::disk('local')->delete($proofs);
 
-        return redirect()->route('spk.index')->with('success', 'SPK berhasil dihapus.');
-    }
-
-    public function cancel(Spk $spk)
-    {
-        $this->authorizeInventory('spk.index', 'edit');
-        DB::transaction(function () use ($spk) {
-            $locked = Spk::lockForUpdate()->findOrFail($spk->id);
-            if ($locked->dibatalkan_pada) return;
-            $locked->update(['dibatalkan_pada' => now('Asia/Jakarta'), 'versi' => $locked->versi + 1]);
-        });
-
-        return back()->with('success', 'SPK berhasil dibatalkan. Riwayat pembayaran tetap tersimpan.');
+        return redirect()->route('spk.index')->with('success', 'SPK beserta seluruh pembayaran dan bukti bayarnya berhasil dihapus.');
     }
 
     public function payment(Request $request, Spk $spk)

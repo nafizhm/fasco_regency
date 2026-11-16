@@ -604,8 +604,11 @@ class PembayaranController extends Controller
                 $logoData = 'data:' . $imageInfo['mime'] . ';base64,' . base64_encode(file_get_contents($logoPath));
             }
         }
+        $signatureData = $pembayaran->gunakan_ttd
+            ? 'data:image/png;base64,' . base64_encode(file_get_contents(resource_path('images/ttd-pembayaran.png')))
+            : null;
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.pembayaran.kwitansi', compact(
-            'pembayaran', 'nasabah', 'lokasi', 'kavling', 'perusahaan', 'history', 'hargaJual', 'terbilang', 'logoData', 'jumlahKwitansi'
+            'pembayaran', 'nasabah', 'lokasi', 'kavling', 'perusahaan', 'history', 'hargaJual', 'terbilang', 'logoData', 'jumlahKwitansi', 'signatureData'
         ))->setPaper('a4', 'portrait');
 
         $filename = 'Kwitansi-' . str_replace(['/', '\\'], '-', $pembayaran->no_kwitansi ?: 'draft') . '.pdf';
@@ -981,6 +984,7 @@ class PembayaranController extends Controller
     {
         $rules = [
             'tanggal_pembayaran'    => 'required|date',
+            'gunakan_ttd'           => 'nullable|boolean',
             'id_kategori_transaksi' => ['required', 'integer', \Illuminate\Validation\Rule::exists('kategori_transaksi', 'id')->where('jenis_kategori', 'PEMASUKAN')],
             'id_bank'               => 'required',
             'id_metode_bayar'       => 'required',
@@ -1027,6 +1031,7 @@ class PembayaranController extends Controller
             $kategoriKwitansi = KategoriTransaksi::findOrFail($request->id_kategori_transaksi)->kategori;
 
             $pemasukan = Pemasukan::create([
+                'gunakan_ttd'           => $request->boolean('gunakan_ttd'),
                 'tanggal'               => $request->tanggal_pembayaran,
                 'id_customer'           => $id,
                 'id_bank'               => $request->id_bank,
@@ -1249,6 +1254,7 @@ class PembayaranController extends Controller
     {
         $request->validate([
             'tanggal_pembayaran'    => 'required|date',
+            'gunakan_ttd'           => 'nullable|boolean',
             'id_kategori_transaksi' => 'required',
             'id_bank'               => 'required',
             'id_metode_bayar'       => 'required',
@@ -1287,6 +1293,7 @@ class PembayaranController extends Controller
 
             $updateData = [
                 'catatan_pembayaran'    => $request->input('catatan_pembayaran'),
+                'gunakan_ttd'           => $request->boolean('gunakan_ttd'),
                 'tanggal'               => $request->tanggal_pembayaran,
                 'id_bank'               => $request->id_bank,
                 'id_kategori_transaksi' => $request->id_kategori_transaksi,

@@ -103,11 +103,10 @@ class SpkTest extends TestCase
         $this->payment($spk, 1)->assertUnprocessable();
     }
 
-    public function test_paid_spk_is_protected_and_invalid_input_is_rejected(): void
+    public function test_paid_spk_edits_and_invalid_input_are_rejected(): void
     {
         $spk = $this->createSpk();
         $this->payment($spk, 150000)->assertRedirect();
-        $this->deleteJson(route('spk.destroy', $spk))->assertUnprocessable();
         $data = $this->payload(); $data['versi'] = 0; $data['nilai_borongan'] = 100000;
         $this->putJson(route('spk.update', $spk), $data)->assertUnprocessable()->assertJsonValidationErrors('nilai_borongan');
         $data['nilai_borongan'] = 400000; $data['tanggal'] = '2026-11-15';
@@ -138,33 +137,46 @@ class SpkTest extends TestCase
         $this->assertDatabaseCount('spk', 0);
     }
 
-    public function test_cancellation_preserves_payments_and_blocks_editing_and_new_payments(): void
+    public function test_delete_removes_paid_spk_payments_and_proofs_only_for_selected_spk(): void
     {
+        Storage::fake('local');
         $spk = $this->createSpk();
         $this->payment($spk, 150000)->assertRedirect();
-        $this->get(route('spk.index'))->assertSee('Batalkan SPK');
-        $this->post(route('spk.cancel', $spk))->assertRedirect();
-        $this->assertNotNull($spk->fresh()->dibatalkan_pada);
-        $this->assertDatabaseCount('spk_pembayaran', 1);
-        $this->assertSame(150000, $spk->fresh()->terbayar);
-        $this->post(route('spk.cancel', $spk))->assertRedirect();
-        $this->assertSame(1, (int) $spk->fresh()->versi);
-        $this->payment($spk, 1000)->assertUnprocessable()->assertJsonValidationErrors('spk');
-        $this->getJson(route('spk.edit', $spk))->assertUnprocessable();
-        $this->putJson(route('spk.update', $spk), $this->payload() + ['versi' => 1])->assertUnprocessable();
-        $this->get(route('spk.show', $spk))->assertOk()->assertSee('SPK dibatalkan')->assertDontSee('id="payment-form"', false)->assertDontSee('Batalkan SPK');
-        $this->get(route('spk.index', ['status' => 'batal']))->assertSee($spk->nomor);
-        $this->get(route('spk.index', ['status' => 'sebagian']))->assertDontSee($spk->nomor);
+        $payment = $spk->pembayaran()->firstOrFail();
+        Storage::disk('local')->put('spk-payment-proofs/delete.pdf', 'proof');
+        $payment->update(['bukti_bayar' => 'spk-payment-proofs/delete.pdf']);
+        $other = Spk::create(array_merge($spk->getAttributes(), ['id' => null, 'nomor' => 'SPK-OTHER', 'items' => $spk->items]));
+        $this->payment($other, 1000)->assertRedirect();
+        $otherPayment = $other->pembayaran()->firstOrFail();
+        Storage::disk('local')->put('spk-payment-proofs/keep.pdf', 'proof');
+        $otherPayment->update(['bukti_bayar' => 'spk-payment-proofs/keep.pdf']);
+        $this->get(route('spk.index'))->assertSee('Hapus SPK')->assertDontSee('Batalkan SPK');
+        $this->get(route('spk.show', $spk))->assertSee('Hapus SPK')->assertDontSee('Batalkan SPK');
+        $this->delete(route('spk.destroy', $spk))->assertRedirect(route('spk.index'));
+        $this->assertDatabaseMissing('spk', ['id' => $spk->id]);
+        $this->assertDatabaseMissing('spk_pembayaran', ['id_spk' => $spk->id]);
+        Storage::disk('local')->assertMissing('spk-payment-proofs/delete.pdf');
+        $this->assertDatabaseHas('spk', ['id' => $other->id]);
+        $this->assertDatabaseHas('spk_pembayaran', ['id' => $otherPayment->id]);
+        Storage::disk('local')->assertExists('spk-payment-proofs/keep.pdf');
     }
 
-    public function test_cancellation_requires_edit_permission(): void
+    public function test_delete_requires_delete_permission_and_supports_previously_cancelled_spk(): void
     {
         $spk = $this->createSpk();
+        $this->payment($spk, 1000)->assertRedirect();
+        $spk->update(['dibatalkan_pada' => now()]);
         $id = DB::table('menu')->where('route_name', 'spk.index')->value('id');
-        DB::table('hak_akses')->where('id_menu', $id)->update(['edit' => 0]);
-        $this->postJson(route('spk.cancel', $spk))->assertForbidden();
-        $this->assertNull($spk->fresh()->dibatalkan_pada);
-        $this->get(route('spk.index'))->assertDontSee('Batalkan SPK');
+        DB::table('hak_akses')->where('id_menu', $id)->update(['hapus' => 0]);
+        $this->deleteJson(route('spk.destroy', $spk))->assertForbidden();
+        $this->assertDatabaseHas('spk_pembayaran', ['id_spk' => $spk->id]);
+        $this->get(route('spk.index'))->assertDontSee('Hapus SPK');
+        $this->get(route('spk.show', $spk))->assertDontSee('Hapus SPK');
+        DB::table('hak_akses')->where('id_menu', $id)->update(['hapus' => 1, 'edit' => 0]);
+        $this->get(route('spk.show', $spk))->assertSee('Hapus SPK');
+        $this->delete(route('spk.destroy', $spk))->assertRedirect(route('spk.index'));
+        $this->assertDatabaseMissing('spk', ['id' => $spk->id]);
+        $this->assertDatabaseMissing('spk_pembayaran', ['id_spk' => $spk->id]);
     }
 
     public function test_payment_proof_upload_preview_and_access(): void

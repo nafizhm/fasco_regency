@@ -163,6 +163,16 @@
                         </div>
 
                         <div class="form-group row">
+                            <label class="col-sm-3 col-form-label" for="gunakan_ttd">Tanda Tangan</label>
+                            <div class="col-sm-7 pt-2">
+                                <div class="form-check">
+                                    <input type="checkbox" name="gunakan_ttd" id="gunakan_ttd" value="1" class="form-check-input">
+                                    <label class="form-check-label" for="gunakan_ttd">Gunakan TTD pada kwitansi pembayaran ini</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
                             <label class="col-sm-3 col-form-label">Bukti Pembayaran</label>
                             <div class="col-sm-4">
                                 <input type="file" class="mb-2" id="file" name="file"

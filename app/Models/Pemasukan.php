@@ -6,7 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 class Pemasukan extends Model
 {
     protected $table    = 'pemasukan';
-    protected $fillable = ['id', 'id_hutang', 'id_piutang', 'id_customer', 'id_lokasi', 'id_mutasi', 'id_bank', 'id_metode_bayar', 'id_pindah_unit', 'id_ganti_nama', 'tanggal', 'nominal', 'lampiran', 'no_kwitansi', 'id_kategori_transaksi', 'keterangan', 'keterangan_kategori', 'id_sp3k', 'no_sp3k', 'plafon_sp3k', 'id_bank_kpr_sp3k', 'catatan_pembayaran'];
+    protected $fillable = ['id', 'id_hutang', 'id_piutang', 'id_customer', 'id_lokasi', 'id_mutasi', 'id_bank', 'id_metode_bayar', 'id_pindah_unit', 'id_ganti_nama', 'tanggal', 'nominal', 'lampiran', 'no_kwitansi', 'id_kategori_transaksi', 'keterangan', 'keterangan_kategori', 'id_sp3k', 'no_sp3k', 'plafon_sp3k', 'id_bank_kpr_sp3k', 'catatan_pembayaran', 'gunakan_ttd'];
+    protected $casts = ['gunakan_ttd' => 'boolean'];
     public $timestamps  = false;
 
 

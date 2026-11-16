@@ -106,7 +106,7 @@
                 <strong style="color: #e98b19">{{ $perusahaan?->nama_perusahaan ?: '-' }}</strong><br>
                 <span style="color: #e98b19">"{{ $lokasi?->nama_kavling ?: '-' }}"</span><br>
                 {{ $perusahaan?->jabatan_penandatangan ?: 'Penerima' }}</td></tr>
-            <tr><td class="signature-space"></td><td></td></tr>
+            <tr><td class="signature-space"></td><td style="vertical-align: middle">@if ($signatureData ?? null)<img src="{{ $signatureData }}" style="max-width: 185px; max-height: 110px" alt="Tanda tangan penerima">@endif</td></tr>
             <tr><td class="signature-name">{{ $nasabah->nama_lengkap }}</td><td class="signature-name">{{ $perusahaan?->nama_penandatangan ?: '-' }}</td></tr>
         </table>
     </div>

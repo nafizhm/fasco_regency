@@ -30,8 +30,8 @@
                     <td class="text-right text-nowrap">Rp {{ number_format($spk->sisa, 0, ',', '.') }}</td>
                     <td>@if($spk->dibatalkan_pada)<span class="badge badge-secondary">Dibatalkan</span><br>@endif<span class="badge badge-{{ $spk->sisa === 0 ? 'success' : ($spk->terbayar > 0 ? 'warning' : 'danger') }}">{{ $spk->status_pembayaran }}</span></td>
                     <td class="text-nowrap"><a class="btn btn-sm btn-info" href="{{ route('spk.show', $spk) }}">Detail / Bayar</a> <a class="btn btn-sm btn-outline-primary" href="{{ route('spk.word', $spk) }}">Word</a>
-                        @if($permissions['edit'] && !$spk->dibatalkan_pada)
-                            @include('admin.spk.cancel-button')
+                        @if($permissions['hapus'])
+                            @include('admin.spk.delete-button')
                         @endif
                     </td>
                 </tr>

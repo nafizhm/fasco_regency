@@ -10,11 +10,8 @@
             <a class="btn btn-primary mr-2 mb-2" href="{{ route('spk.word', $spk) }}"><i class="fas fa-file-word"></i> Cetak Word (.docx)</a>
             @if($permissions['edit'] && !$spk->dibatalkan_pada)<a class="btn btn-outline-primary mr-2 mb-2" href="{{ route('spk.edit', $spk) }}">Edit SPK</a>@endif
             @if($permissions['edit'] && !$spk->dibatalkan_pada && $spk->sisa > 0)<button type="button" class="btn btn-success mr-2 mb-2" data-toggle="modal" data-target="#paymentModal">Catat Pembayaran</button>@endif
-            @if($permissions['edit'] && !$spk->dibatalkan_pada)
-                @include('admin.spk.cancel-button')
-            @endif
-            @if($permissions['hapus'] && $spk->terbayar === 0)
-                <form method="POST" action="{{ route('spk.destroy', $spk) }}" onsubmit="return confirm('Hapus SPK ini?')">@csrf @method('DELETE')<button class="btn btn-outline-danger mb-2">Hapus SPK</button></form>
+            @if($permissions['hapus'])
+                @include('admin.spk.delete-button')
             @endif
         </div>
         @if($spk->dibatalkan_pada)<div class="alert alert-secondary">SPK dibatalkan pada {{ $spk->dibatalkan_pada->format('d/m/Y H:i') }}. Riwayat pembayaran tetap tersimpan.</div>@endif
