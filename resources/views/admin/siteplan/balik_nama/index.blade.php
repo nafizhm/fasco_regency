@@ -69,25 +69,11 @@
                     @csrf
                     <input type="hidden" id="primary_id" name="primary_id">
                     <div class="modal-body">
-                        <div class="form-group row">
-                            <label for="id_lokasi" class="col-sm-3 col-form-label">Lokasi Perumahan</label>
-                            <div class="col-sm-3">
-                                <select name="id_lokasi" id="id_lokasi" class="form-control select-lokasi">
-                                    <option value=""></option>
-                                    @foreach ($lokasi as $l)
-                                        <option value="{{ $l->id }}">{{ $l->nama_kavling }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <label for="id_kavling" class="col-sm-2 col-form-label">Blok/Kav</label>
-                            <div class="col-sm-2">
-                                <select name="id_kavling" id="id_kavling" class="form-control select-kavling"></select>
-                            </div>
-                        </div>
+                        @include('admin.partials.cluster-kavling-fields')
 
                         <div class="form-group row mb-3">
                             <label class="col-sm-3 col-form-label">Nama Lama</label>
-                            <div class="col-sm-3">
+                            <div class="col-sm-9">
                                 <select name="id_customer" id="id_customer" class="form-control select-customer">
                                     <option value=""></option>
                                     @foreach ($customers as $c)
@@ -100,14 +86,14 @@
 
                         <div class="form-group row mb-3">
                             <label for="nama_pengganti" class="col-sm-3 col-form-label">Nama Pengganti</label>
-                            <div class="col-sm-3">
+                            <div class="col-sm-9">
                                 <input type="text" id="nama_pengganti" class="form-control" name="nama_pengganti">
                             </div>
                         </div>
 
                         <div class="form-group row mb-3">
                             <label for="stt_balik" class="col-sm-3 col-form-label">Status</label>
-                            <div class="col-sm-3">
+                            <div class="col-sm-9">
                                 <select name="stt_balik" id="stt_balik" class="form-control select-stt">
                                     <option value=""></option>
                                     <option value="sudah">Sudah Balik Nama</option>
@@ -136,11 +122,15 @@
         $(document).ready(function() {
             $('.select-lokasi').select2({
                 theme: "bootstrap4",
-                placeholder: "Pilih Lokasi",
+                placeholder: "Pilih Cluster",
+                dropdownParent: $('#modalForm'),
+                width: "100%",
             });
             $('.select-kavling').select2({
                 theme: "bootstrap4",
                 placeholder: "Pilih Kavling",
+                dropdownParent: $('#modalForm'),
+                width: "100%",
             });
            $('.select-stt').select2({
                 theme: "bootstrap4",
@@ -152,6 +142,8 @@
             $('.select-customer').select2({
                 theme: "bootstrap4",
                 placeholder: "Pilih Customer",
+                dropdownParent: $('#modalForm'),
+                width: "100%",
             });
         });
 
@@ -159,24 +151,7 @@
             $('#modalFormLabel').text('Tambah Balik Nama');
         });
 
-        const routeGetKavling = "{{ route('customer.getKavling', ':id') }}";
-
-        $('#id_lokasi').on('change', function() {
-            let idLokasi = $(this).val();
-            $('#id_kavling').html('<option value="">Loading...</option>').trigger('change');
-
-            if (idLokasi) {
-                const urlKavling = routeGetKavling.replace(':id', idLokasi);
-                $.get(urlKavling, function(data) {
-                    let options = '<option value=""></option>';
-                    data.forEach(function(item) {
-                        options +=
-                            `<option value="${item.id}">${item.kode_kavling}</option>`;
-                    });
-                    $('#id_kavling').html(options).trigger('change');
-                });
-            }
-        });
+        @include('admin.partials.cluster-kavling-script')
 
         $(function() {
             var permissions = @json($permissions);
@@ -246,13 +221,8 @@
                     $('#modalFormLabel').text('Edit Balik Nama');
                     $('#primary_id').val(response.data.id);
 
-                    $('#id_lokasi').val(response.data.id_lokasi).trigger('change');
-
-                    setTimeout(function () {
-                        $('#id_kavling')
-                            .val(response.data.id_kavling)
-                            .trigger('change');
-                    }, 300);
+                    $('#id_lokasi').val(response.data.id_lokasi).trigger('change.select2');
+                    loadClusterKavling(response.data.id_lokasi, response.data.id_kavling);
 
                     $('#id_customer')
                         .val(response.data.id_customer)

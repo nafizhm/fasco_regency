@@ -94,14 +94,15 @@ class BalikNamaController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'id_lokasi'      => 'required',
-            'id_kavling'     => 'required',
+            'id_lokasi' => 'required|integer|exists:lokasi_kavling,id',
+            'id_kavling' => ['required', 'integer', \Illuminate\Validation\Rule::exists('kavling_peta', 'id')->where('id_lokasi', $request->input('id_lokasi'))],
             'id_customer' => 'required',
             'nama_pengganti'  => 'required',
             'stt_balik'  => 'required',
         ], [
             'id_customer.required'      => 'Customer wajib diisi.',
             'id_lokasi.required'      => 'Lokasi perumahan wajib diisi.',
+            'id_kavling.exists' => 'Kavling harus sesuai dengan cluster yang dipilih.',
             'id_kavling.required'     => 'Blok/Kavling wajib diisi.',
             'nama_pengganti.required' => 'Nama Pengganti wajib diisi.',
             'stt_balik.required'      => 'Stt Balik wajib diisi.',
@@ -138,13 +139,14 @@ class BalikNamaController extends Controller
         $data = BalikNama::findOrFail($id);
 
         $request->validate([
-            'id_lokasi'      => 'required|integer',
-            'id_kavling'     => 'required|integer',
+            'id_lokasi' => 'required|integer|exists:lokasi_kavling,id',
+            'id_kavling' => ['required', 'integer', \Illuminate\Validation\Rule::exists('kavling_peta', 'id')->where('id_lokasi', $request->input('id_lokasi'))],
             'id_customer'    => 'required|integer',
             'nama_pengganti' => 'required|string|max:255',
             'stt_balik'      => 'required',
         ], [
             'id_lokasi.required'      => 'Lokasi wajib dipilih',
+            'id_kavling.exists' => 'Kavling harus sesuai dengan cluster yang dipilih.',
             'id_kavling.required'     => 'Kavling wajib dipilih',
             'id_customer.required'    => 'Customer wajib dipilih',
             'nama_pengganti.required' => 'Nama pengganti wajib diisi',

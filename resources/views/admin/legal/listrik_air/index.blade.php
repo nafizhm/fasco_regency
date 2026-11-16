@@ -68,35 +68,21 @@
                     @csrf
                     <input type="hidden" id="primary_id" name="primary_id">
                     <div class="modal-body">
-                        <div class="form-group row">
-                            <label for="id_lokasi" class="col-sm-3 col-form-label">Lokasi Perumahan</label>
-                            <div class="col-sm-3">
-                                <select name="id_lokasi" id="id_lokasi" class="form-control select-lokasi">
-                                    <option value=""></option>
-                                    @foreach ($lokasi as $l)
-                                        <option value="{{ $l->id }}">{{ $l->nama_kavling }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <label for="id_kavling" class="col-sm-1 col-form-label">Blok/Kav</label>
-                            <div class="col-sm-2">
-                                <select name="id_kavling" id="id_kavling" class="form-control select-kavling"></select>
-                            </div>
-                        </div>
+                        @include('admin.partials.cluster-kavling-fields')
 
                         <hr>
+                        <p class="small text-muted">Foto berformat JPG / PNG, maksimal 2 MB per foto. Saat edit, kosongkan untuk mempertahankan foto lama.</p>
 
                         <div class="form-group row mb-3">
-                            <label for="nama" class="col-sm-3 col-form-label">No. Rekening Listrik</label>
-                            <div class="col-sm-3">
+                            <label for="norek_listrik" class="col-sm-3 col-form-label">No. Rekening Listrik</label>
+                            <div class="col-sm-9">
                                 <input type="text" id="norek_listrik" class="form-control" name="norek_listrik">
                             </div>
                         </div>
 
                         <div class="form-group row">
-                            <label class="col-sm-3 col-form-label">Foto Meteran Listrik 1</label>
-                            <div class="col-sm-3">
-                                <input type="file" class="mb-2" id="foto_listrik" name="foto_listrik"
+                            <div class="col-md-6 mb-3"><label>Foto Meteran Listrik 1</label>
+                                <input type="file" class="form-control-file mb-2" id="foto_listrik" name="foto_listrik"
                                     accept=".jpg, .jpeg, .png">
                                 <div class="img-thumbnail mb-2 d-flex align-items-center justify-content-center"
                                     id="previewFotoListrik1"
@@ -104,9 +90,8 @@
                                     <span style="color: #6c757d;">Tidak ada foto</span>
                                 </div>
                             </div>
-                            <label class="col-sm-3 col-form-label">Foto Meteran Listrik 2</label>
-                            <div class="col-sm-3">
-                                <input type="file" class="mb-2" id="foto_listrik_2" name="foto_listrik_2"
+                            <div class="col-md-6 mb-3"><label>Foto Meteran Listrik 2</label>
+                                <input type="file" class="form-control-file mb-2" id="foto_listrik_2" name="foto_listrik_2"
                                     accept=".jpg, .jpeg, .png">
                                 <div class="img-thumbnail mb-2 d-flex align-items-center justify-content-center"
                                     id="previewFotoListrik2"
@@ -119,15 +104,14 @@
 
                         <div class="form-group row">
                             <label class="col-sm-3 col-form-label" for="norek_air">No. Rekening Air</label>
-                            <div class="col-sm-3">
+                            <div class="col-sm-9">
                                 <input id="norek_air" name="norek_air" type="text" class="form-control">
                             </div>
                         </div>
 
                         <div class="form-group row">
-                            <label class="col-sm-3 col-form-label">Foto Meteran Air 1</label>
-                            <div class="col-sm-3">
-                                <input type="file" class="mb-2" id="foto_air" name="foto_air"
+                            <div class="col-md-6 mb-3"><label>Foto Meteran Air 1</label>
+                                <input type="file" class="form-control-file mb-2" id="foto_air" name="foto_air"
                                     accept=".jpg, .jpeg, .png">
                                 <div class="img-thumbnail mb-2 d-flex align-items-center justify-content-center"
                                     id="previewFotoAir1"
@@ -135,9 +119,8 @@
                                     <span style="color: #6c757d;">Tidak ada foto</span>
                                 </div>
                             </div>
-                            <label class="col-sm-3 col-form-label">Foto Meteran Air 2</label>
-                            <div class="col-sm-3">
-                                <input type="file" class="mb-2" id="foto_air_2" name="foto_air_2"
+                            <div class="col-md-6 mb-3"><label>Foto Meteran Air 2</label>
+                                <input type="file" class="form-control-file mb-2" id="foto_air_2" name="foto_air_2"
                                     accept=".jpg, .jpeg, .png">
                                 <div class="img-thumbnail mb-2 d-flex align-items-center justify-content-center"
                                     id="previewFotoAir2"
@@ -171,11 +154,15 @@
         $(document).ready(function() {
             $('.select-lokasi').select2({
                 theme: "bootstrap4",
-                placeholder: "Pilih Lokasi",
+                placeholder: "Pilih Cluster",
+                dropdownParent: $('#modalForm'),
+                width: "100%",
             });
             $('.select-kavling').select2({
                 theme: "bootstrap4",
                 placeholder: "Pilih Kavling",
+                dropdownParent: $('#modalForm'),
+                width: "100%",
             });
         });
 
@@ -183,24 +170,7 @@
             $('#modalFormLabel').text('Tambah Listrik dan Air');
         });
 
-        const routeGetKavling = "{{ route('customer.getKavling', ':id') }}";
-
-        $('#id_lokasi').on('change', function() {
-            let idLokasi = $(this).val();
-            $('#id_kavling').html('<option value="">Loading...</option>').trigger('change');
-
-            if (idLokasi) {
-                const urlKavling = routeGetKavling.replace(':id', idLokasi);
-                $.get(urlKavling, function(data) {
-                    let options = '<option value=""></option>';
-                    data.forEach(function(item) {
-                        options +=
-                            `<option value="${item.id}">${item.kode_kavling}</option>`;
-                    });
-                    $('#id_kavling').html(options).trigger('change');
-                });
-            }
-        });
+        @include('admin.partials.cluster-kavling-script')
 
         $(function() {
             var permissions = @json($permissions);
@@ -262,11 +232,8 @@
                 if (response.status === 'success') {
                     $('#modalFormLabel').text('Edit Listrik dan Air');
                     $('#primary_id').val(response.data.id);
-                    $('#id_lokasi').val(response.data.id_lokasi).trigger('change');
-
-                    setTimeout(function() {
-                        $('#id_kavling').val(response.data.id_kavling).trigger('change');
-                    }, 300);
+                    $('#id_lokasi').val(response.data.id_lokasi).trigger('change.select2');
+                    loadClusterKavling(response.data.id_lokasi, response.data.id_kavling);
 
                     $('#norek_listrik').val(response.data.norek_listrik);
                     $('#norek_air').val(response.data.norek_air);

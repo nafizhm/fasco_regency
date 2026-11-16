@@ -71,8 +71,8 @@ class ListrikAirController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'id_lokasi'      => 'required',
-            'id_kavling'     => 'required',
+            'id_lokasi' => 'required|integer|exists:lokasi_kavling,id',
+            'id_kavling' => ['required', 'integer', \Illuminate\Validation\Rule::exists('kavling_peta', 'id')->where('id_lokasi', $request->input('id_lokasi'))],
             'norek_listrik'  => 'required',
             'norek_air'      => 'required',
             'foto_listrik'   => 'required|file|mimes:jpeg,png,jpg|max:2048',
@@ -81,6 +81,7 @@ class ListrikAirController extends Controller
             'foto_air_2'     => 'required|file|mimes:jpeg,png,jpg|max:2048',
         ], [
             'id_lokasi.required'      => 'Lokasi perumahan wajib diisi.',
+            'id_kavling.exists' => 'Kavling harus sesuai dengan cluster yang dipilih.',
             'id_kavling.required'     => 'Blok/Kavling wajib diisi.',
             'norek_listrik.required'  => 'No. rekening listrik wajib diisi.',
             'norek_air.required'      => 'No. rekening air wajib diisi.',
@@ -159,8 +160,8 @@ class ListrikAirController extends Controller
         $data = ListrikAir::findOrFail($id);
 
         $request->validate([
-            'id_lokasi'      => 'required',
-            'id_kavling'     => 'required',
+            'id_lokasi' => 'required|integer|exists:lokasi_kavling,id',
+            'id_kavling' => ['required', 'integer', \Illuminate\Validation\Rule::exists('kavling_peta', 'id')->where('id_lokasi', $request->input('id_lokasi'))],
             'norek_listrik'  => 'required',
             'norek_air'      => 'required',
             'foto_listrik'   => 'nullable|file|mimes:jpeg,png,jpg|max:2048',
@@ -169,6 +170,7 @@ class ListrikAirController extends Controller
             'foto_air_2'     => 'nullable|file|mimes:jpeg,png,jpg|max:2048',
         ], [
             'id_lokasi.required'     => 'Lokasi perumahan wajib diisi.',
+            'id_kavling.exists' => 'Kavling harus sesuai dengan cluster yang dipilih.',
             'id_kavling.required'    => 'Blok/Kavling wajib diisi.',
             'norek_listrik.required' => 'No. rekening listrik wajib diisi.',
             'norek_air.required'     => 'No. rekening air wajib diisi.',

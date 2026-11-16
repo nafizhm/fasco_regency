@@ -97,12 +97,13 @@ class BphtbSSPController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'id_lokasi'      => 'required',
-            'id_kavling'     => 'required',
+            'id_lokasi' => 'required|integer|exists:lokasi_kavling,id',
+            'id_kavling' => ['required', 'integer', \Illuminate\Validation\Rule::exists('kavling_peta', 'id')->where('id_lokasi', $request->input('id_lokasi'))],
             'status_bphtb'        => 'required',
             'status_ssp'        => 'required',
         ], [
             'id_lokasi.required'      => 'Lokasi perumahan wajib diisi.',
+            'id_kavling.exists' => 'Kavling harus sesuai dengan cluster yang dipilih.',
             'id_kavling.required'     => 'Blok/Kavling wajib diisi.',
             'status_bphtb.required'      => 'Status bphtb wajib diisi.',
             'status_ssp.required'      => 'Status ssp wajib diisi.',
@@ -138,12 +139,13 @@ class BphtbSSPController extends Controller
         $data = BphtbSsp::findOrFail($id);
 
        $request->validate([
-            'id_lokasi'      => 'required',
-            'id_kavling'     => 'required',
+            'id_lokasi' => 'required|integer|exists:lokasi_kavling,id',
+            'id_kavling' => ['required', 'integer', \Illuminate\Validation\Rule::exists('kavling_peta', 'id')->where('id_lokasi', $request->input('id_lokasi'))],
             'status_bphtb'        => 'required',
             'status_ssp'        => 'required',
         ], [
             'id_lokasi.required'      => 'Lokasi perumahan wajib diisi.',
+            'id_kavling.exists' => 'Kavling harus sesuai dengan cluster yang dipilih.',
             'id_kavling.required'     => 'Blok/Kavling wajib diisi.',
             'status_bphtb.required'      => 'Status bphtb wajib diisi.',
             'status_ssp.required'      => 'Status ssp wajib diisi.',
