@@ -117,7 +117,7 @@
         $(document).ready(function() {
             $('.select-lokasi').select2({
                 theme: "bootstrap4",
-                placeholder: "Pilih Cluster",
+                placeholder: "Pilih Perumahan",
                 dropdownParent: $('#modalForm'),
                 width: "100%",
             });

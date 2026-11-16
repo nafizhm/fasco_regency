@@ -140,7 +140,7 @@ class CustomerController extends Controller
     public function getKavling($idLokasi)
     {
         $data = KavlingPeta::where('id_lokasi', $idLokasi)
-            ->select('id', 'kode_kavling')
+            ->select('id', 'kode_kavling', 'nama_cluster')
             ->get();
 
         return response()->json($data);
