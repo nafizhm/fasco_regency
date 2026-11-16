@@ -31,6 +31,7 @@ class TukangAttendanceTest extends TestCase
         DB::table('menu')->insert(['id' => 1, 'title' => 'Data Tukang', 'route_name' => 'tukang.index', 'icon' => 'fas fa-users']);
         DB::table('hak_akses')->insert(['id_user' => 1, 'id_menu' => 1]);
         (require database_path('migrations/2026_11_14_010000_add_tukang_attendance.php'))->up();
+        (require database_path('migrations/2026_11_16_010000_add_jenis_to_tukang_table.php'))->up();
         DB::table('tukang')->where('id', 1)->update(['gaji_per_hari' => 150000]);
         $user = new User(); $user->id = 1; $user->username = 'test'; $this->actingAs($user);
     }
@@ -84,10 +85,24 @@ class TukangAttendanceTest extends TestCase
         $count = DB::table('tukang')->count();
         (new \Database\Seeders\TukangReferenceSeeder)->run();
         $this->assertDatabaseCount('tukang', $count);
-        $this->postJson(route('tukang.store'), ['nama' => 'Test Tukang', 'no_telp' => '08123456789', 'gaji_per_hari' => 125000])->assertOk();
+        $this->postJson(route('tukang.store'), ['nama' => 'Test Tukang', 'jenis' => 'Mandor', 'gaji_per_hari' => 125000])->assertOk();
         $id = DB::table('tukang')->where('nama', 'Test Tukang')->value('id');
-        $this->putJson(route('tukang.update', $id), ['nama' => 'Test Tukang', 'no_telp' => '08123456789', 'gaji_per_hari' => 175000])->assertOk();
-        $this->assertDatabaseHas('tukang', ['id' => $id, 'gaji_per_hari' => 175000]);
+        $this->assertDatabaseHas('tukang', ['id' => $id, 'jenis' => 'Mandor']);
+        $this->putJson(route('tukang.update', $id), ['nama' => 'Test Tukang', 'jenis' => 'Borongan', 'gaji_per_hari' => 175000])->assertOk();
+        $this->assertDatabaseHas('tukang', ['id' => $id, 'jenis' => 'Borongan', 'gaji_per_hari' => 175000]);
         $this->putJson(route('tukang.update', $id), ['nama' => 'Test Tukang', 'gaji_per_hari' => -1])->assertUnprocessable();
+    }
+
+    public function test_worker_type_is_required_and_limited_to_available_choices(): void
+    {
+        $payload = ['nama' => 'Test Jenis', 'gaji_per_hari' => 100000];
+        $this->postJson(route('tukang.store'), $payload)->assertUnprocessable()->assertJsonValidationErrors('jenis');
+        $this->postJson(route('tukang.store'), $payload + ['jenis' => 'Lainnya'])->assertUnprocessable()->assertJsonValidationErrors('jenis');
+        foreach (\App\Models\Tukang::JENIS as $jenis) {
+            $this->postJson(route('tukang.store'), ['nama' => 'Test ' . $jenis, 'jenis' => $jenis, 'gaji_per_hari' => 100000])->assertOk();
+        }
+        $id = DB::table('tukang')->where('nama', 'Test Mandor')->value('id');
+        $this->putJson(route('tukang.update', $id), $payload + ['jenis' => '08123456789'])->assertUnprocessable()->assertJsonValidationErrors('jenis');
+        $this->assertDatabaseHas('tukang', ['id' => $id, 'jenis' => 'Mandor']);
     }
 }

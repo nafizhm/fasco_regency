@@ -9,6 +9,8 @@ class Tukang extends Model
 {
     use HasFactory;
 
+    public const JENIS = ['Mandor', 'Tukang', 'Kuli', 'Harian', 'Borongan'];
+
     protected $table = 'tukang';
     public $timestamps = false;
 
@@ -16,6 +18,7 @@ class Tukang extends Model
         'nama',
         'alamat',
         'no_telp',
+        'jenis',
         'gaji_per_hari',
     ];
 }

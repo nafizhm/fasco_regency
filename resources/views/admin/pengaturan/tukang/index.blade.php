@@ -31,7 +31,7 @@
                                             <th width="50px">No</th>
                                             <th>Nama Tukang</th>
                                             <th>Gaji / Hari</th>
-                                            <th>No Telp</th>
+                                            <th>Jenis</th>
                                             <th width="100px">Action</th>
                                         </tr>
                                     </thead>
@@ -73,9 +73,14 @@
                             </div>
 
                             <div class="form-group row">
-                                <label for="no_telp" class="col-sm-3 col-form-label">No Telp</label>
+                                <label for="jenis" class="col-sm-3 col-form-label">Jenis</label>
                                 <div class="col-sm-9">
-                                    <input type="text" name="no_telp" id="no_telp" class="form-control">
+                                    <select name="jenis" id="jenis" class="form-control" required>
+                                        <option value="">Pilih Jenis</option>
+                                        @foreach (\App\Models\Tukang::JENIS as $jenis)
+                                            <option value="{{ $jenis }}">{{ $jenis }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -130,8 +135,9 @@
                         searchable: false
                     },
                     {
-                        data: 'no_telp',
-                        name: 'no_telp',
+                        data: 'jenis',
+                        name: 'jenis',
+                        defaultContent: '-',
                         orderable: false,
                         searchable: false
                     },
@@ -161,7 +167,7 @@
                     $('#primary_id').val(response.data.id);
                     $('#nama').val(response.data.nama);
                     $('#gaji_per_hari').val(response.data.gaji_per_hari || 0);
-                    $('#no_telp').val(response.data.no_telp);
+                    $('#jenis').val(response.data.jenis || '');
                     $('#modalForm').modal('show');
                 }
             });

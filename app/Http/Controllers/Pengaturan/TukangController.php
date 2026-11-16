@@ -66,7 +66,7 @@ class TukangController extends Controller
         $rules = [
             'nama' => 'required|unique:tukang,nama',
             'alamat' => 'nullable',
-            'no_telp' => 'nullable',
+            'jenis' => ['required', \Illuminate\Validation\Rule::in(Tukang::JENIS)],
             'gaji_per_hari' => 'required|integer|min:0|max:1000000000',
         ];
 
@@ -82,7 +82,7 @@ class TukangController extends Controller
             Tukang::create([
                 'nama' => $request->nama,
                 'alamat' => $request->alamat,
-                'no_telp' => $request->no_telp,
+                'jenis' => $request->jenis,
                 'gaji_per_hari' => $request->gaji_per_hari,
             ]);
 
@@ -107,7 +107,7 @@ class TukangController extends Controller
         $rules = [
             'nama' => 'required|unique:tukang,nama,' . $id . ',id',
             'alamat' => 'nullable',
-            'no_telp' => 'nullable',
+            'jenis' => ['required', \Illuminate\Validation\Rule::in(Tukang::JENIS)],
             'gaji_per_hari' => 'required|integer|min:0|max:1000000000',
         ];
 
@@ -123,7 +123,7 @@ class TukangController extends Controller
             $data->update([
                 'nama' => $request->nama,
                 'alamat' => $request->input('alamat', $data->alamat),
-                'no_telp' => $request->no_telp,
+                'jenis' => $request->jenis,
                 'gaji_per_hari' => $request->gaji_per_hari,
             ]);
 
