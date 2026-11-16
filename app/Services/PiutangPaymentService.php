@@ -35,8 +35,9 @@ class PiutangPaymentService
 
     public function syncCustomer($id): array
     {
-        if (!$id) return [];
+        if (!$id || !\Illuminate\Support\Facades\Schema::hasTable('piutang')) return [];
         return DB::transaction(function () use ($id) {
+            app(KprReceivableService::class)->sync($id);
             $bills = Piutang::where('id_customer', $id)->orderBy('id')->lockForUpdate()->get();
             if ($bills->isEmpty()) return [];
             $payments = Pemasukan::where(function ($query) use ($id, $bills) {
@@ -50,6 +51,9 @@ class PiutangPaymentService
 
     private function allocate($bills, $payments): array
     {
+        $bankCategories = \Illuminate\Support\Facades\Schema::hasTable('kategori_transaksi')
+            ? \App\Models\KategoriTransaksi::where('kategori', 'Pencairan KPR')->pluck('id')->all() : [];
+        $isKpr = $bills->isNotEmpty() && strtoupper(trim(\App\Models\Customer::find($bills->first()->id_customer)?->jenis_pembelian ?? '')) === 'KPR';
         $ledger = [];
         $remaining = [];
         foreach ($bills as $bill) {
@@ -61,8 +65,18 @@ class PiutangPaymentService
             foreach ($payments as $payment) {
                 if ((bool) $payment->id_piutang !== $linked) continue;
                 $amount = max((int) $payment->nominal, 0);
-                $targets = $linked ? [$payment->id_piutang] : $bills->pluck('id')->all();
+                $isBankPayment = in_array($payment->id_kategori_transaksi, $bankCategories);
+                $linkedBill = $bills->firstWhere('id', $payment->id_piutang);
+                $wrongLink = $linkedBill && $linkedBill->jenis_piutang !== null
+                    && $isBankPayment !== ($linkedBill->jenis_piutang === 'bank');
+                $targets = $linked && !$wrongLink ? [$payment->id_piutang] : $bills->pluck('id')->all();
                 foreach ($targets as $id) {
+                    // A linked historic payment must obey the same customer/bank boundary.
+                    $bill = $bills->firstWhere('id', $id);
+                    if (!$bill) continue;
+                    $isBank = in_array($payment->id_kategori_transaksi, $bankCategories);
+                    if (($isKpr || $bill->jenis_piutang !== null || $bills->contains('jenis_piutang', 'bank'))
+                        && $isBank !== ($bill->jenis_piutang === 'bank')) continue;
                     $allocated = min($amount, $remaining[$id] ?? 0);
                     if ($allocated <= 0) continue;
                     $remaining[$id] -= $allocated;

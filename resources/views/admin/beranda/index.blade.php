@@ -577,8 +577,8 @@
         <article class="kpi-card">
           <div class="kpi-icon blue"><i class="fa-solid fa-building"></i></div>
           <div>
-            <div class="kpi-label">Jumlah Project</div>
-            <div class="kpi-value" style="color:#2563eb">{{ $summaryMetrics['jumlah_project'] ?? 0 }}</div>
+            <div class="kpi-label">Unit Belum Terjual</div>
+            <div class="kpi-value" style="color:#2563eb">{{ $summaryMetrics['unit_belum_terjual'] ?? 0 }}</div>
           </div>
         </article>
 
@@ -590,18 +590,19 @@
           </div>
         </article>
 
-        <article class="kpi-card">
-          <div class="kpi-icon orange"><i class="fa-solid fa-wallet"></i></div>
+        <a href="{{ route('dashboard.piutang-kpr') }}" class="kpi-card" style="color:inherit;text-decoration:none" aria-label="Lihat laporan pencairan termin KPR">
+          <div class="kpi-icon orange"><i class="fa-solid fa-building-columns"></i></div>
           <div>
-            <div class="kpi-label">Booking Fee Hari Ini</div>
-            <div class="kpi-value money" style="color:#f97316">Rp {{ number_format($summaryMetrics['booking_fee_hari_ini'] ?? 0, 0, ',', '.') }}</div>
+            <div class="kpi-label">Piutang KPR</div>
+            <div class="kpi-value money" style="color:#f97316">Rp {{ number_format($summaryMetrics['piutang_kpr'] ?? 0, 0, ',', '.') }}</div>
+            <div class="kpi-note">{{ $summaryMetrics['piutang_kpr_customer'] ?? 0 }} customer &middot; Lihat detail &rarr;</div>
           </div>
-        </article>
+        </a>
 
         <a href="{{ route('dashboard.piutang') }}" class="kpi-card" style="color:inherit;text-decoration:none" aria-label="Lihat detail piutang">
           <div class="kpi-icon purple"><i class="fa-regular fa-credit-card"></i></div>
           <div>
-            <div class="kpi-label">Piutang</div>
+            <div class="kpi-label">Piutang Customer / DP</div>
             <div class="kpi-value money" style="color:#a25e00">Rp {{ number_format($summaryMetrics['piutang'] ?? 0, 0, ',', '.') }}</div>
             <div class="kpi-note">Total {{ $summaryMetrics['piutang_customer'] ?? 0 }} customer</div>
             <div class="kpi-note">Lihat detail &rarr;</div>

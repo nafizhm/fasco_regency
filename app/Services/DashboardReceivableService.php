@@ -20,8 +20,9 @@ class DashboardReceivableService
     {
         return Customer::where('stt_arsip', 0)
             ->with($relations)
-            ->withSum('piutangs as total_tagihan', 'nominal')
+            ->withSum(['piutangs as total_tagihan' => fn ($q) => $q->where(fn ($q) => $q->whereNull('jenis_piutang')->orWhere('jenis_piutang', '!=', 'bank'))], 'nominal')
             ->withSum(['pemasukans as total_bayar' => function ($query) {
+                $query->whereNotIn('id_kategori_transaksi', \App\Models\KategoriTransaksi::where('kategori', 'Pencairan KPR')->pluck('id'));
                 $query->where(fn ($payment) => $payment->whereNull('keterangan')
                     ->orWhere('keterangan', 'NOT LIKE', 'Biaya ganti nama%'));
             }], 'nominal')

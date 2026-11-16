@@ -24,12 +24,12 @@
                 </div>
                 <div class="card-body">
                     @if(strtoupper(trim($customer->jenis_pembelian ?? '')) === 'KPR')
-                        <div class="alert alert-{{ $customer->dp_kpr === null ? 'warning' : 'info' }}">
-                            @if($customer->dp_kpr === null)
-                                DP KPR belum ditentukan. Admin perlu mengisi nominal melalui tombol <strong>DP KPR</strong> pada Data Customer agar piutang tidak memakai harga rumah.
-                            @else
-                                DP wajib KPR: <strong>Rp {{ number_format($customer->dp_kpr, 0, ',', '.') }}</strong>. Booking fee dan pembayaran DP mengurangi tagihan ini.
-                            @endif
+                        @if(!$sp3k && $customer->dp_kpr === null)
+                        <div class="alert alert-warning">DP dan plafon SP3K belum ditentukan. Nominal tagihan lama belum dapat dipisahkan otomatis; lengkapi SP3K melalui Proses Bank.</div>
+                        @endif
+                        <div class="alert alert-info">
+                            Piutang DP = harga rumah dikurangi plafon SP3K. Pembayaran customer mengurangi DP;
+                            pencairan KPR mengurangi piutang bank. Sebelum SP3K tersedia, DP memakai nominal sementara dari admin.
                             <a class="alert-link" href="{{ route('customer.index') }}">Buka Data Customer</a>
                         </div>
                     @endif
@@ -73,14 +73,14 @@
                         <!-- Awal Kanan -->
                         <div class="col col-5">
                             <div class="form-group row">
-                                <label class="control-label col-sm-4">Total Tagihan</label>
+                                <label class="control-label col-sm-4">Tagihan Customer</label>
                                 <div class="col-sm-5">
                                     <div class="input-group">
                                         <div class="input-group-prepend">
                                             <span class="input-group-text">Rp.</span>
                                         </div>
                                         <input class="form-control text-right" type="text" id="total_tagihan_all"
-                                            value="{{ number_format($customer->piutangs->sum('nominal'), 0, ',', '.') }}"
+                                            value="{{ number_format($customer->piutangs->where('jenis_piutang', '!=', 'bank')->sum('nominal'), 0, ',', '.') }}"
                                             readonly>
                                     </div>
                                 </div>
@@ -113,7 +113,7 @@
                             </div>
 
                             <div class="form-group row">
-                                <label class="control-label col-sm-4">Jumlah Bayar</label>
+                                <label class="control-label col-sm-4">Pembayaran Customer</label>
                                 <div class="col-sm-5">
                                     <div class="input-group">
                                         <div class="input-group-prepend">
@@ -127,7 +127,7 @@
                             </div>
 
                             <div class="form-group row">
-                                <label class="control-label col-sm-4">Sisa Bayar</label>
+                                <label class="control-label col-sm-4">Sisa Piutang Customer</label>
                                 <div class="col-sm-5">
                                     <div class="input-group">
                                         <div class="input-group-prepend">
@@ -149,7 +149,7 @@
                         <div class="col col-10">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <div class="d-flex align-items-center">
-                                    <h5>- Tagihan - </h5>
+                                    <h5>Tagihan Customer / DP</h5>
                                 </div>
                                 <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modalTagihan"><i
                                         class="fa fa-home"></i>
@@ -179,12 +179,10 @@
 
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <div class="d-flex align-items-center">
-                                    <h5>- Pemasukan -</h5>
+                                    <h5>Pembayaran Customer / DP</h5>
                                 </div>
                                 <div>
-                                    <button class="btn btn-warning btn-sm mr-2" type="button" id="btnPencairanKpr" @disabled(!$akadSelesai) title="{{ $akadSelesai ? 'Catat pencairan bertahap' : 'Customer harus selesai akad terlebih dahulu' }}">
-                                        <i class="fa fa-university"></i> Pencairan KPR
-                                    </button>
+
                                     <button class="btn btn-success btn-sm" data-toggle="modal" data-target="#modalPemasukan"><i
                                             class="fa fa-money-bill"></i>
                                         Tambah Pemasukan</button>
@@ -210,6 +208,36 @@
                                     </tr>
                                 </tfoot>
                             </table>
+                            @if(strtoupper(trim($customer->jenis_pembelian ?? '')) === 'KPR')
+                            <hr>
+                            <div class="d-flex justify-content-between align-items-center flex-wrap mb-2" style="gap: 8px;">
+                                <h5 class="mb-0">Pembayaran Bank / Pencairan KPR</h5>
+                                    <button class="btn btn-warning btn-sm" type="button" id="btnPencairanKpr" @disabled(!$akadSelesai) title="{{ $akadSelesai ? 'Catat pencairan bertahap' : 'Customer harus selesai akad terlebih dahulu' }}">
+                                        <i class="fa fa-university"></i> Pencairan KPR
+                                    </button>
+                            </div>
+                            <p>Piutang bank: Rp <span id="bank-plafon">{{ number_format($plafonSp3k, 0, ',', '.') }}</span>
+                            &middot; Sisa piutang bank: Rp <span id="bank-sisa">{{ number_format($ringkasanKpr['sisa_plafon'], 0, ',', '.') }}</span></p>
+                            <table class="table table-bordered table-bank">
+                                <thead>
+                                    <tr class="table-success">
+                                        <th width="30px">No</th>
+                                        <th>Tanggal</th>
+                                        <th>Jenis Pembayaran</th>
+                                        <th>Jenis</th>
+                                        <th>Nominal</th>
+                                        <th width="150px">Action</th>
+                                    </tr>
+                                </thead>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="4" align="right"><b>Total Pencairan Bank</b></td>
+                                        <td align="right"><b id="total-bank">Rp. 0</b></td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                            @endif
 
                         </div>
                     </div>
@@ -221,7 +249,7 @@
     {{-- modal pencairan kpr --}}
     <div class="modal fade" id="modalPencairanKpr" tabindex="-1" role="dialog" data-focus="false"
         aria-labelledby="modalPencairanKprLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
-        <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header bg-warning">
                     <h5 class="modal-title text-white font-weight-bold" id="modalPencairanKprLabel">Pencairan KPR</h5>
@@ -237,21 +265,21 @@
                         <div class="alert alert-info mb-0">
                             Sudah cair: <strong id="kpr_total_cair">{{ number_format($ringkasanKpr['total_pencairan'], 0, ',', '.') }}</strong>.
                             Sisa plafon: <strong id="kpr_sisa_plafon">{{ number_format($ringkasanKpr['sisa_plafon'], 0, ',', '.') }}</strong>.
-                            <div class="small mt-1">Isi pencairan tahap ini dan retensi yang masih ditahan setelah pencairan ini. Retensi tahap sebelumnya tidak ditambahkan lagi.</div>
+                            <div class="small mt-1">Isi persentase termin sesuai pencairan bank. Nominal dihitung dari plafon SP3K, bukan dari sisa plafon.</div>
                         </div>
                     </div>
                     <div class="modal-body">
                         <div class="form-group row">
-                            <label class="col-sm-3 col-form-label">Tgl Pencairan</label>
-                            <div class="col-sm-4">
+                            <label class="col-sm-4 col-form-label">Tgl Pencairan</label>
+                            <div class="col-sm-8">
                                 <input name="tanggal_pencairan" id="tanggal_pencairan" class="form-control"
                                     type="date" value="{{ date('Y-m-d') }}">
                             </div>
                         </div>
 
                         <div class="form-group row">
-                            <label class="col-sm-3 col-form-label">Jumlah Plafon</label>
-                            <div class="col-sm-4">
+                            <label class="col-sm-4 col-form-label">Jumlah Plafon</label>
+                            <div class="col-sm-8">
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text">Rp.</span>
@@ -263,54 +291,30 @@
                         </div>
 
                         <div class="form-group row">
-                            <label class="col-sm-3 col-form-label">Pencairan Tahap Ini</label>
-                            <div class="col-sm-4">
+                            <label for="persentase_termin" class="col-sm-4 col-form-label">Persentase Termin</label>
+                            <div class="col-sm-8">
+                                <div class="input-group">
+                                    <input name="persentase_termin" id="persentase_termin" class="form-control" type="number" min="0.01" max="100" step="0.01" required placeholder="Contoh: 30" aria-describedby="termin-help">
+                                    <div class="input-group-append"><span class="input-group-text">%</span></div>
+                                </div>
+                                <small id="termin-help" class="form-text text-muted">Diisi manual sesuai termin bank, misalnya 30, 20, 40, atau 10.</small>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-sm-4 col-form-label">Pencairan Tahap Ini</label>
+                            <div class="col-sm-8">
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text">Rp.</span>
                                     </div>
                                     <input name="jumlah_pencairan" id="jumlah_pencairan"
-                                        class="form-control format-number" type="text">
+                                        class="form-control format-number" type="text" readonly>
                                 </div>
                             </div>
                         </div>
 
-                        <hr>
-                        <h6 class="font-weight-bold">Retensi</h6>
-                        <h6 class="font-weight-bold mt-3">Sisa Retensi Setelah Pencairan</h6>
-                        @forelse ($retensis as $retensi)
-                            <div class="form-group row retensi-row">
-                                <label class="col-sm-3 col-form-label">{{ $retensi->nama_retensi }}</label>
-                                <div class="col-sm-4">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text">Rp.</span>
-                                        </div>
-                                        <input type="text" name="retensi[{{ $retensi->id }}]"
-                                            class="form-control format-number retensi-input"
-                                            data-retensi-id="{{ $retensi->id }}" value="0">
-                                    </div>
-                                </div>
-                                <div class="col-sm-5">
-                                    <small class="text-muted">{{ $retensi->keterangan ?: '-' }}</small>
-                                </div>
-                            </div>
-                        @empty
-                            <div class="alert alert-warning mb-0">
-                                Data retensi belum tersedia. Tambahkan dulu di menu master data retensi.
-                            </div>
-                        @endforelse
-
-                        <div class="form-group row mt-3">
-                            <label class="col-sm-3 col-form-label font-weight-bold">Total Retensi</label>
-                            <div class="col-sm-4">
-                                <div class="input-group">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text">Rp.</span>
-                                    </div>
-                                    <input type="text" id="total_retensi" class="form-control text-right" readonly>
-                                </div>
-                            </div>
+                        <div class="alert alert-light border mb-0 small">Sisa piutang bank setelah pencairan:
+                            <strong>Rp <span id="kpr_sisa_setelah">0</span></strong>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -750,13 +754,14 @@
             $('#sisa_bayar_all').val(formatNumber(sisa));
         }
 
-        function hitungTotalRetensi() {
-            let total = 0;
-            $('.retensi-input').each(function() {
-                total += unformatNumber($(this).val() || 0);
-            });
-            $('#total_retensi').val(formatNumber(total));
-            return total;
+        function hitungNominalTermin() {
+            const persen = Number($('#persentase_termin').val());
+            const plafon = unformatNumber($('#jumlah_plafon').val());
+            const nominal = Number.isFinite(persen) && persen > 0 && persen <= 100
+                ? Math.round(plafon * Math.round(persen * 100) / 10000) : 0;
+            $('#jumlah_pencairan').val(nominal ? formatNumber(nominal) : '');
+            $('#kpr_sisa_setelah').text(formatNumber(Math.max(Number(ringkasanKpr.sisa_plafon) - nominal, 0)));
+            return nominal;
         }
 
         $(document).ready(function() {
@@ -802,8 +807,8 @@
             });
         });
 
-        $(document).on('input', '.retensi-input, #jumlah_plafon, #jumlah_pencairan', function() {
-            hitungTotalRetensi();
+        $(document).on('input', '#persentase_termin', function() {
+            hitungNominalTermin();
         });
 
         let ringkasanKpr = @json($ringkasanKpr);
@@ -819,10 +824,6 @@
                 toastr.warning('Customer harus selesai akad terlebih dahulu.');
                 return;
             }
-            if (ringkasanKpr.sisa_plafon <= 0) {
-                toastr.warning('Seluruh plafon SP3K sudah dicairkan.');
-                return;
-            }
             let estimasiPlafon = unformatNumber($('#plafon_sp3k').val());
 
             if (!estimasiPlafon || estimasiPlafon <= 0) {
@@ -835,13 +836,14 @@
                 return;
             }
 
+            if (ringkasanKpr.sisa_plafon <= 0) {
+                toastr.warning('Seluruh plafon SP3K sudah dicairkan.');
+                return;
+            }
             $('#jumlah_plafon').val(formatNumber(estimasiPlafon));
             $('#jumlah_pencairan').val('');
-            $('.retensi-input').val('0');
-            $('.retensi-input').each(function() {
-                $(this).val(formatNumber(ringkasanKpr.retensi_tersisa[$(this).data('retensi-id')] || 0));
-            });
-            hitungTotalRetensi();
+            $('#persentase_termin').val('');
+            hitungNominalTermin();
             $('#modalPencairanKpr').modal('show');
         });
 
@@ -1155,7 +1157,8 @@
 
                                 $('.table-tagihan').DataTable().ajax.reload(null,
                                     false);
-                                $('.table-pemasukan').DataTable().ajax.reload(null,
+                                $('.table-pemasukan, .table-bank').each(function() { $(this).DataTable().ajax.reload(null, false); });
+                        $('.table-pemasukan').DataTable().ajax.reload(null,
                                     false);
                                 $('#total_tagihan_all').val(response
                                     .total_tagihan_formatted);
@@ -1187,14 +1190,16 @@
             var url = "{{ route('pembayaran.detail-pemasukan', ['id' => '__id__']) }}".replace('__id__',
                 customerId);
 
-            $('.table-pemasukan').DataTable({
+            $('.table-pemasukan, .table-bank').each(function() {
+            const isBank = $(this).hasClass('table-bank');
+            $(this).DataTable({
                 processing: false,
                 serverSide: true,
                 paging: false,
                 searching: false,
                 ordering: false,
                 info: false,
-                ajax: url,
+                ajax: {url: url, data: {sumber: isBank ? 'bank' : 'customer'}},
                 columns: [{
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',
@@ -1228,11 +1233,15 @@
                         container: 'body',
                         trigger: 'hover'
                     });
-                    $('#total-pemasukan').html('<b>Rp. ' + settings.json.total_pemasukan_formatted +
+                    $(isBank ? '#total-bank' : '#total-pemasukan').html('<b>Rp. ' + settings.json.total_pemasukan_formatted +
                         '</b>');
+                    if (settings.json.ringkasan_bank) {
+                        $('#bank-sisa').text(formatNumber(settings.json.ringkasan_bank.sisa_plafon));
+                    }
                     $('#jumlah_bayar_all').val(settings.json.jumlah_bayar);
                     $('#sisa_bayar_all').val(settings.json.sisa_bayar);
                 }
+            });
             });
         });
 
@@ -1261,8 +1270,6 @@
 
         $('#modalPencairanKpr').on('hidden.bs.modal', function() {
             $('#formPencairanKpr')[0].reset();
-            $('.retensi-input').val('0');
-            $('#total_retensi').val('');
             $('.is-invalid').removeClass('is-invalid');
             $('.invalid-feedback').remove();
 
@@ -1289,24 +1296,12 @@
                 return;
             }
 
-            let jumlahPlafon = unformatNumber($('#jumlah_plafon').val());
-            let jumlahPencairan = unformatNumber($('#jumlah_pencairan').val());
-            let totalRetensi = hitungTotalRetensi();
+            let jumlahPencairan = hitungNominalTermin();
 
             if (jumlahPencairan <= 0 || jumlahPencairan > ringkasanKpr.sisa_plafon) {
                 toastr.error('Pencairan harus lebih dari nol dan tidak boleh melebihi sisa plafon SP3K.');
                 return;
             }
-            if (jumlahPlafon !== (Number(ringkasanKpr.total_pencairan) + jumlahPencairan + totalRetensi)) {
-                audio.play();
-                toastr.error("Pencairan sebelumnya + tahap ini + sisa retensi harus sama dengan plafon SP3K.", "GAGAL!", {
-                    progressBar: true,
-                    timeOut: 3500,
-                    positionClass: "toast-bottom-right",
-                });
-                return;
-            }
-
             let submitBtn = $('#submitBtnPencairanKpr');
             let spinner = submitBtn.find('.spinner-border');
             let btnText = submitBtn.find('.button-text');
@@ -1344,6 +1339,7 @@
                         $('#total_tagihan_all').val(response.total_tagihan);
                         $('#sisa_bayar_all').val(response.sisa_bayar);
 
+                        $('.table-pemasukan, .table-bank').each(function() { $(this).DataTable().ajax.reload(null, false); });
                         $('.table-pemasukan').DataTable().ajax.reload();
                     }
                 },
@@ -1431,6 +1427,7 @@
                         $('#total_tagihan_all').val(response.total_tagihan);
                         recalcSisaBayar();
 
+                        $('.table-pemasukan, .table-bank').each(function() { $(this).DataTable().ajax.reload(null, false); });
                         $('.table-pemasukan').DataTable().ajax.reload();
                     }
                 },
@@ -1510,7 +1507,8 @@
                                         positionClass: "toast-bottom-right"
                                     });
 
-                                $('.table-pemasukan').DataTable().ajax.reload(null,
+                                $('.table-pemasukan, .table-bank').each(function() { $(this).DataTable().ajax.reload(null, false); });
+                        $('.table-pemasukan').DataTable().ajax.reload(null,
                                     false);
                                 syncKprSummary(response);
                         $('#jumlah_bayar_all').val(response.jumlah_bayar);
@@ -1634,6 +1632,7 @@
                             timeOut: 3500,
                             positionClass: "toast-bottom-right",
                         });
+                        $('.table-pemasukan, .table-bank').each(function() { $(this).DataTable().ajax.reload(null, false); });
                         $('.table-pemasukan').DataTable().ajax.reload();
                     }
                 },

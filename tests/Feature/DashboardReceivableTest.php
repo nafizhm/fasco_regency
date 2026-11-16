@@ -18,11 +18,15 @@ class DashboardReceivableTest extends TestCase
             $table->integer('stt_arsip')->default(0);
         });
         Schema::create('piutang', function (Blueprint $table) {
+            $table->string('jenis_piutang')->nullable();
             $table->id();
             $table->integer('id_customer');
             $table->integer('nominal');
         });
+        Schema::create('kategori_transaksi', function (Blueprint $table) { $table->id(); $table->string('kategori'); });
+        DB::table('kategori_transaksi')->insert(['id' => 9, 'kategori' => 'Pencairan KPR']);
         Schema::create('pemasukan', function (Blueprint $table) {
+            $table->integer('id_kategori_transaksi')->default(1);
             $table->id();
             $table->integer('id_customer');
             $table->integer('nominal');
@@ -41,6 +45,8 @@ class DashboardReceivableTest extends TestCase
             DB::table('pemasukan')->insert(['id_customer' => $id, 'nominal' => $amount, 'keterangan' => $description]);
         }
 
+        DB::table('piutang')->insert(['id_customer' => 1, 'nominal' => 6000, 'jenis_piutang' => 'bank']);
+        DB::table('pemasukan')->insert(['id_customer' => 1, 'nominal' => 5500, 'id_kategori_transaksi' => 9]);
         $this->assertSame(['piutang' => 1200, 'piutang_customer' => 2], app(DashboardReceivableService::class)->summary());
         $customers = app(DashboardReceivableService::class)->customers();
         $this->assertSame([1, 4], $customers->pluck('id')->all());

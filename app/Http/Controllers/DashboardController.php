@@ -20,14 +20,22 @@ class DashboardController extends Controller
     {
         $customers = $receivables->customers([
             'lokasi', 'kavling',
-            'piutangs' => fn ($query) => $query->orderBy('tanggal_piutang')->orderBy('id'),
+            'piutangs' => fn ($query) => $query->where(fn ($q) => $q->whereNull('jenis_piutang')->orWhere('jenis_piutang', '!=', 'bank'))->orderBy('tanggal_piutang')->orderBy('id'),
             'pemasukans' => fn ($query) => $query
+                ->whereNotIn('id_kategori_transaksi', \App\Models\KategoriTransaksi::where('kategori', 'Pencairan KPR')->pluck('id'))
                 ->where(fn ($payment) => $payment->whereNull('keterangan')
                     ->orWhere('keterangan', 'NOT LIKE', 'Biaya ganti nama%'))
                 ->orderBy('tanggal')->orderBy('id'),
         ]);
 
         return view('admin.dashboard.piutang', compact('customers'));
+    }
+
+    public function piutangKpr(\App\Services\KprReceivableReport $report)
+    {
+        $rows = $report->rows();
+        $stages = max(4, (int) $rows->max(fn ($row) => $row['payments']->count()));
+        return view('admin.dashboard.piutang-kpr', compact('rows', 'stages'));
     }
 
     public function dashboard()

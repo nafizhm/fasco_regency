@@ -35,6 +35,7 @@ class AbsenTukangController extends Controller
             'rows' => 'required|array|min:1|max:1000',
             'rows.*.id' => 'required|integer|distinct|exists:tukang,id',
             'rows.*.hari' => 'required|array|size:6',
+            'rows.*.tambahan_gaji' => 'sometimes|required|integer|min:0|max:1000000000',
             'rows.*.hari.*' => ['nullable', 'string', 'regex:/^(M|H|I|S|A|L|0\.5|½|([01][0-9]|2[0-3]):[0-5][0-9])$/i'],
         ], ['rows.*.hari.*.regex' => 'Isi dengan jam HH:MM, M (masuk), ½, I (izin), S (sakit), A (alpa), atau L (libur).']);
         $start = CarbonImmutable::parse($request->mulai)->startOfWeek()->toDateString();
@@ -64,6 +65,7 @@ class AbsenTukangController extends Controller
                 DB::table('absen_tukang_detail')->updateOrInsert(['id_pekan' => $week->id, 'id_tukang' => $row['id']], [
                     'gaji_per_hari' => $saved ? $saved->gaji_per_hari : $workers[$row['id']]->gaji_per_hari,
                     'hari' => json_encode($days, JSON_THROW_ON_ERROR),
+                    'tambahan_gaji' => $row['tambahan_gaji'] ?? ($saved->tambahan_gaji ?? 0),
                 ]);
             }
             DB::table('absen_tukang_pekan')->where('id', $week->id)->update(['versi' => $week->versi + 1, 'updated_at' => now()]);

@@ -32,6 +32,7 @@ class Sp3kPaymentTest extends TestCase
             $table->integer('estimasi_plafon')->default(999);
         });
         Schema::create('piutang', function (Blueprint $table) {
+            $table->string('jenis_piutang')->nullable();
             $table->id();
             $table->integer('id_customer');
             $table->integer('nominal');
@@ -71,6 +72,7 @@ class Sp3kPaymentTest extends TestCase
         });
         DB::table('kategori_transaksi')->insert(['id' => 9, 'kategori' => 'Pencairan KPR']);
         (require database_path('migrations/2026_10_07_010000_add_sp3k_snapshot_to_pemasukan.php'))->up();
+        (require database_path('migrations/2026_11_17_020000_add_persentase_termin_to_pemasukan.php'))->up();
         DB::table('customer')->insert(['id' => 1]);
         DB::table('wawancara')->insert(['id' => 1, 'id_customer' => 1]);
         Route::post('/_test/kpr/{id}', [PembayaranController::class, 'tambahPencairanKpr']);
@@ -88,7 +90,7 @@ class Sp3kPaymentTest extends TestCase
     private function payload(): array
     {
         return ['id_sp3k' => 1, 'tanggal_pencairan' => '2026-10-07', 'jumlah_plafon' => '300',
-            'jumlah_pencairan' => '270', 'retensi' => [10 => '30']];
+            'jumlah_pencairan' => '270', 'persentase_termin' => '90'];
     }
 
     public function test_manual_estimate_cannot_replace_missing_sp3k(): void
@@ -105,7 +107,8 @@ class Sp3kPaymentTest extends TestCase
         $this->assertDatabaseHas('pemasukan', [
             'id_sp3k' => 1, 'no_sp3k' => 'SP3K-1', 'plafon_sp3k' => 300, 'nominal' => 270, 'id_bank_kpr_sp3k' => 7,
         ]);
-        $this->assertDatabaseHas('pemasukan_retensi', ['id_pemasukan' => 1, 'id_retensi' => 10, 'nominal' => 30]);
+        $this->assertDatabaseHas('pemasukan', ['id' => 1, 'persentase_termin' => 90]);
+        $this->assertDatabaseCount('pemasukan_retensi', 0);
         $this->sp3k(2, 400);
         $this->assertEquals(400, app(Sp3kPlafonService::class)->latestForCustomer(1)->acc_plafon);
         DB::table('wawancara_sp3k')->where('id', 1)->delete();
@@ -113,7 +116,7 @@ class Sp3kPaymentTest extends TestCase
         $this->assertSame('SP3K-1', Pemasukan::findOrFail(1)->no_sp3k);
     }
 
-    public function test_stale_reference_wrong_plafon_and_inconsistent_retensi_are_rejected(): void
+    public function test_stale_reference_wrong_plafon_and_inconsistent_percentage_are_rejected(): void
     {
         $this->sp3k();
         $payload = $this->payload();
@@ -121,23 +124,23 @@ class Sp3kPaymentTest extends TestCase
         $payload['jumlah_pencairan'] = '969';
         $this->postJson('/_test/kpr/1', $payload)->assertStatus(422);
         $payload = $this->payload();
-        $payload['retensi'] = [10 => '31'];
+        $payload['persentase_termin'] = '80';
         $this->postJson('/_test/kpr/1', $payload)->assertStatus(422);
         $this->sp3k(2);
         $this->postJson('/_test/kpr/1', $this->payload())->assertStatus(422);
         $this->assertDatabaseCount('pemasukan', 0);
     }
 
-    public function test_disbursements_can_release_retensi_in_multiple_stages_up_to_plafon(): void
+    public function test_manual_percentage_disbursements_can_reach_full_plafon(): void
     {
         $this->sp3k();
         $this->postJson('/_test/kpr/1', $this->payload())->assertOk()->assertJson(['total_pencairan' => 270, 'sisa_plafon' => 30]);
         $second = $this->payload();
         $second['jumlah_pencairan'] = '20';
-        $second['retensi'] = [10 => '10'];
+        $second['persentase_termin'] = '6.67';
         $this->postJson('/_test/kpr/1', $second)->assertOk()->assertJson(['total_pencairan' => 290, 'sisa_plafon' => 10]);
         $second['jumlah_pencairan'] = '10';
-        $second['retensi'] = [10 => '0'];
+        $second['persentase_termin'] = '3.33';
         $this->postJson('/_test/kpr/1', $second)->assertOk()->assertJson(['total_pencairan' => 300, 'sisa_plafon' => 0, 'retensi_tersisa' => []]);
         $this->assertDatabaseCount('pemasukan', 3);
         $this->postJson('/_test/kpr/1', $second)->assertStatus(422);
@@ -156,32 +159,58 @@ class Sp3kPaymentTest extends TestCase
         $this->assertDatabaseCount('pemasukan', 0);
     }
 
-    public function test_total_above_plafon_and_negative_retensi_are_rejected(): void
+    public function test_total_above_plafon_and_negative_percentage_are_rejected(): void
     {
         $this->sp3k();
         $this->postJson('/_test/kpr/1', $this->payload())->assertOk();
         $payload = $this->payload();
         $payload['jumlah_pencairan'] = '31';
-        $payload['retensi'] = [10 => '0'];
+        $payload['persentase_termin'] = '10.33';
         $this->postJson('/_test/kpr/1', $payload)->assertStatus(422);
         $payload['jumlah_pencairan'] = '10';
-        $payload['retensi'] = [10 => '-1'];
+        $payload['persentase_termin'] = '-1';
         $this->postJson('/_test/kpr/1', $payload)->assertStatus(422);
         $this->assertDatabaseCount('pemasukan', 1);
     }
 
-    public function test_deletion_must_start_with_last_stage_and_restores_previous_retensi(): void
+    public function test_deletion_must_start_with_last_stage_and_restores_bank_balance(): void
     {
         $this->sp3k();
         $this->postJson('/_test/kpr/1', $this->payload())->assertOk();
         $second = $this->payload();
         $second['jumlah_pencairan'] = '20';
-        $second['retensi'] = [10 => '10'];
+        $second['persentase_termin'] = '6.67';
         $this->postJson('/_test/kpr/1', $second)->assertOk();
         $this->deleteJson('/_test/kpr-payment/1')->assertStatus(422);
         $this->assertDatabaseCount('pemasukan', 2);
         $this->deleteJson('/_test/kpr-payment/2')->assertOk()->assertJson(['total_pencairan' => 270, 'sisa_plafon' => 30]);
         $summary = app(\App\Services\KprDisbursementService::class)->summary(1);
-        $this->assertEquals(30, $summary['retensi_tersisa'][10]);
+        $this->assertSame([], $summary['retensi_tersisa']);
+        $this->assertSame(30, $summary['sisa_plafon']);
     }
+    public function test_percentage_is_required_and_must_be_positive_at_most_100_with_two_decimals(): void
+    {
+        $this->sp3k();
+        foreach ([null, '0', '-1', '101', '30.001', 'abc'] as $percentage) {
+            $payload = $this->payload();
+            $payload['persentase_termin'] = $percentage;
+            $this->postJson('/_test/kpr/1', $payload)->assertUnprocessable()->assertJsonValidationErrors('persentase_termin');
+        }
+        $this->assertDatabaseCount('pemasukan', 0);
+    }
+
+    public function test_excel_30_20_40_10_pattern_without_retensi(): void
+    {
+        $this->sp3k();
+        foreach ([30, 20, 40, 10] as $percentage) {
+            $payload = $this->payload();
+            $payload['persentase_termin'] = (string) $percentage;
+            $payload['jumlah_pencairan'] = (string) ($percentage * 3);
+            $this->postJson('/_test/kpr/1', $payload)->assertOk();
+        }
+        $this->assertSame(300, (int) DB::table('pemasukan')->sum('nominal'));
+        $this->assertDatabaseCount('pemasukan_retensi', 0);
+        $this->assertEquals([30, 20, 40, 10], DB::table('pemasukan')->orderBy('id')->pluck('persentase_termin')->all());
+    }
+
 }

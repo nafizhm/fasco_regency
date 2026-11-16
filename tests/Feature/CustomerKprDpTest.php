@@ -16,6 +16,9 @@ class CustomerKprDpTest extends CustomerReceivableTest
     protected function setUp(): void
     {
         parent::setUp();
+        Schema::table('piutang', fn (Blueprint $t) => $t->string('jenis_piutang')->nullable());
+        Schema::table('pemasukan', fn (Blueprint $t) => $t->integer('id_kategori_transaksi')->default(1));
+        Schema::create('kategori_transaksi', function (Blueprint $t) { $t->id(); $t->string('kategori'); });
         Schema::table('customer', function (Blueprint $t) { $t->string('jenis_pembelian')->nullable(); $t->integer('id_booking')->nullable(); });
         Schema::create('pengajuan_hold', fn (Blueprint $t) => $t->id());
         (require database_path('migrations/2026_11_14_030000_add_customer_dp_kpr.php'))->up();

@@ -121,4 +121,27 @@ class PiutangPaymentTest extends TestCase
         $bill->update(['nominal' => 200]);
         $this->assertDatabaseHas('piutang', ['id' => $bill->id, 'terbayar' => 150, 'sisa_bayar' => 50, 'status' => 1, 'tgl_pelunasan' => null]);
     }
+    public function test_bank_and_customer_payments_never_cross_receivable_types_even_when_linked(): void
+    {
+        Schema::table('piutang', fn (Blueprint $t) => $t->string('jenis_piutang')->nullable());
+        Schema::create('kategori_transaksi', function (Blueprint $t) {
+            $t->id(); $t->string('kategori');
+        });
+        DB::table('kategori_transaksi')->insert(['id' => 9, 'kategori' => 'Pencairan KPR']);
+        $dp = Piutang::create(['id_customer' => 1, 'nominal' => 100, 'jenis_piutang' => 'dp']);
+        $bank = Piutang::create(['id_customer' => 1, 'nominal' => 600, 'jenis_piutang' => 'bank']);
+        $this->pay(30);
+        $payment = $this->pay(540, ['id_kategori_transaksi' => 9]);
+        $this->assertDatabaseHas('piutang', ['id' => $dp->id, 'terbayar' => 30, 'sisa_bayar' => 70]);
+        $this->assertDatabaseHas('piutang', ['id' => $bank->id, 'terbayar' => 540, 'sisa_bayar' => 60]);
+        $payment->update(['id_piutang' => $dp->id]);
+        $this->assertDatabaseHas('piutang', ['id' => $dp->id, 'terbayar' => 30]);
+        $this->assertDatabaseHas('piutang', ['id' => $bank->id, 'terbayar' => 540]);
+        $payment->update(['id_piutang' => 0, 'nominal' => 600]);
+        $this->assertDatabaseHas('piutang', ['id' => $bank->id, 'status' => 2, 'sisa_bayar' => 0]);
+        $payment->delete();
+        $this->assertDatabaseHas('piutang', ['id' => $bank->id, 'status' => 1, 'sisa_bayar' => 600]);
+        $this->assertDatabaseHas('piutang', ['id' => $dp->id, 'sisa_bayar' => 70]);
+    }
+
 }

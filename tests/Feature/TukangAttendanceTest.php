@@ -32,6 +32,7 @@ class TukangAttendanceTest extends TestCase
         DB::table('hak_akses')->insert(['id_user' => 1, 'id_menu' => 1]);
         (require database_path('migrations/2026_11_14_010000_add_tukang_attendance.php'))->up();
         (require database_path('migrations/2026_11_16_010000_add_jenis_to_tukang_table.php'))->up();
+        (require database_path('migrations/2026_11_17_030000_add_bonus_to_absen_tukang.php'))->up();
         DB::table('tukang')->where('id', 1)->update(['gaji_per_hari' => 150000]);
         $user = new User(); $user->id = 1; $user->username = 'test'; $this->actingAs($user);
     }
@@ -105,4 +106,25 @@ class TukangAttendanceTest extends TestCase
         $this->putJson(route('tukang.update', $id), $payload + ['jenis' => '08123456789'])->assertUnprocessable()->assertJsonValidationErrors('jenis');
         $this->assertDatabaseHas('tukang', ['id' => $id, 'jenis' => 'Mandor']);
     }
+    public function test_weekly_bonus_is_saved_reopened_updated_and_validated(): void
+    {
+        $payload = $this->payload();
+        $payload['rows'][0]['tambahan_gaji'] = 50000;
+        $this->postJson(route('absen-tukang.store'), $payload)->assertOk();
+        $this->assertDatabaseHas('absen_tukang_detail', ['id_tukang' => 1, 'tambahan_gaji' => 50000]);
+        $this->get(route('absen-tukang.index', ['minggu' => '2026-11-09']))->assertOk()->assertSee('Tambahan Gaji')->assertSee('value="50.000"', false);
+        $payload['versi'] = 1;
+        $payload['rows'][0]['tambahan_gaji'] = 75000;
+        $this->postJson(route('absen-tukang.store'), $payload)->assertOk();
+        $this->assertDatabaseHas('absen_tukang_detail', ['id_tukang' => 1, 'tambahan_gaji' => 75000]);
+        $payload['versi'] = 2;
+        foreach ([-1, 'abc', 1000000001, 2.5] as $bonus) {
+            $payload['rows'][0]['tambahan_gaji'] = $bonus;
+            $this->postJson(route('absen-tukang.store'), $payload)->assertUnprocessable()->assertJsonValidationErrors('rows.0.tambahan_gaji');
+        }
+        $payload['rows'][0]['tambahan_gaji'] = 0;
+        $this->postJson(route('absen-tukang.store'), $payload)->assertOk();
+        $this->assertDatabaseHas('absen_tukang_detail', ['id_tukang' => 1, 'tambahan_gaji' => 0]);
+    }
+
 }

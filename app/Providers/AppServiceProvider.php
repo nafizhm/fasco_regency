@@ -27,6 +27,15 @@ class AppServiceProvider extends ServiceProvider
                 ->orderBy('urutan')->with(['children' => fn ($q) => $q->whereIn('id', $allowed)])->get();
             session(['getmenus' => $menus]);
         });
+        \App\Models\Customer::updated(function ($customer) {
+            app(\App\Services\PiutangPaymentService::class)->syncCustomer($customer->id);
+        });
+        foreach (['saved', 'deleted'] as $event) {
+            \App\Models\WawancaraSp3k::$event(function ($sp3k) {
+                $id = $sp3k->wawancara?->id_customer;
+                if ($id) app(\App\Services\PiutangPaymentService::class)->syncCustomer($id);
+            });
+        }
         foreach (['saved', 'deleted'] as $event) {
             \App\Models\Pemasukan::$event(function ($payment) {
                 app(\App\Services\PiutangPaymentService::class)->paymentChanged($payment);

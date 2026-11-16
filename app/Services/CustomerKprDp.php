@@ -15,6 +15,11 @@ class CustomerKprDp
             if (strtoupper(trim($customer->jenis_pembelian ?? '')) !== 'KPR' || $customer->stt_arsip) {
                 throw ValidationException::withMessages(['dp_kpr' => 'DP hanya dapat diubah untuk customer KPR aktif.']);
             }
+            if (\Illuminate\Support\Facades\Schema::hasColumn('piutang', 'jenis_piutang')
+                && \Illuminate\Support\Facades\Schema::hasTable('wawancara_sp3k')
+                && app(Sp3kPlafonService::class)->latestForCustomer($id)) {
+                throw ValidationException::withMessages(['dp_kpr' => 'DP dihitung dari harga rumah dikurangi plafon SP3K. Koreksi harga rumah atau SP3K untuk mengubah DP.']);
+            }
             if ($amount < 0 || $amount > (int) $customer->total_harga) {
                 throw ValidationException::withMessages(['dp_kpr' => 'DP harus antara Rp0 dan total harga rumah.']);
             }

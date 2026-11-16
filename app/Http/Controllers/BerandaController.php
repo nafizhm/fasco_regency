@@ -50,10 +50,12 @@ class BerandaController extends Controller
         $today = Carbon::now('Asia/Jakarta')->toDateString();
         $receivables = app(\App\Services\DashboardReceivableService::class)->summary();
 
+        $kprRows = app(\App\Services\KprReceivableReport::class)->rows();
         $summaryMetrics = [
-            'jumlah_project' => LokasiKavling::whereIn('stt_tampil', [1, 3])->count(),
+            'unit_belum_terjual' => KavlingPeta::whereDoesntHave('customer')->count(),
             'total_unit' => KavlingPeta::count(),
-            'booking_fee_hari_ini' => PengajuanHold::whereDate('tgl_booking', $today)->sum('booking_fee'),
+            'piutang_kpr' => $kprRows->sum('sisa'),
+            'piutang_kpr_customer' => $kprRows->where('sisa', '>', 0)->count(),
             'piutang' => $receivables['piutang'],
             'piutang_customer' => $receivables['piutang_customer'],
             'tagihan_tempo_customer' => 0,

@@ -72,6 +72,10 @@ class PembayaranController extends Controller
                 $data->where('id_status_progres', $request->progres);
             }
 
+            if (in_array($request->jenis_pembelian, ['Pembelian Cash', 'Cash Bertahap', 'KPR'], true)) {
+                $data->where('jenis_pembelian', $request->jenis_pembelian);
+            }
+
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('customer', function ($row) {
@@ -644,6 +648,7 @@ class PembayaranController extends Controller
 
     public function show($id)
     {
+        app(\App\Services\PiutangPaymentService::class)->syncCustomer($id);
         $customer = Customer::with([
             'piutangs',
             'lokasi',
@@ -711,12 +716,15 @@ class PembayaranController extends Controller
 
     private function getTotalTagihanCustomer($customerId)
     {
-        return Piutang::where('id_customer', $customerId)->sum('nominal');
+        return Piutang::where('id_customer', $customerId)->where(function ($q) {
+            $q->whereNull('jenis_piutang')->orWhere('jenis_piutang', '!=', 'bank');
+        })->sum('nominal');
     }
 
     private function getJumlahBayarCustomer($customerId)
     {
         return Pemasukan::where('id_customer', $customerId)
+            ->whereNotIn('id_kategori_transaksi', KategoriTransaksi::where('kategori', 'Pencairan KPR')->pluck('id'))
             ->where(function ($query) {
                 $query->whereNull('keterangan')->orWhere('keterangan', 'NOT LIKE', 'Biaya ganti nama%');
             })
@@ -740,6 +748,7 @@ class PembayaranController extends Controller
             return DataTables::of($tagihanList)
                 ->addIndexColumn()
                 ->addColumn('jumlah_tagihan', function ($row) {
+                    if ($row->jenis_piutang) return 'Rp. ' . number_format($row->nominal, 0, ',', '.');
                     return '<div class="input-group input-group-sm" style="max-width:200px; margin-left:auto;">
                         <div class="input-group-prepend"><span class="input-group-text">Rp.</span></div>
                         <input type="text" class="form-control format-number edit-nominal text-right" aria-label="Nominal tagihan" value="' . number_format($row->nominal, 0, ',', '.') . '" data-id="' . $row->id . '">
@@ -749,7 +758,7 @@ class PembayaranController extends Controller
                     </div>';
                 })
                 ->addColumn('action', function ($row) {
-                    if (str_contains($row->deskripsi, 'Harga Rumah')) {
+                    if ($row->jenis_piutang || str_contains($row->deskripsi, 'Harga Rumah')) {
                         return '';
                     }
                     $deleteUrl = route('pembayaran.delete-tagihan', $row->id);
@@ -845,7 +854,7 @@ class PembayaranController extends Controller
     public function DeleteTagihan($id)
     {
         $tagihan     = Piutang::findOrFail($id);
-        if ($tagihan->customer?->jenis_pembelian === 'KPR' && str_starts_with(mb_strtolower($tagihan->deskripsi ?? ''), 'dp kpr')) {
+        if ($tagihan->jenis_piutang || $tagihan->customer?->jenis_pembelian === 'KPR' && str_starts_with(mb_strtolower($tagihan->deskripsi ?? ''), 'dp kpr')) {
             throw \Illuminate\Validation\ValidationException::withMessages(['tagihan' => 'Tagihan DP KPR dikelola melalui tombol DP KPR pada Data Customer.']);
         }
         $id_customer = $tagihan->id_customer;
@@ -881,7 +890,7 @@ class PembayaranController extends Controller
 
             $cust = Customer::whereKey($id_customer)->lockForUpdate()->first();
             $tagihan->refresh();
-            if ($cust && $cust->jenis_pembelian === 'KPR'
+            if ($tagihan->jenis_piutang || $cust && $cust->jenis_pembelian === 'KPR'
                 && (str_contains(mb_strtolower($tagihan->deskripsi ?? ''), 'harga rumah')
                     || str_starts_with(mb_strtolower($tagihan->deskripsi ?? ''), 'dp kpr'))) {
                 throw \Illuminate\Validation\ValidationException::withMessages(['nominal' => 'Ubah nominal DP melalui tombol DP KPR pada Data Customer agar piutang tetap sesuai.']);
@@ -924,6 +933,9 @@ class PembayaranController extends Controller
                 ->orderByDesc('tanggal')->orderByDesc('id')
                 ->get();
 
+            $bankIds = KategoriTransaksi::where('kategori', 'Pencairan KPR')->pluck('id')->all();
+            $data = $data->filter(fn ($payment) => ($request->input('sumber') === 'bank')
+                === in_array($payment->id_kategori_transaksi, $bankIds))->values();
             foreach ($data as $item) {
                 $deleteUrl              = route('pembayaran.delete-pemasukan', $item->id);
                 $editUrl                = route('pembayaran.edit-pemasukan', $item->id);
@@ -934,6 +946,7 @@ class PembayaranController extends Controller
                     $item->tanggal .= '<div class="text-muted small">' . e($reference) . ': Rp '
                         . number_format($item->plafon_sp3k, 0, ',', '.') . '</div>';
                 }
+                if ($item->persentase_termin !== null) $item->tanggal .= '<div class="text-muted small">Termin ' . e((float) $item->persentase_termin) . '%</div>';
                 $item->kategori         = $item->kategori->kategori ?? '-';
                 $item->jumlah_formatted = '
                     <div class="d-flex justify-content-between">
@@ -973,6 +986,7 @@ class PembayaranController extends Controller
                 ->addColumn('jumlah', fn($item) => $item->jumlah_formatted)
                 ->addColumn('action', fn($item) => $item->action)
                 ->with('total_pemasukan_formatted', number_format($total, 0, ',', '.'))
+                ->with('ringkasan_bank', app(\App\Services\KprDisbursementService::class)->summary($id))
                 ->with('jumlah_bayar', number_format($this->getJumlahBayarCustomer($id), 0, ',', '.'))
                 ->with('sisa_bayar', number_format($this->getSisaBayarCustomer($id), 0, ',', '.'))
                 ->rawColumns(['action', 'jumlah', 'tanggal'])
@@ -1081,8 +1095,7 @@ class PembayaranController extends Controller
             'id_sp3k' => 'required|integer|min:1',
             'jumlah_plafon' => 'required',
             'jumlah_pencairan' => ['required', 'regex:/^\d+(?:\.\d{3})*$/'],
-            'retensi' => 'nullable|array',
-            'retensi.*' => ['required', 'regex:/^\d+(?:\.\d{3})*$/'],
+            'persentase_termin' => ['required', 'numeric', 'gt:0', 'max:100', 'decimal:0,2'],
         ], [
             'tanggal_pencairan.required' => 'Tanggal pencairan wajib diisi.',
             'jumlah_plafon.required' => 'Jumlah plafon wajib diisi.',
@@ -1101,12 +1114,10 @@ class PembayaranController extends Controller
         }
 
         $jumlahPlafon = (int) str_replace('.', '', $request->jumlah_plafon);
-        $jumlahPencairan = (int) str_replace('.', '', $request->jumlah_pencairan);
-        $retensiInput = $request->input('retensi', []);
-        $totalRetensi = 0;
-
-        foreach ($retensiInput as $nominal) {
-            $totalRetensi += (int) str_replace('.', '', $nominal ?? 0);
+        $persentase = (float) $request->persentase_termin;
+        $jumlahPencairan = (int) round($jumlahPlafon * (int) round($persentase * 100) / 10000);
+        if ($jumlahPencairan !== (int) str_replace('.', '', $request->jumlah_pencairan)) {
+            return response()->json(['message' => 'Nominal pencairan harus sesuai persentase termin dari plafon SP3K.'], 422);
         }
 
         if ($jumlahPlafon !== $estimasiPlafon || (int) $request->id_sp3k !== (int) $sp3k->id) {
@@ -1131,16 +1142,13 @@ class PembayaranController extends Controller
                 $message = 'Pencairan hanya dapat diinput setelah customer selesai akad. Tanggal pencairan tidak boleh sebelum akad.';
             } elseif ($jumlahPencairan <= 0 || $summary['total_pencairan'] + $jumlahPencairan > $jumlahPlafon) {
                 $message = 'Jumlah pencairan harus lebih dari nol dan total seluruh pencairan tidak boleh melebihi plafon SP3K.';
-            } elseif ($summary['total_pencairan'] + $jumlahPencairan + $totalRetensi !== $jumlahPlafon) {
-                $message = 'Total pencairan sebelumnya, pencairan saat ini, dan sisa retensi harus sama dengan plafon SP3K.';
-            } elseif (Retensi::whereIn('id', array_keys($retensiInput))->count() !== count($retensiInput)) {
-                $message = 'Jenis retensi tidak valid.';
             }
             if ($message) {
                 DB::rollBack();
                 return response()->json(['message' => $message], 422);
             }
             $pemasukan = Pemasukan::create([
+                'persentase_termin' => $persentase,
                 'id_sp3k' => $currentSp3k->id,
                 'no_sp3k' => $currentSp3k->no_sp3k,
                 'plafon_sp3k' => $jumlahPlafon,
@@ -1157,19 +1165,6 @@ class PembayaranController extends Controller
                 'id_metode_bayar' => 2,
                 'lampiran' => '',
             ]);
-
-            foreach ($retensiInput as $retensiId => $nominal) {
-                $nilaiRetensi = (int) str_replace('.', '', $nominal ?? 0);
-                if ($nilaiRetensi <= 0) {
-                    continue;
-                }
-
-                PemasukanRetensi::create([
-                    'id_pemasukan' => $pemasukan->id,
-                    'id_retensi' => $retensiId,
-                    'nominal' => $nilaiRetensi,
-                ]);
-            }
 
             $this->logCreate('Pencairan KPR', $pemasukan->id);
 
@@ -1203,7 +1198,7 @@ class PembayaranController extends Controller
             if ($pemasukan->plafon_sp3k !== null && Pemasukan::where('id_customer', $id_customer)
                 ->where('id_kategori_transaksi', $pemasukan->id_kategori_transaksi)->where('id', '>', $id)->exists()) {
                 DB::rollBack();
-                return response()->json(['message' => 'Hapus pencairan dari tahap terakhir terlebih dahulu agar sisa retensi tetap sesuai.'], 422);
+                return response()->json(['message' => 'Hapus pencairan dari tahap terakhir terlebih dahulu agar urutan pencairan tetap sesuai.'], 422);
             }
 
             if (!empty($pemasukan->lampiran) && file_exists(public_path('assets/keuangan/pemasukan/' . $pemasukan->lampiran))) {
@@ -1272,12 +1267,11 @@ class PembayaranController extends Controller
                 return response()->json(['message' => 'Gunakan input pencairan KPR agar akad dan batas plafon diperiksa.'], 422);
             }
             if ($pemasukan->plafon_sp3k !== null) {
-                $retensi = (int) PemasukanRetensi::where('id_pemasukan', $id)->sum('nominal');
                 $nominal = (int) str_replace('.', '', $request->nominal_bayar);
                 if ($nominal !== (int) $pemasukan->nominal
                     || (int) $request->id_kategori_transaksi !== (int) $pemasukan->id_kategori_transaksi) {
                     DB::rollBack();
-                    return response()->json(['message' => 'Pencairan harus sesuai plafon SP3K dan retensi yang dicatat. Koreksi melalui input pencairan KPR.'], 422);
+                    return response()->json(['message' => 'Pencairan harus sesuai persentase termin dan plafon SP3K yang dicatat. Koreksi melalui input pencairan KPR.'], 422);
                 }
             }
 

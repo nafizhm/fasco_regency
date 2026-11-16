@@ -5,7 +5,8 @@
     $labels = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 @endphp
 <style>
-    .absen-table { min-width: 1050px; }
+    .absen-table { min-width: 1200px; }
+    .absen-table input.bonus { width:130px; text-align:right; padding:6px 8px; }
     .absen-table thead th { background: #d9e9f5; text-align: center; vertical-align: middle; }
     .absen-table .nama { min-width: 160px; position: sticky; left: 0; background: white; z-index: 1; }
     .absen-table input { width: 78px; text-align: center; padding: 6px 3px; }
@@ -27,7 +28,7 @@
         </form>
         <h5>{{ $start->translatedFormat('d M Y') }} – {{ $start->addDays(5)->translatedFormat('d M Y') }}</h5>
         <p class="text-muted no-print">Isi jam (contoh 07:30) atau M = masuk, ½ / 0.5 = setengah hari, I = izin, S = sakit, A = alpa, L = libur. Jam/M dihitung 1 hari. Kosong tidak dihitung. Tekan Tab untuk pindah sel.</p>
-        <p class="small text-muted no-print">Gaji memakai tarif saat pertama kali rekap pekan disimpan. Isi gaji di Data Tukang sebelum menyimpan rekap pertama.</p>
+        <p class="small text-muted no-print">Gaji memakai tarif saat pertama kali rekap pekan disimpan. Isi gaji di Data Tukang sebelum menyimpan rekap pertama. Tambahan Gaji adalah bonus sekali untuk pekan ini. Total = jumlah masuk ? gaji/hari + tambahan gaji.</p>
         <div class="no-print mb-3" id="save-status" role="status">{{ $week ? 'Rekap pekan sudah tersimpan.' : 'Pekan ini belum disimpan.' }}</div>
         <div class="table-responsive"><table class="table table-bordered table-sm absen-table">
             <thead><tr><th>No</th><th>Nama Tukang</th>
@@ -35,7 +36,7 @@
                     <th>{{ $label }}<br>{{ $start->addDays($i)->format('d/m') }}
                     @if($canSave)<br><button type="button" class="btn btn-sm btn-outline-success no-print fill-day" data-day="{{ $i }}" title="Isi semua M atau kosongkan kolom hari ini" aria-pressed="false">Semua M</button>@endif</th>
                 @endforeach
-                <th>Jumlah<br>Masuk</th><th>Gaji / Hari</th><th>Total Gaji</th>
+                <th>Jumlah<br>Masuk</th><th>Gaji / Hari</th><th>Tambahan Gaji</th><th>Total Gaji</th>
             </tr></thead>
             <tbody>
             @foreach($workers as $worker)
@@ -45,15 +46,17 @@
                     $rate = $record ? $record->gaji_per_hari : $worker->gaji_per_hari;
                 @endphp
                 <tr data-worker="{{ $worker->id }}" data-rate="{{ $rate }}">
-                    <td>{{ $loop->iteration }}</td><th scope="row" class="nama">{{ $worker->nama }}</th>
+                    <td>{{ $loop->iteration }}</td><th scope="row" class="nama">{{ mb_strtoupper($worker->nama, 'UTF-8') }}</th>
                     @for($i = 0; $i < 6; $i++)
-                        <td><input class="form-control form-control-sm attendance" data-day="{{ $i }}" aria-label="{{ $worker->nama }} {{ $labels[$i] }}" value="{{ $days[$i] ?? '' }}" list="attendance-options" autocomplete="off" @disabled(!$canSave)></td>
+                        <td><input class="form-control form-control-sm attendance" data-day="{{ $i }}" aria-label="{{ mb_strtoupper($worker->nama, 'UTF-8') }} {{ $labels[$i] }}" value="{{ $days[$i] ?? '' }}" list="attendance-options" autocomplete="off" @disabled(!$canSave)></td>
                     @endfor
-                    <td class="jumlah text-center font-weight-bold">0</td><td class="text-right text-nowrap">Rp {{ number_format($rate, 0, ',', '.') }}</td><td class="total-gaji text-right font-weight-bold">Rp0</td>
+                    <td class="jumlah text-center font-weight-bold">0</td><td class="text-right text-nowrap">Rp {{ number_format($rate, 0, ',', '.') }}</td>
+                    <td><input type="text" class="form-control form-control-sm bonus" inputmode="numeric" autocomplete="off" aria-label="Tambahan gaji {{ mb_strtoupper($worker->nama, 'UTF-8') }}" value="{{ number_format($record->tambahan_gaji ?? 0, 0, ',', '.') }}" @disabled(!$canSave)></td>
+                    <td class="total-gaji text-right font-weight-bold">Rp0</td>
                 </tr>
             @endforeach
             </tbody>
-            <tfoot><tr><th colspan="10" class="text-right">TOTAL GAJI TUKANG</th><th class="text-right text-nowrap" id="grand-total">Rp0</th></tr></tfoot>
+            <tfoot><tr><th colspan="11" class="text-right">TOTAL GAJI TUKANG</th><th class="text-right text-nowrap" id="grand-total">Rp0</th></tr></tfoot>
         </table></div>
         @if($workers->isEmpty())<p>Belum ada data tukang. Tambahkan melalui <a href="{{ route('tukang.index') }}">Data Tukang</a>.</p>@endif
         <datalist id="attendance-options"><option value="M">Masuk</option><option value="½">Setengah hari</option><option value="I">Izin</option><option value="S">Sakit</option><option value="A">Alpa</option><option value="L">Libur</option></datalist>
@@ -84,7 +87,8 @@ $(function() {
                 count += units(v);
                 $(this).toggleClass('hadir', units(v) > 0).toggleClass('invalid', !valid(v));
             });
-            const wage = count * Number($(this).data('rate'));
+            const bonus = Number($(this).find('.bonus').val().replace(/\./g, '')) || 0;
+            const wage = count * Number($(this).data('rate')) + bonus;
             $(this).find('.jumlah').text(count);
             $(this).find('.total-gaji').text(currency(wage));
             total += wage;
@@ -99,6 +103,13 @@ $(function() {
     }
     $('.attendance').on('input', function() { dirty = true; $('#save-status').text('Ada perubahan yang belum disimpan.'); calculate(); })
         .on('blur', function() { this.value = normalize(this.value); });
+    $('.bonus').on('input', function() {
+        const digits = this.value.replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '');
+        this.value = digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        dirty = true;
+        $('#save-status').text('Ada perubahan yang belum disimpan.');
+        calculate();
+    });
     $('.fill-day').on('click', function() {
         const cells = $('.attendance[data-day="' + $(this).data('day') + '"]:enabled');
         const allPresent = cells.length > 0 && cells.toArray().every(cell => normalize(cell.value) === 'M');
@@ -110,7 +121,7 @@ $(function() {
     window.addEventListener('beforeunload', function(e) { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
     $('#save-week').on('click', function() {
         const rows = [];
-        $('[data-worker]').each(function() { rows.push({id: $(this).data('worker'), hari: $(this).find('.attendance').map(function() { return normalize(this.value); }).get()}); });
+        $('[data-worker]').each(function() { rows.push({id: $(this).data('worker'), tambahan_gaji: Number($(this).find('.bonus').val().replace(/\./g, '')) || 0, hari: $(this).find('.attendance').map(function() { return normalize(this.value); }).get()}); });
         calculate();
         if ($('.attendance.invalid').length) { $('.attendance.invalid').first().focus(); toastr.error('Periksa jam/status yang ditandai merah.'); return; }
         const button = $(this).prop('disabled', true).text('Menyimpan...');

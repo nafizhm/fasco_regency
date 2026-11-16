@@ -66,4 +66,38 @@ class CustomerReceivableTest extends TestCase
         $this->assertSame(1, Piutang::count());
         $this->assertEquals(600, Piutang::first()->nominal);
     }
+    public function test_migration_splits_legacy_dp_and_recalculates_when_sp3k_changes(): void
+    {
+        Schema::table('customer', function (Blueprint $t) {
+            if (!Schema::hasColumn('customer', 'jenis_pembelian')) $t->string('jenis_pembelian')->nullable();
+            if (!Schema::hasColumn('customer', 'dp_kpr')) $t->integer('dp_kpr')->nullable();
+        });
+        if (!Schema::hasColumn('pemasukan', 'id_kategori_transaksi')) Schema::table('pemasukan', fn (Blueprint $t) => $t->integer('id_kategori_transaksi')->default(1));
+        if (!Schema::hasTable('kategori_transaksi')) Schema::create('kategori_transaksi', function (Blueprint $t) { $t->id(); $t->string('kategori'); });
+        DB::table('kategori_transaksi')->insert(['id' => 9, 'kategori' => 'Pencairan KPR']);
+        Schema::create('wawancara', function (Blueprint $t) { $t->id(); $t->integer('id_customer'); });
+        Schema::create('wawancara_sp3k', function (Blueprint $t) {
+            $t->id(); $t->integer('id_wawancara'); $t->integer('acc_plafon'); $t->date('tgl_terbit_sp3k');
+        });
+        $c = Customer::create(['nama_lengkap' => 'KPR', 'id_kavling' => 1, 'total_harga' => 700,
+            'jenis_pembelian' => 'KPR', 'dp_kpr' => 200]);
+        app(CustomerReceivableService::class)->ensureForCustomer($c->id);
+        $billId = Piutang::first()->id;
+        DB::table('wawancara')->insert(['id' => 1, 'id_customer' => $c->id]);
+        DB::table('wawancara_sp3k')->insert(['id' => 1, 'id_wawancara' => 1, 'acc_plafon' => 600, 'tgl_terbit_sp3k' => '2026-11-17']);
+        DB::table('pemasukan')->insert([
+            ['id_customer' => $c->id, 'id_kategori_transaksi' => 1, 'nominal' => 30, 'tanggal' => '2026-11-17'],
+            ['id_customer' => $c->id, 'id_kategori_transaksi' => 9, 'nominal' => 540, 'tanggal' => '2026-11-17'],
+        ]);
+        if (Schema::hasColumn('piutang', 'jenis_piutang')) Schema::table('piutang', fn (Blueprint $t) => $t->dropColumn('jenis_piutang'));
+        (require database_path('migrations/2026_11_17_010000_split_kpr_receivables.php'))->up();
+        $this->assertDatabaseHas('piutang', ['id' => $billId, 'jenis_piutang' => 'dp', 'nominal' => 100, 'terbayar' => 30, 'sisa_bayar' => 70]);
+        $this->assertDatabaseHas('piutang', ['jenis_piutang' => 'bank', 'nominal' => 600, 'terbayar' => 540, 'sisa_bayar' => 60]);
+        app(\App\Services\PiutangPaymentService::class)->syncCustomer($c->id);
+        $this->assertSame(2, Piutang::count());
+        \App\Models\WawancaraSp3k::find(1)->update(['acc_plafon' => 550]);
+        $this->assertDatabaseHas('piutang', ['id' => $billId, 'nominal' => 150, 'sisa_bayar' => 120]);
+        $this->assertDatabaseHas('piutang', ['jenis_piutang' => 'bank', 'nominal' => 550, 'sisa_bayar' => 10]);
+    }
+
 }

@@ -10,7 +10,7 @@ use Tests\TestCase;
 
 class PembayaranBalanceTest extends TestCase
 {
-    public function test_balance_uses_all_displayed_payments_and_ignores_plafon_and_bank_dp(): void
+    public function test_customer_balance_excludes_bank_disbursements_and_ignores_estimates(): void
     {
         $this->assertSame('sqlite', config('database.default'));
         $this->assertSame(':memory:', config('database.connections.sqlite.database'));
@@ -20,6 +20,7 @@ class PembayaranBalanceTest extends TestCase
             $table->integer('sbum');
         });
         Schema::create('piutang', function (Blueprint $table) {
+            $table->string('jenis_piutang')->nullable();
             $table->id();
             $table->integer('id_customer');
             $table->integer('nominal');
@@ -51,13 +52,13 @@ class PembayaranBalanceTest extends TestCase
         $controller = app(PembayaranController::class);
         $balance = new \ReflectionMethod($controller, 'getSisaBayarCustomer');
         $paid = new \ReflectionMethod($controller, 'getJumlahBayarCustomer');
-        $this->assertEquals(280025000, $paid->invoke($controller, 1));
-        $this->assertEquals(374975000, $balance->invoke($controller, 1));
+        $this->assertEquals(3000000, $paid->invoke($controller, 1));
+        $this->assertEquals(652000000, $balance->invoke($controller, 1));
 
         DB::table('customer')->where('id', 1)->update(['estimasi_plafon' => 0, 'sbum' => 0]);
-        $this->assertEquals(374975000, $balance->invoke($controller, 1));
+        $this->assertEquals(652000000, $balance->invoke($controller, 1));
 
         DB::table('pemasukan')->insert(['id_customer' => 1, 'id_kategori_transaksi' => 4, 'nominal' => 400000000, 'keterangan' => 'Pelunasan']);
-        $this->assertEquals(0, $balance->invoke($controller, 1));
+        $this->assertEquals(252000000, $balance->invoke($controller, 1));
     }
 }

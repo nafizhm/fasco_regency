@@ -13,6 +13,7 @@ class Piutang extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'jenis_piutang',
         'id_invoice',
         'tanggal_piutang',
         'id_bank',

@@ -68,7 +68,7 @@
                             <div class="form-group row">
                                 <label for="gaji_per_hari" class="col-sm-3 col-form-label">Gaji / Hari (Rp)</label>
                                 <div class="col-sm-9">
-                                    <input type="number" name="gaji_per_hari" id="gaji_per_hari" class="form-control" min="0" max="1000000000" step="1" value="0" required>
+                                    <input type="text" name="gaji_per_hari" id="gaji_per_hari" class="form-control text-right" inputmode="numeric" autocomplete="off" value="0" required>
                                 </div>
                             </div>
 
@@ -101,6 +101,22 @@
 @endsection
 @push('scripts')
     <script>
+        function formatGajiTukang(value) {
+            const digits = String(value ?? '').replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '');
+            return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        }
+
+        $('#gaji_per_hari').on('input', function() {
+            const digitsBeforeCursor = this.value.slice(0, this.selectionStart).replace(/[^0-9]/g, '').length;
+            this.value = formatGajiTukang(this.value);
+            let cursor = 0;
+            let digitsSeen = 0;
+            while (cursor < this.value.length && digitsSeen < digitsBeforeCursor) {
+                if (/\d/.test(this.value[cursor])) digitsSeen++;
+                cursor++;
+            }
+            this.setSelectionRange(cursor, cursor);
+        });
         $(document).on('click', '[data-target="#modalForm"]', function() {
             $('#modalFormLabel').text('Tambah Tukang');
         });
@@ -166,7 +182,7 @@
                     $('#modalFormLabel').text('Edit Tukang');
                     $('#primary_id').val(response.data.id);
                     $('#nama').val(response.data.nama);
-                    $('#gaji_per_hari').val(response.data.gaji_per_hari || 0);
+                    $('#gaji_per_hari').val(formatGajiTukang(response.data.gaji_per_hari || 0));
                     $('#jenis').val(response.data.jenis || '');
                     $('#modalForm').modal('show');
                 }
@@ -208,6 +224,7 @@
             $('.invalid-feedback').remove();
 
             let formData = new FormData(this);
+            formData.set('gaji_per_hari', $('#gaji_per_hari').val().replace(/\./g, ''));
             formData.append('_method', method);
 
             $.ajax({
@@ -236,7 +253,7 @@
                             positionClass: "toast-bottom-right",
                         });
 
-                        let errors = xhr.responseJSON.errors;
+                        let errors = xhr.responseJSON?.errors || {};
                         $.each(errors, function(key, val) {
                             let input = $('#' + key);
                             input.addClass('is-invalid');
@@ -247,10 +264,14 @@
                             );
                         });
 
-                        spinner.addClass('d-none');
-                        btnText.text('Simpan');
-                        submitBtn.prop('disabled', false);
+                    } else {
+                        toastr.error(xhr.responseJSON?.message || 'Data gagal disimpan. Silakan coba lagi.', 'GAGAL!');
                     }
+                },
+                complete: function() {
+                    spinner.addClass('d-none');
+                    btnText.text('Simpan');
+                    submitBtn.prop('disabled', false);
                 }
             });
         });
