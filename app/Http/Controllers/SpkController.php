@@ -7,6 +7,7 @@ use App\Models\Spk;
 use App\Services\SpkWordService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -17,12 +18,14 @@ class SpkController extends Controller
     public function index(Request $request)
     {
         $this->authorizeInventory('spk.index', 'lihat');
-        $request->validate(['q' => 'nullable|string|max:255', 'status' => 'nullable|in:belum,sebagian,lunas']);
+        $request->validate(['q' => 'nullable|string|max:255', 'status' => 'nullable|in:belum,sebagian,lunas,batal']);
         $query = Spk::withSum('pembayaran', 'nominal');
         if ($request->filled('q')) {
             $query->where(fn ($q) => $q->where('nomor', 'like', '%'.$request->q.'%')->orWhere('nama_pemborong', 'like', '%'.$request->q.'%')->orWhere('nama_proyek', 'like', '%'.$request->q.'%'));
         }
         $paidSql = '(select coalesce(sum(nominal), 0) from spk_pembayaran where id_spk = spk.id)';
+        if ($request->status === 'batal') $query->whereNotNull('dibatalkan_pada');
+        if (in_array($request->status, ['belum', 'sebagian', 'lunas'], true)) $query->whereNull('dibatalkan_pada');
         if ($request->status === 'belum') $query->whereRaw("$paidSql = 0");
         if ($request->status === 'sebagian') $query->whereRaw("$paidSql > 0 AND $paidSql < nilai_borongan");
         if ($request->status === 'lunas') $query->whereRaw("$paidSql >= nilai_borongan");
@@ -101,6 +104,7 @@ class SpkController extends Controller
     public function edit(Spk $spk)
     {
         $this->authorizeInventory('spk.index', 'edit');
+        if ($spk->dibatalkan_pada) throw ValidationException::withMessages(['spk' => 'SPK sudah dibatalkan.']);
 
         return view('admin.spk.form', compact('spk'));
     }
@@ -112,6 +116,7 @@ class SpkController extends Controller
         $request->validate(['versi' => 'required|integer|min:0']);
         DB::transaction(function () use ($spk, $data, $request) {
             $locked = Spk::lockForUpdate()->findOrFail($spk->id);
+            if ($locked->dibatalkan_pada) throw ValidationException::withMessages(['spk' => 'SPK sudah dibatalkan.']);
             if ((int) $locked->versi !== (int) $request->versi) throw ValidationException::withMessages(['versi' => 'SPK telah berubah. Muat ulang sebelum mengedit.']);
             if ($data['nilai_borongan'] < $locked->pembayaran()->sum('nominal')) throw ValidationException::withMessages(['nilai_borongan' => 'Nilai SPK tidak boleh lebih kecil dari pembayaran yang sudah dicatat.']);
             $firstPayment = $locked->pembayaran()->min('tanggal');
@@ -134,24 +139,61 @@ class SpkController extends Controller
         return redirect()->route('spk.index')->with('success', 'SPK berhasil dihapus.');
     }
 
+    public function cancel(Spk $spk)
+    {
+        $this->authorizeInventory('spk.index', 'edit');
+        DB::transaction(function () use ($spk) {
+            $locked = Spk::lockForUpdate()->findOrFail($spk->id);
+            if ($locked->dibatalkan_pada) return;
+            $locked->update(['dibatalkan_pada' => now('Asia/Jakarta'), 'versi' => $locked->versi + 1]);
+        });
+
+        return back()->with('success', 'SPK berhasil dibatalkan. Riwayat pembayaran tetap tersimpan.');
+    }
+
     public function payment(Request $request, Spk $spk)
     {
         $this->authorizeInventory('spk.index', 'edit');
         $data = $request->validate([
             'tanggal' => 'required|date_format:Y-m-d', 'nominal' => 'required|integer|min:1|max:100000000000000',
-            'metode' => 'nullable|string|max:100', 'referensi' => 'nullable|string|max:255',
+            'metode' => 'required|in:Cash,Transfer', 'referensi' => 'nullable|string|max:255',
             'keterangan' => 'nullable|string|max:5000', 'token' => 'required|uuid',
+            'bukti_bayar' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:2048',
         ]);
-        DB::transaction(function () use ($spk, $data) {
+        unset($data['bukti_bayar']);
+        $proofPath = null;
+        try {
+        DB::transaction(function () use ($spk, $data, $request, &$proofPath) {
             $locked = Spk::lockForUpdate()->findOrFail($spk->id);
             if ($locked->pembayaran()->where('token', $data['token'])->exists()) return;
+            if ($locked->dibatalkan_pada) throw ValidationException::withMessages(['spk' => 'SPK sudah dibatalkan dan tidak dapat menerima pembayaran.']);
             if ($data['tanggal'] < $locked->tanggal->format('Y-m-d')) throw ValidationException::withMessages(['tanggal' => 'Tanggal pembayaran tidak boleh sebelum tanggal SPK.']);
             $remaining = (int) $locked->nilai_borongan - (int) $locked->pembayaran()->sum('nominal');
             if ($data['nominal'] > $remaining) throw ValidationException::withMessages(['nominal' => 'Pembayaran melebihi sisa tagihan SPK.']);
+            if ($request->hasFile('bukti_bayar')) {
+                $proofPath = $request->file('bukti_bayar')->store('spk-payment-proofs', 'local');
+                if (!$proofPath) throw new \RuntimeException('Bukti bayar gagal disimpan.');
+                $data['bukti_bayar'] = $proofPath;
+            }
             $locked->pembayaran()->create($data);
         });
+        } catch (\Throwable $exception) {
+            if ($proofPath) Storage::disk('local')->delete($proofPath);
+            throw $exception;
+        }
 
         return redirect()->route('spk.show', $spk)->with('success', 'Pembayaran berhasil dicatat.');
+    }
+
+    public function proof(Spk $spk, $payment)
+    {
+        $this->authorizeInventory('spk.index', 'lihat');
+        $payment = $spk->pembayaran()->findOrFail($payment);
+        abort_unless($payment->bukti_bayar && Storage::disk('local')->exists($payment->bukti_bayar), 404);
+
+        return response()->file(Storage::disk('local')->path($payment->bukti_bayar), [
+            'Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     public function word(Spk $spk, SpkWordService $service)

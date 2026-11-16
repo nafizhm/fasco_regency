@@ -92,7 +92,6 @@
         </tbody>
     </table>
 
-    <div class="closing">
         @php($receiptNotes = \App\Services\ReceiptNotes::lines($nasabah))
         @if ($receiptNotes)
             <div class="notes"><strong style="color: #f00">Note :</strong>
@@ -101,6 +100,7 @@
                 </ol>
             </div>
         @endif
+    <div class="closing">
         <table class="signatures">
             <tr><td>User/Pembeli</td><td rowspan="3" style="width: 24%; vertical-align: middle">@if ($logoData)<img class="signature-logo" src="{{ $logoData }}" alt="Logo profil">@endif</td><td>{{ $perusahaan?->kota_penandatangan ?: '-' }}, {{ $date($pembayaran->tanggal) }}<br>
                 <strong style="color: #e98b19">{{ $perusahaan?->nama_perusahaan ?: '-' }}</strong><br>

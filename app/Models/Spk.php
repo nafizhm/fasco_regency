@@ -8,7 +8,7 @@ class Spk extends Model
 {
     protected $table = 'spk';
     protected $guarded = ['id'];
-    protected $casts = ['items' => 'array', 'tanggal' => 'date', 'tanggal_mulai' => 'date', 'tanggal_selesai' => 'date'];
+    protected $casts = ['items' => 'array', 'tanggal' => 'date', 'tanggal_mulai' => 'date', 'tanggal_selesai' => 'date', 'dibatalkan_pada' => 'datetime'];
 
     public function pembayaran()
     {

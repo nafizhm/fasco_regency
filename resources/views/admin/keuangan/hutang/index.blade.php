@@ -86,13 +86,11 @@
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label for="id_bank" class="col-sm-3 col-form-label">Rekening</label>
+                            <label for="transaksi_pembayaran" class="col-sm-3 col-form-label">Transaksi Pembayaran</label>
                             <div class="col-sm-3">
-                                <select class="form-select select-bank" name="id_bank" id="id_bank">
-                                    <option value=""></option>
-                                    @foreach ($bankList as $item)
-                                        <option value="{{ $item->id }}">{{ $item->nama }}</option>
-                                    @endforeach
+                                <select class="form-control" name="transaksi_pembayaran" id="transaksi_pembayaran" required>
+                                    <option value="cash">Cash</option>
+                                    <option value="transfer">Transfer</option>
                                 </select>
                             </div>
                             <label for="nominal" class="col-sm-2 col-form-label">Nominal</label>
@@ -103,6 +101,23 @@
                                     </div>
                                     <input name="nominal" id="nominal" class="form-control format-number" type="text">
                                 </div>
+                            </div>
+                        </div>
+                        <div class="form-group row transfer-fields">
+                            <label for="id_bank" class="col-sm-3 col-form-label">Rekening</label>
+                            <div class="col-sm-8">
+                                <select class="form-control select-bank" name="id_bank" id="id_bank">
+                                    <option value=""></option>
+                                    @foreach ($bankList as $item)
+                                        <option value="{{ $item->id }}" data-no-rekening="{{ $item->no_rek }}">{{ $item->nama }}{{ $item->no_rek ? ' - ' . $item->no_rek : '' }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group row transfer-fields">
+                            <label for="no_rekening" class="col-sm-3 col-form-label">No rekening</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control" id="no_rekening" name="no_rekening" maxlength="100" placeholder="Masukkan nomor rekening">
                             </div>
                         </div>
                         <div class="form-group row">
@@ -188,6 +203,18 @@
             });
         });
 
+        function toggleTransferFields() {
+            const transfer = $('#transaksi_pembayaran').val() === 'transfer';
+            $('.transfer-fields').toggle(transfer);
+            $('#id_bank').prop('required', transfer).prop('disabled', !transfer);
+            $('#no_rekening').prop('disabled', !transfer);
+        }
+        $('#transaksi_pembayaran').on('change', toggleTransferFields);
+        $('#id_bank').on('change', function() {
+            $('#no_rekening').val($('#id_bank option:selected').attr('data-no-rekening') || '');
+        });
+        toggleTransferFields();
+
         var permissions = @json($permissions);
         var showActionColumn = (permissions['edit'] == 1 || permissions['hapus'] == 1);
 
@@ -272,7 +299,9 @@
                     $('#primary_id').val(response.data.id);
                     $('#tanggal_hutang').val(response.data.tanggal_hutang);
                     $('#deskripsi').val(response.data.deskripsi);
+                    $('#transaksi_pembayaran').val(response.data.transaksi_pembayaran || 'transfer').trigger('change');
                     $('#id_bank').val(response.data.id_bank).trigger('change');
+                    $('#no_rekening').val(response.data.no_rekening || $('#id_bank option:selected').attr('data-no-rekening') || '');
 
                     let nominal = parseFloat(response.data.nominal);
                     if (!isNaN(nominal)) {
@@ -299,6 +328,8 @@
         $('#modalForm').on('hidden.bs.modal', function() {
             $('#formData')[0].reset();
             $('#primary_id').val('');
+            $('#id_bank').val('').trigger('change');
+            $('#transaksi_pembayaran').trigger('change');
             $('#lihat-lampiran-wrapper').addClass('d-none');
             $('#info-pembayaran').hide();
             $('.is-invalid').removeClass('is-invalid');

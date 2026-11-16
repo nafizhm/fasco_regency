@@ -9,7 +9,8 @@
             <form class="form-inline" method="GET">
                 <input class="form-control mr-2 mb-2" name="q" value="{{ request('q') }}" placeholder="Nomor, pemborong, proyek" aria-label="Cari SPK">
                 <select class="form-control mr-2 mb-2" name="status" aria-label="Status pembayaran">
-                    <option value="">Semua pembayaran</option>
+                    <option value="">Semua status</option>
+                    <option value="batal" @selected(request('status') === 'batal')>Dibatalkan</option>
                     <option value="belum" @selected(request('status') === 'belum')>Belum Dibayar</option>
                     <option value="sebagian" @selected(request('status') === 'sebagian')>Terbayar Sebagian</option>
                     <option value="lunas" @selected(request('status') === 'lunas')>Lunas</option>
@@ -27,8 +28,12 @@
                     <td class="text-right text-nowrap">Rp {{ number_format($spk->nilai_borongan, 0, ',', '.') }}</td>
                     <td class="text-right text-nowrap">Rp {{ number_format($spk->terbayar, 0, ',', '.') }}</td>
                     <td class="text-right text-nowrap">Rp {{ number_format($spk->sisa, 0, ',', '.') }}</td>
-                    <td><span class="badge badge-{{ $spk->sisa === 0 ? 'success' : ($spk->terbayar > 0 ? 'warning' : 'danger') }}">{{ $spk->status_pembayaran }}</span></td>
-                    <td class="text-nowrap"><a class="btn btn-sm btn-info" href="{{ route('spk.show', $spk) }}">Detail / Bayar</a> <a class="btn btn-sm btn-outline-primary" href="{{ route('spk.word', $spk) }}">Word</a></td>
+                    <td>@if($spk->dibatalkan_pada)<span class="badge badge-secondary">Dibatalkan</span><br>@endif<span class="badge badge-{{ $spk->sisa === 0 ? 'success' : ($spk->terbayar > 0 ? 'warning' : 'danger') }}">{{ $spk->status_pembayaran }}</span></td>
+                    <td class="text-nowrap"><a class="btn btn-sm btn-info" href="{{ route('spk.show', $spk) }}">Detail / Bayar</a> <a class="btn btn-sm btn-outline-primary" href="{{ route('spk.word', $spk) }}">Word</a>
+                        @if($permissions['edit'] && !$spk->dibatalkan_pada)
+                            @include('admin.spk.cancel-button')
+                        @endif
+                    </td>
                 </tr>
                 @empty<tr><td colspan="7" class="text-center text-muted">Belum ada SPK.</td></tr>@endforelse
             </tbody>

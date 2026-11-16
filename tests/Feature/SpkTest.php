@@ -9,6 +9,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class SpkTest extends TestCase
@@ -33,6 +35,8 @@ class SpkTest extends TestCase
         DB::table('menu')->insert(['id' => 1, 'title' => 'Hak Akses', 'route_name' => 'hak-akses.index', 'icon' => 'fas fa-lock']);
         DB::table('hak_akses')->insert(['id_user' => 1, 'id_menu' => 1]);
         (require database_path('migrations/2026_11_14_020000_create_spk.php'))->up();
+        (require database_path('migrations/2026_11_16_010000_add_spk_cancellation.php'))->up();
+        (require database_path('migrations/2026_11_16_040000_add_spk_payment_proof.php'))->up();
         $user = new User(); $user->id = 1; $user->username = 'test'; $this->actingAs($user);
     }
 
@@ -113,7 +117,7 @@ class SpkTest extends TestCase
         $this->postJson(route('spk.store'), $data)->assertUnprocessable();
         $data['items'][0]['volume'] = '1'; $data['tanggal_selesai'] = '2026-11-01';
         $this->postJson(route('spk.store'), $data)->assertUnprocessable();
-        $this->postJson(route('spk.payment', $spk), ['tanggal' => '2026-11-01', 'nominal' => 1000, 'token' => (string) Str::uuid()])->assertUnprocessable()->assertJsonValidationErrors('tanggal');
+        $this->postJson(route('spk.payment', $spk), ['tanggal' => '2026-11-01', 'nominal' => 1000, 'metode' => 'Cash', 'token' => (string) Str::uuid()])->assertUnprocessable()->assertJsonValidationErrors('tanggal');
         $this->assertDatabaseCount('spk', 1);
     }
 
@@ -132,6 +136,59 @@ class SpkTest extends TestCase
         DB::table('hak_akses')->where('id_menu', $id)->update(['lihat' => 1, 'hapus' => 1]);
         $this->delete(route('spk.destroy', $spk))->assertRedirect(route('spk.index'));
         $this->assertDatabaseCount('spk', 0);
+    }
+
+    public function test_cancellation_preserves_payments_and_blocks_editing_and_new_payments(): void
+    {
+        $spk = $this->createSpk();
+        $this->payment($spk, 150000)->assertRedirect();
+        $this->get(route('spk.index'))->assertSee('Batalkan SPK');
+        $this->post(route('spk.cancel', $spk))->assertRedirect();
+        $this->assertNotNull($spk->fresh()->dibatalkan_pada);
+        $this->assertDatabaseCount('spk_pembayaran', 1);
+        $this->assertSame(150000, $spk->fresh()->terbayar);
+        $this->post(route('spk.cancel', $spk))->assertRedirect();
+        $this->assertSame(1, (int) $spk->fresh()->versi);
+        $this->payment($spk, 1000)->assertUnprocessable()->assertJsonValidationErrors('spk');
+        $this->getJson(route('spk.edit', $spk))->assertUnprocessable();
+        $this->putJson(route('spk.update', $spk), $this->payload() + ['versi' => 1])->assertUnprocessable();
+        $this->get(route('spk.show', $spk))->assertOk()->assertSee('SPK dibatalkan')->assertDontSee('id="payment-form"', false)->assertDontSee('Batalkan SPK');
+        $this->get(route('spk.index', ['status' => 'batal']))->assertSee($spk->nomor);
+        $this->get(route('spk.index', ['status' => 'sebagian']))->assertDontSee($spk->nomor);
+    }
+
+    public function test_cancellation_requires_edit_permission(): void
+    {
+        $spk = $this->createSpk();
+        $id = DB::table('menu')->where('route_name', 'spk.index')->value('id');
+        DB::table('hak_akses')->where('id_menu', $id)->update(['edit' => 0]);
+        $this->postJson(route('spk.cancel', $spk))->assertForbidden();
+        $this->assertNull($spk->fresh()->dibatalkan_pada);
+        $this->get(route('spk.index'))->assertDontSee('Batalkan SPK');
+    }
+
+    public function test_payment_proof_upload_preview_and_access(): void
+    {
+        Storage::fake('local');
+        $spk = $this->createSpk();
+        $payload = ['tanggal' => '2026-11-14', 'nominal' => 1000, 'metode' => 'Transfer',
+            'token' => (string) Str::uuid(), 'bukti_bayar' => UploadedFile::fake()->createWithContent('bukti.pdf', "%PDF-1.4\n1 0 obj <<>> endobj\n%%EOF")];
+        $this->post(route('spk.payment', $spk), $payload)->assertRedirect();
+        $payment = $spk->pembayaran()->firstOrFail();
+        Storage::disk('local')->assertExists($payment->bukti_bayar);
+        $this->get(route('spk.show', $spk))->assertOk()->assertSee('Lihat Bukti Bayar')->assertSee('id="proofModal"', false);
+        $this->get(route('spk.proof', [$spk, $payment]))->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $this->post(route('spk.payment', $spk), $payload)->assertRedirect();
+        $this->assertCount(1, Storage::disk('local')->allFiles());
+        $this->assertDatabaseCount('spk_pembayaran', 1);
+        $other = Spk::create(array_merge($spk->getAttributes(), ['id' => null, 'nomor' => 'SPK-OTHER', 'items' => $spk->items]));
+        $this->get(route('spk.proof', [$other, $payment]))->assertNotFound();
+        $payload['token'] = (string) Str::uuid();
+        $payload['bukti_bayar'] = UploadedFile::fake()->create('invalid.txt', 1, 'text/plain');
+        $this->postJson(route('spk.payment', $spk), $payload)->assertUnprocessable()->assertJsonValidationErrors('bukti_bayar');
+        $id = DB::table('menu')->where('route_name', 'spk.index')->value('id');
+        DB::table('hak_akses')->where('id_menu', $id)->update(['lihat' => 0]);
+        $this->get(route('spk.proof', [$spk, $payment]))->assertForbidden();
     }
 
     public function test_word_preserves_template_header_and_expands_items_with_xml_escaping(): void

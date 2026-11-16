@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('admin/spk/{spk}/word', [\App\Http\Controllers\SpkController::class, 'word'])->name('spk.word');
 Route::post('admin/spk/{spk}/pembayaran', [\App\Http\Controllers\SpkController::class, 'payment'])->name('spk.payment');
 Route::resource('admin/spk', \App\Http\Controllers\SpkController::class);
+Route::post('admin/spk/{spk}/batal', [\App\Http\Controllers\SpkController::class, 'cancel'])->name('spk.cancel');
+Route::get('admin/spk/{spk}/pembayaran/{payment}/bukti', [\App\Http\Controllers\SpkController::class, 'proof'])->name('spk.proof');
 
 Route::get('admin/tukang/absen', [\App\Http\Controllers\Pengaturan\AbsenTukangController::class, 'index'])->name('absen-tukang.index');
 Route::post('admin/tukang/absen', [\App\Http\Controllers\Pengaturan\AbsenTukangController::class, 'store'])->name('absen-tukang.store');

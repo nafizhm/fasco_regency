@@ -16,6 +16,8 @@ class Hutang extends Model
         'tanggal_hutang',
         'deskripsi',
         'id_bank',
+        'no_rekening',
+        'transaksi_pembayaran',
         'nominal',
         'lampiran',
         'status',

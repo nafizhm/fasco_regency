@@ -119,14 +119,16 @@ class HutangController extends Controller
         $request->validate([
             'tanggal_hutang' => 'required|date',
             'nominal'        => 'required',
-            'id_bank'        => 'required',
+            'transaksi_pembayaran' => 'required|in:cash,transfer',
+            'id_bank'        => 'exclude_unless:transaksi_pembayaran,transfer|required|integer|exists:bank,id',
+            'no_rekening'    => 'nullable|string|max:100',
             'lampiran'       => 'required|file|mimes:jpg,jpeg,png,pdf,webp|max:2048',
             'deskripsi'      => 'required',
         ], [
             'tanggal_hutang.required' => 'Tanggal hutang wajib diisi.',
             'tanggal_hutang.date'     => 'Tanggal hutang harus berupa tanggal.',
             'nominal.required'        => 'Nominal wajib diisi.',
-            'id_bank.required'        => 'Bank wajib diisi.',
+            'id_bank.required'        => 'Rekening wajib dipilih untuk transfer.',
             'lampiran.required'       => 'Lampiran wajib diisi.',
             'lampiran.file'           => 'Lampiran harus berupa file.',
             'lampiran.mimes'          => 'Format lampiran harus jpg, jpeg, png, atau pdf.',
@@ -141,7 +143,9 @@ class HutangController extends Controller
                 'tanggal_hutang' => $request->tanggal_hutang,
                 'deskripsi'      => $request->deskripsi,
                 'nominal'        => str_replace('.', '', $request->nominal),
-                'id_bank'        => $request->id_bank,
+                'transaksi_pembayaran' => $request->transaksi_pembayaran,
+                'id_bank'        => $request->transaksi_pembayaran === 'transfer' ? $request->id_bank : 0,
+                'no_rekening'    => $request->transaksi_pembayaran === 'transfer' ? $request->no_rekening : null,
                 'status'         => 1,
                 'terbayar'       => 0,
                 'sisa_bayar'     => str_replace('.', '', $request->nominal),
@@ -165,7 +169,7 @@ class HutangController extends Controller
                 'id_hutang'             => $hutang->id,
                 'tanggal'               => $request->tanggal_hutang,
                 'nominal'               => str_replace('.', '', $request->nominal),
-                'id_bank'               => $request->id_bank,
+                'id_bank'               => $db['id_bank'],
                 'lampiran'              => $filename,
                 'id_kategori_transaksi' => 6,
                 'keterangan'            => $request->deskripsi,
@@ -191,7 +195,9 @@ class HutangController extends Controller
         $rules = [
             'tanggal_hutang' => 'required|date',
             'nominal'        => 'required',
-            'id_bank'        => 'required',
+            'transaksi_pembayaran' => 'required|in:cash,transfer',
+            'id_bank'        => 'exclude_unless:transaksi_pembayaran,transfer|required|integer|exists:bank,id',
+            'no_rekening'    => 'nullable|string|max:100',
             'deskripsi'      => 'required',
         ];
 
@@ -205,7 +211,7 @@ class HutangController extends Controller
             'tanggal_hutang.required' => 'Tanggal hutang wajib diisi.',
             'tanggal_hutang.date'     => 'Tanggal hutang harus berupa tanggal.',
             'nominal.required'        => 'Nominal wajib diisi.',
-            'id_bank.required'        => 'Bank wajib diisi.',
+            'id_bank.required'        => 'Rekening wajib dipilih untuk transfer.',
             'lampiran.required'       => 'Lampiran wajib diisi.',
             'lampiran.file'           => 'Lampiran harus berupa file.',
             'lampiran.mimes'          => 'Format lampiran harus jpg, jpeg, png, atau pdf.',
@@ -220,7 +226,9 @@ class HutangController extends Controller
                 'tanggal_hutang' => $request->tanggal_hutang,
                 'deskripsi'      => $request->deskripsi,
                 'nominal'        => str_replace('.', '', $request->nominal),
-                'id_bank'        => $request->id_bank,
+                'transaksi_pembayaran' => $request->transaksi_pembayaran,
+                'id_bank'        => $request->transaksi_pembayaran === 'transfer' ? $request->id_bank : 0,
+                'no_rekening'    => $request->transaksi_pembayaran === 'transfer' ? $request->no_rekening : null,
                 'terbayar'       => 0,
                 'sisa_bayar'     => str_replace('.', '', $request->nominal),
                 'tgl_pelunasan'  => null,
@@ -246,6 +254,7 @@ class HutangController extends Controller
 
             $pemasukan = Pemasukan::where('id_hutang', $id)->first();
             $pemasukan->update([
+                'id_bank'  => $db['id_bank'],
                 'tanggal'  => $request->tanggal_hutang,
                 'nominal'  => str_replace('.', '', $request->nominal),
                 'lampiran' => $filename,
