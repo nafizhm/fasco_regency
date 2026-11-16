@@ -20,7 +20,7 @@
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped" id="receivable-table">
-                            <thead><tr><th>No</th><th>Customer</th><th>Perumahan / Kavling</th><th>Total Tagihan</th><th>Total Pembayaran</th><th>Sisa Piutang</th><th>Rincian</th></tr></thead>
+                            <thead><tr><th>No</th><th>Customer</th><th>Perumahan / Kavling</th><th>Total Tagihan</th><th>Total Pembayaran</th><th>Sisa Piutang</th><th>Status</th><th>Rincian</th></tr></thead>
                             <tbody>
                             @foreach ($customers as $customer)
                                 <tr>
@@ -30,6 +30,13 @@
                                     <td data-order="{{ $customer->total_tagihan }}" class="text-nowrap">Rp {{ number_format($customer->total_tagihan, 0, ',', '.') }}</td>
                                     <td data-order="{{ $customer->total_bayar ?? 0 }}" class="text-nowrap">Rp {{ number_format($customer->total_bayar ?? 0, 0, ',', '.') }}</td>
                                     <td data-order="{{ $customer->sisa_piutang }}" class="text-danger text-nowrap font-weight-bold">Rp {{ number_format($customer->sisa_piutang, 0, ',', '.') }}</td>
+                                    <td>
+                                        @if ($customer->sisa_piutang > 0)
+                                            <span class="badge bg-danger">Belum Lunas</span>
+                                        @else
+                                            <span class="badge bg-success">Sudah Lunas</span>
+                                        @endif
+                                    </td>
                                     <td>
                                         <button type="button" class="btn btn-primary btn-sm text-nowrap" data-toggle="modal" data-target="#receivable-modal" data-customer="{{ $customer->id }}">Lihat Rincian</button>
                                     </td>
@@ -110,7 +117,7 @@
         });
         $('#receivable-table').DataTable({
             order: [[5, 'desc']],
-            columnDefs: [{ targets: [0, 6], orderable: false }, { targets: 6, searchable: false }],
+            columnDefs: [{ targets: [0, 7], orderable: false }, { targets: 7, searchable: false }],
             language: { emptyTable: 'Tidak ada piutang customer aktif.' }
         });
     });
