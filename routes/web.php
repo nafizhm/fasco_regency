@@ -157,6 +157,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('admin/laporan/excel', [\App\Http\Controllers\LaporanController::class, 'excel'])->name('laporan.excel');
 
     Route::get('admin/beranda', [BerandaController::class, 'index'])->name('beranda.index');
+    Route::post('admin/prioritas-pekerjaan', [\App\Http\Controllers\WorkPriorityController::class, 'store'])->name('work-priorities.store');
+    Route::patch('admin/prioritas-pekerjaan/{workPriority}', [\App\Http\Controllers\WorkPriorityController::class, 'update'])->name('work-priorities.update');
 
     Route::prefix('admin')->controller(DashboardController::class)->group(function () {
         Route::get('/dashboard', 'dashboard')->name('dashboard.index');

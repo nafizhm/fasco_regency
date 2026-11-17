@@ -97,8 +97,9 @@ class PembayaranController extends Controller
                 })
                 ->addColumn('lokasi_unit', function ($row) {
                     $lokasi  = $row->lokasi->nama_kavling ?? '-';
+                    $cluster = $row->kavling->nama_cluster ?? '-';
                     $kavling = $row->kavling->kode_kavling ?? '-';
-                    return '<strong>' . $lokasi . '</strong><br>' . $kavling;
+                    return '<strong>' . e($lokasi) . '</strong><br>Cluster ' . e($cluster) . '<br>' . e($kavling);
                 })
                 ->addColumn('status', function ($row) {
                     $status = $row->progres ? $row->progres->status_progres : '';

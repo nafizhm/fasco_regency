@@ -24,6 +24,9 @@ class BerandaController extends Controller
     public function index(Request $request)
     {
         $username = Auth::user()->username;
+        $workPriorities = \App\Models\WorkPriority::orderByRaw("CASE WHEN status = 'proses' THEN 0 ELSE 1 END")
+            ->orderByRaw("CASE WHEN priority = 'tinggi' THEN 0 ELSE 1 END")
+            ->latest()->get();
         $request->validate(['tahun' => 'nullable|integer|min:2000|max:2100']);
         $chartYear = (int) ($request->input('tahun') ?: Carbon::now('Asia/Jakarta')->year);
         $monthlySales = app(\App\Services\MonthlySalesService::class)->forYear($chartYear);
@@ -134,6 +137,7 @@ class BerandaController extends Controller
             ->values();
 
         return view('admin.beranda.index', compact(
+            'workPriorities',
             'username',
             'chartYear',
             'monthlySales',

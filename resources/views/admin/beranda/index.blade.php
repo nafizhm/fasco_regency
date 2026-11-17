@@ -619,6 +619,8 @@
         </article>
       </section>
 
+      @include('admin.beranda.work-priorities')
+
       <section class="panel">
         <div class="panel-body">
           <div class="section-head">
