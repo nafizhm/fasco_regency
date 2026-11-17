@@ -210,6 +210,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::prefix('admin')->controller(PembayaranController::class)->group(function () {
         Route::get('pembayaran/{id}/detail', 'detail')->name('pembayaran.detail');
+        Route::put('pembayaran/{id}/jatuh-tempo', 'updateJatuhTempo')->name('pembayaran.jatuh-tempo');
         Route::get('pembayaran/detail-tagihan/{id}', 'detailTagihan')->name('pembayaran.detail-tagihan');
         Route::get('pembayaran/detail-pemasukan/{id}', 'detailPemasukan')->name('pembayaran.detail-pemasukan');
         Route::put('pembayaran/update-harga-rumah/{id}', 'UpdateHargaRumah')->name('Pembayaran.update-harga-rumah');

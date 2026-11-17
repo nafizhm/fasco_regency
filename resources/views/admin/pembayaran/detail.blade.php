@@ -60,6 +60,18 @@
                                         value="{{ $customer->jenis_pembelian }}" readonly>
                                 </div>
                             </div>
+                            <form id="form-jatuh-tempo" class="form-group row">
+                                <label for="tanggal_jatuh_tempo" class="control-label col-sm-4">Tanggal Jatuh Tempo</label>
+                                <div class="col-sm-7">
+                                        <div class="input-group">
+                                            <input type="date" id="tanggal_jatuh_tempo" name="tanggal_jatuh_tempo" class="form-control" value="{{ $customer->tanggal_jatuh_tempo }}" required>
+                                            <div class="input-group-append">
+                                                <button type="submit" class="btn btn-success" title="Simpan tanggal jatuh tempo" aria-label="Simpan tanggal jatuh tempo"><i class="fa fa-check"></i></button>
+                                            </div>
+                                        </div>
+                                        <small id="jatuh-tempo-status" role="status" class="text-muted">Pilih tanggal lalu klik centang untuk menyimpan.</small>
+                                </div>
+                            </form>
                             <div class="form-group row">
                                 <div class="col-sm-7 offset-sm-4">
                                     <a href="{{ route('customer.cetak-rekap', $customer->id) }}" target="_blank"
@@ -713,6 +725,28 @@
 @push('scripts')
     <script>
         previewFile('file', 'previewLampiran');
+
+        $('#form-jatuh-tempo').on('submit', function(event) {
+            event.preventDefault();
+            const button = $(this).find('button');
+            button.prop('disabled', true);
+            $.ajax({
+                url: @json(route('pembayaran.jatuh-tempo', $customer->id)),
+                method: 'PUT',
+                data: { _token: @json(csrf_token()), tanggal_jatuh_tempo: $('#tanggal_jatuh_tempo').val() },
+                success: function(response) {
+                    $('#jatuh-tempo-status').removeClass('text-muted text-danger').addClass('text-success').text(response.message);
+                },
+                error: function(xhr) {
+                    $('#jatuh-tempo-status').removeClass('text-muted text-success').addClass('text-danger')
+                        .text(xhr.responseJSON?.errors?.tanggal_jatuh_tempo?.[0] || xhr.responseJSON?.message || 'Gagal menyimpan tanggal jatuh tempo. Silakan coba lagi.');
+                },
+                complete: function() { button.prop('disabled', false); }
+            });
+        });
+        $('#tanggal_jatuh_tempo').on('input', function() {
+            $('#jatuh-tempo-status').removeClass('text-success text-danger').addClass('text-muted').text('Klik centang untuk menyimpan perubahan tanggal.');
+        });
 
         $(document).on('click', '.view-payment-attachment', function() {
             const url = this.dataset.url;

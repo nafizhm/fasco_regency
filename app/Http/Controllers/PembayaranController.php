@@ -876,6 +876,20 @@ class PembayaranController extends Controller
         ]);
     }
 
+    public function updateJatuhTempo(Request $request, $id)
+    {
+        $data = $request->validate([
+            'tanggal_jatuh_tempo' => ['required', 'date_format:Y-m-d'],
+        ]);
+
+        $customer = Customer::findOrFail($id);
+        $customer->tanggal_jatuh_tempo = $data['tanggal_jatuh_tempo'];
+        $customer->save();
+        $this->logEdit('Tanggal Jatuh Tempo Customer', $customer->id);
+
+        return response()->json(['message' => 'Tanggal jatuh tempo berhasil disimpan.']);
+    }
+
     public function updateTagihan(Request $request, $id)
     {
         $request->validate([

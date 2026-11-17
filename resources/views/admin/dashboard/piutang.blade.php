@@ -20,16 +20,16 @@
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped" id="receivable-table">
-                            <thead><tr><th>No</th><th>Customer</th><th>Perumahan / Kavling</th><th>Total Tagihan</th><th>Total Pembayaran</th><th>Sisa Piutang</th><th>Status</th><th>Rincian</th></tr></thead>
+                            <thead><tr><th>No</th><th>Nama</th><th>Total Tagihan</th><th>Total Pembayaran</th><th>Sisa Piutang</th><th>Jatuh Tempo</th><th>Status</th><th>Rincian</th></tr></thead>
                             <tbody>
                             @foreach ($customers as $customer)
                                 <tr>
                                     <td>{{ $loop->iteration }}</td>
-                                    <td>{{ $customer->nama_lengkap }}<br><small>{{ $customer->kode_customer }}</small></td>
-                                    <td>{{ $customer->lokasi->nama_kavling ?? '-' }}<br>{{ $customer->kavling->kode_kavling ?? '-' }}</td>
+                                    <td>{{ $customer->nama_lengkap }}<br><small>{{ $customer->kavling->nama_cluster ?? '-' }} / Blok {{ $customer->kavling->kode_kavling ?? '-' }}</small></td>
                                     <td data-order="{{ $customer->total_tagihan }}" class="text-nowrap">Rp {{ number_format($customer->total_tagihan, 0, ',', '.') }}</td>
                                     <td data-order="{{ $customer->total_bayar ?? 0 }}" class="text-nowrap">Rp {{ number_format($customer->total_bayar ?? 0, 0, ',', '.') }}</td>
                                     <td data-order="{{ $customer->sisa_piutang }}" class="text-danger text-nowrap font-weight-bold">Rp {{ number_format($customer->sisa_piutang, 0, ',', '.') }}</td>
+                                    <td data-order="{{ $customer->tanggal_jatuh_tempo ?? '' }}">@include('admin.dashboard.receivable-due-date')</td>
                                     <td>
                                         @if ($customer->sisa_piutang > 0)
                                             <span class="badge bg-danger">Belum Lunas</span>
@@ -70,6 +70,7 @@
     <template id="receivable-detail-{{ $customer->id }}">
         <h5>{{ $customer->nama_lengkap }} <small>{{ $customer->kode_customer }}</small></h5>
         <p>{{ $customer->lokasi->nama_kavling ?? '-' }} / {{ $customer->kavling->kode_kavling ?? '-' }}</p>
+        <p>Jatuh Tempo:<br>@include('admin.dashboard.receivable-due-date')</p>
         <div class="row mb-3">
             <div class="col-md-4">Total Tagihan<strong class="d-block">Rp {{ number_format($customer->total_tagihan, 0, ',', '.') }}</strong></div>
             <div class="col-md-4">Total Pembayaran<strong class="d-block">Rp {{ number_format($customer->total_bayar ?? 0, 0, ',', '.') }}</strong></div>
@@ -116,7 +117,7 @@
             $(this).find('.modal-body').empty();
         });
         $('#receivable-table').DataTable({
-            order: [[5, 'desc']],
+            order: [[4, 'desc']],
             columnDefs: [{ targets: [0, 7], orderable: false }, { targets: 7, searchable: false }],
             language: { emptyTable: 'Tidak ada piutang customer aktif.' }
         });
