@@ -249,19 +249,16 @@ class WawancaraController extends Controller
     {
         $request->validate([
             'acc_plafon'      => 'required',
-            'tenor'           => 'required',
+            'tenor'           => 'nullable',
             'tgl_terbit_sp3k' => 'required',
-            'no_sp3k'         => 'required',
+            'no_sp3k'         => 'nullable',
             'id_notaris'      => 'required',
             'catatan_acc'     => 'nullable',
-            'lampiran'        => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'lampiran'        => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ], [
             'acc_plafon.required'      => 'Acc Plafon wajib diisi.',
-            'tenor.required'           => 'Tenor wajib diisi.',
             'tgl_terbit_sp3k.required' => 'Tanggal Terbit SP3K wajib diisi.',
-            'no_sp3k.required'         => 'No SP3K wajib diisi.',
             'id_notaris.required'      => 'Notaris wajib diisi.',
-            'lampiran.required'        => 'Lampiran wajib diisi.',
             'lampiran.file'            => 'Lampiran harus berupa file.',
             'lampiran.mimes'           => 'Lampiran harus berformat JPG, JPEG, PNG, atau PDF.',
             'lampiran.max'             => 'Ukuran lampiran maksimal 2 MB.',
@@ -272,6 +269,7 @@ class WawancaraController extends Controller
         try {
             $tglTerbit  = Carbon::parse($request->tgl_terbit_sp3k);
             $tglExpired = $tglTerbit->copy()->addDays(90);
+            $filename = null;
 
 
             if ($request->hasFile('lampiran')) {
@@ -287,7 +285,7 @@ class WawancaraController extends Controller
                 'id_wawancara'    => $id,
                 'id_bank_kpr'     => $wawancara->id_bank_kpr,
                 'acc_plafon'      => str_replace('.', '', $request->acc_plafon),
-                'tenor'           => str_replace('.', '', $request->tenor),
+                'tenor'           => $request->filled('tenor') ? str_replace('.', '', $request->tenor) : null,
                 'id_notaris'      => $request->id_notaris,
                 'tgl_terbit_sp3k' => $tglTerbit,
                 'lampiran'        => $filename,

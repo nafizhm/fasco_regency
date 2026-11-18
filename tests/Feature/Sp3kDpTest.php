@@ -58,6 +58,21 @@ class Sp3kDpTest extends TestCase
         ], $dp);
     }
 
+    public function test_sp3k_can_be_saved_without_tenor_attachment_and_number(): void
+    {
+        foreach ([[], ['tenor' => '', 'lampiran' => '', 'no_sp3k' => '']] as $optionalFields) {
+            $this->postJson('/_test/sp3k-dp/1', array_merge([
+                'acc_plafon' => '589.000.000',
+                'tgl_terbit_sp3k' => '2026-11-18',
+                'id_notaris' => 1,
+            ], $optionalFields))->assertOk();
+        }
+
+        $this->assertSame(2, WawancaraSp3k::whereNull('tenor')->whereNull('lampiran')->whereNull('no_sp3k')->count());
+        $this->assertDatabaseHas('wawancara', ['id' => 1, 'status' => 2]);
+        $this->assertDatabaseHas('customer', ['id' => 1, 'id_status_progres' => 4]);
+    }
+
     public function test_sp3k_can_be_saved_without_bank_dp_and_ignores_old_dp_inputs(): void
     {
         $this->postJson('/_test/sp3k-dp/1', $this->payload([]))->assertOk();
