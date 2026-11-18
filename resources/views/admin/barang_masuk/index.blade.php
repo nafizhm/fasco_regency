@@ -28,6 +28,7 @@
                                         <tr>
                                             <th width="50px">No</th>
                                             <th>Tanggal</th>
+                                            <th>Nomor Pengajuan</th>
                                             <th>Supplier</th>
                                             <th>Penerima</th>
                                             <th width="100px">Jml Item</th>
@@ -202,6 +203,11 @@
                         data: 'tanggal',
                         name: 'tanggal',
                         searchable: false
+                    },
+                    {
+                        data: 'nomor_pengajuan',
+                        name: 'nomor_pengajuan',
+                        render: $.fn.dataTable.render.text()
                     },
                     {
                         data: 'supplier',

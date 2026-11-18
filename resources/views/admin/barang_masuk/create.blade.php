@@ -17,6 +17,17 @@
                                 <form id="formData" enctype="multipart/form-data">
                                     @csrf
                                     <div class="row mb-3">
+                                        <label for="id_pengajuan_pembelian" class="col-sm-2 col-form-label">Nomor Pengajuan</label>
+                                        <div class="col-sm-6">
+                                            <select id="id_pengajuan_pembelian" name="id_pengajuan_pembelian" class="form-control" required>
+                                                <option value="">Pilih Pengajuan Pembelian</option>
+                                                @foreach($pengajuanList as $pengajuan)<option value="{{ $pengajuan->id }}">{{ $pengajuan->nomor }} — {{ $pengajuan->supplier?->nama }}</option>@endforeach
+                                            </select>
+                                            <small class="form-text text-muted">Barang mengikuti pengajuan. Isi jumlah aktual yang datang; isi 0 jika belum datang. Harga beli diisi sesuai harga aktual.</small>
+                                            <div id="pengajuanError" class="text-danger" role="alert"></div>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
                                         <label for="tanggal" class="col-sm-2 col-form-label">Tanggal Masuk</label>
                                         <div class="col-sm-3">
                                             <input type="date" id="tanggal" name="tanggal" class="form-control"
@@ -35,7 +46,8 @@
                                     <div class="row mb-3">
                                         <label for="id_supplier" class="col-sm-2 col-form-label">Supplier</label>
                                         <div class="col-sm-4">
-                                            <select class="form-select select-supplier" name="id_supplier" id="id_supplier">
+                                            <input type="hidden" name="id_supplier" id="supplierReference">
+                                            <select class="form-select select-supplier" id="id_supplier" disabled>
                                                 <option value=""></option>
                                                 @foreach ($supplierList as $supplier)
                                                     <option value="{{ $supplier->id }}">{{ $supplier->nama }}</option>
@@ -69,9 +81,6 @@
 
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                         <h5 class="font-weight-bold mb-0">Daftar Barang</h5>
-                                        <button type="button" class="btn btn-primary btn-sm" id="addRowBtn">
-                                            <i class="fas fa-plus"></i> Tambah Barang
-                                        </button>
                                     </div>
 
                                     <div class="table-responsive">
@@ -84,7 +93,7 @@
                                                     <th width="160px">Satuan</th>
                                                     <th width="180px">Harga Beli</th>
                                                     <th width="200px">Total per Item</th>
-                                                    <th width="90px">Aksi</th>
+                                                    <th width="150px">Diajukan / Sisa</th>
                                                 </tr>
                                             </thead>
                                             <tbody></tbody>
@@ -145,7 +154,8 @@
                 <tr>
                     <td class="row-number text-center align-middle"></td>
                     <td>
-                        <select class="form-select select-barang" name="id_barang[]">
+                        <input type="hidden" name="id_barang[]" value="${item.id_barang ?? ''}">
+                        <select class="form-select select-barang" disabled>
                             ${barangSelectOptions(item.id_barang ?? '')}
                         </select>
                     </td>
@@ -162,7 +172,7 @@
                         <input type="text" class="form-control total-item-field text-right" value="Rp 0" aria-label="Total per item" readonly>
                     </td>
                     <td class="text-center">
-                        <button type="button" class="btn btn-danger btn-sm remove-row">Hapus</button>
+                        <span>${item.diajukan ?? 0} / ${item.sisa ?? 0}</span>
                     </td>
                 </tr>
             `;
@@ -266,7 +276,32 @@
                 width: '100%'
             });
 
-            addRow();
+            $('#id_pengajuan_pembelian').select2({ theme: 'bootstrap4', width: '100%' });
+            $('#submitBtn').prop('disabled', true);
+        });
+
+        let referenceRequest = null;
+        $('#id_pengajuan_pembelian').on('change', function() {
+            if (referenceRequest) referenceRequest.abort();
+            $('#barangTable tbody').empty();
+            $('#supplierReference').val('');
+            $('#id_supplier').val('').trigger('change');
+            $('#submitBtn').prop('disabled', true);
+            $('#pengajuanError').text('');
+            refreshSummary();
+            const id = $(this).val();
+            if (!id) return;
+            referenceRequest = $.get(@json(route('pengajuan-pembelian.receiving', ['id' => '__ID__'])).replace('__ID__', id))
+                .done(function(response) {
+                    $('#supplierReference').val(response.id_supplier);
+                    $('#id_supplier').val(String(response.id_supplier)).trigger('change');
+                    response.items.forEach(item => addRow({ id_barang: item.id_barang, jumlah: item.sisa, harga_beli: 0, diajukan: item.jumlah, sisa: item.sisa }));
+                    const remaining = response.items.some(item => item.sisa > 0);
+                    $('#submitBtn').prop('disabled', !remaining);
+                    if (!remaining) $('#pengajuanError').text('Semua barang pada pengajuan ini sudah diterima.');
+                }).fail(function(xhr, status) {
+                    if (status !== 'abort') $('#pengajuanError').text('Gagal memuat pengajuan. Pilih kembali nomor pengajuan.');
+                });
         });
 
         $('#addRowBtn').on('click', function() {
@@ -348,6 +383,7 @@
                         });
 
                         let errors = xhr.responseJSON.errors || {};
+                        $('#pengajuanError').text(Object.values(errors).flat().join(' '));
                         $.each(errors, function(key, val) {
                             const field = key.split('.')[0];
                             if (['lampiran_nota', 'lampiran_surat_jalan', 'lampiran_foto_barang'].includes(field)) {

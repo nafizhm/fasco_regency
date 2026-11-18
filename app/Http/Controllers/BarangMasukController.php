@@ -32,7 +32,7 @@ class BarangMasukController extends Controller
         $permissions = HakAksesController::getUserPermissions();
 
         if ($request->ajax()) {
-            $data = BarangMasuk::with('lampiran')
+            $data = BarangMasuk::with(['lampiran', 'pengajuanPembelian'])
                 ->orderByRaw('CASE WHEN total_harga > 0 AND terbayar >= total_harga THEN 1 ELSE 0 END')
                 ->orderByRaw('CASE WHEN jatuh_tempo IS NULL THEN 1 ELSE 0 END')
                 ->orderBy('jatuh_tempo')
@@ -40,6 +40,7 @@ class BarangMasukController extends Controller
 
             return DataTables::of($data)
                 ->addIndexColumn()
+                ->addColumn('nomor_pengajuan', fn ($row) => $row->pengajuanPembelian?->nomor ?? '-')
                 ->addColumn('tanggal', function ($row) {
                     return Carbon::parse($row->tanggal)->translatedFormat('d F Y');
                 })
@@ -117,8 +118,9 @@ class BarangMasukController extends Controller
         $this->authorizeInventory('barang-masuk.index', 'tambah');
         $supplierList = Supplier::orderBy('nama')->get();
         $barangList = Barang::with('satuan')->orderBy('nama')->get();
+        $pengajuanList = \App\Models\PengajuanPembelian::with('supplier')->orderByDesc('id')->get();
 
-        return view('admin.barang_masuk.create', compact('supplierList', 'barangList'));
+        return view('admin.barang_masuk.create', compact('supplierList', 'barangList', 'pengajuanList'));
     }
 
     public function validateJumlah(Request $request)
@@ -130,7 +132,7 @@ class BarangMasukController extends Controller
     public function show(string $id)
     {
         $this->authorizeInventory('barang-masuk.index', 'lihat');
-        $data = BarangMasuk::with(['lampiran', 'pembayaran'])->findOrFail($id);
+        $data = BarangMasuk::with(['lampiran', 'pembayaran', 'pengajuanPembelian.detail'])->findOrFail($id);
         $detailList = BarangMasukDetail::where('id_masuk', $data->id)->orderBy('id')->get();
         $supplierList = Supplier::orderBy('nama')->get();
         $barangList = Barang::with('satuan')->orderBy('nama')->get();
@@ -228,16 +230,20 @@ class BarangMasukController extends Controller
     public function store(Request $request)
     {
         $this->authorizeInventory('barang-masuk.index', 'tambah');
-        $request->validate($this->rules(), $this->messages());
+        $request->validate(array_merge($this->rules(), [
+            'id_pengajuan_pembelian' => 'required|integer|exists:pengajuan_pembelian,id',
+        ]), $this->messages());
         $this->validateItems($request);
 
         DB::beginTransaction();
         $storedFiles = [];
         try {
+            app(\App\Services\PurchaseReceivingService::class)->validate($request);
             $summary = $this->buildSummary($request);
 
             $data = BarangMasuk::create([
                 'id_po' => null,
+                'id_pengajuan_pembelian' => $request->id_pengajuan_pembelian,
                 'id_supplier' => $request->id_supplier,
                 'tanggal' => $request->tanggal,
                 'jatuh_tempo' => $request->input('jatuh_tempo'),
@@ -282,12 +288,19 @@ class BarangMasukController extends Controller
         $this->authorizeInventory('barang-masuk.index', 'edit');
         $request->validate($this->rules(), $this->messages());
         $this->validateItems($request);
+        $reference = BarangMasuk::findOrFail($id)->id_pengajuan_pembelian;
 
         DB::beginTransaction();
         $storedFiles = [];
         $deletedFiles = [];
         try {
+            // Lock purchase first, matching creation and preventing competing receipts.
+            if ($reference) \App\Models\PengajuanPembelian::whereKey($reference)->lockForUpdate()->firstOrFail();
             $data = BarangMasuk::with(['lampiran', 'detail'])->lockForUpdate()->findOrFail($id);
+            if ((int) $request->id_pengajuan_pembelian !== (int) $data->id_pengajuan_pembelian) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['id_pengajuan_pembelian' => 'Referensi pengajuan penerimaan tidak dapat diubah.']);
+            }
+            if ($reference) app(\App\Services\PurchaseReceivingService::class)->validate($request, (int) $data->id);
             $oldDetails = $data->detail->map(fn ($detail) => clone $detail);
             if ((int) $data->terbayar >= (int) $data->total_harga && (int) $data->total_harga > 0) {
                 throw \Illuminate\Validation\ValidationException::withMessages(['pembayaran' => 'Data yang sudah lunas tidak bisa diedit lagi.']);
@@ -344,8 +357,10 @@ class BarangMasukController extends Controller
     public function destroy(string $id)
     {
         $this->authorizeInventory('barang-masuk.index', 'hapus');
+        $reference = BarangMasuk::findOrFail($id)->id_pengajuan_pembelian;
         DB::beginTransaction();
         try {
+            if ($reference) \App\Models\PengajuanPembelian::whereKey($reference)->lockForUpdate()->firstOrFail();
             $data = BarangMasuk::with(['lampiran', 'pembayaran', 'detail'])->lockForUpdate()->findOrFail($id);
             if ($data->pembayaran->isNotEmpty()) {
                 throw \Illuminate\Validation\ValidationException::withMessages(['pembayaran' => 'Pembelian yang sudah memiliki pembayaran tidak dapat dihapus.']);
@@ -472,6 +487,7 @@ class BarangMasukController extends Controller
     private function rules(): array
     {
         return [
+            'id_pengajuan_pembelian' => 'nullable|integer|exists:pengajuan_pembelian,id',
             'id_supplier' => 'required|exists:supplier,id',
             'nama_penerima' => 'required|string|max:50',
             'tanggal' => 'required|date',
@@ -506,7 +522,7 @@ class BarangMasukController extends Controller
         foreach ($keys as $key) {
             $quantity = (int) str_replace('.', '', $request->jumlah[$key]);
             $price = (int) str_replace('.', '', $request->harga_beli[$key]);
-            if ($quantity <= 0 || $quantity > 1000000000 || $price > 1000000000000 || $quantity * $price > 9000000000000000) {
+            if ($quantity < ($request->filled('id_pengajuan_pembelian') ? 0 : 1) || $quantity > 1000000000 || $price > 1000000000000 || $quantity * $price > 9000000000000000) {
                 throw \Illuminate\Validation\ValidationException::withMessages(['jumlah.'.$key => 'Jumlah harus positif dan nominal pembelian dalam batas yang valid.']);
             }
         }
@@ -515,6 +531,7 @@ class BarangMasukController extends Controller
     private function messages(): array
     {
         return [
+            'id_pengajuan_pembelian.required' => 'Nomor pengajuan pembelian wajib dipilih.',
             'id_supplier.required' => 'Supplier wajib dipilih.',
             'id_supplier.exists' => 'Supplier tidak ditemukan.',
             'nama_penerima.required' => 'Nama penerima harus diisi.',
@@ -550,6 +567,8 @@ class BarangMasukController extends Controller
             $jumlah = (int) str_replace('.', '', $request->jumlah[$index]);
             $hargaBeli = (int) str_replace('.', '', $request->harga_beli[$index]);
 
+            if ($jumlah === 0) continue;
+
             BarangMasukDetail::create([
                 'id_masuk' => $data->id,
                 'id_barang' => $idBarang,
@@ -574,7 +593,7 @@ class BarangMasukController extends Controller
 
         return [
             'total_harga' => $totalHarga,
-            'jum_item' => count($request->id_barang),
+            'jum_item' => count(array_filter($request->jumlah, fn ($quantity) => (int) str_replace('.', '', $quantity) > 0)),
         ];
     }
 

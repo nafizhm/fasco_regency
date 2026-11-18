@@ -22,6 +22,12 @@
                             <div class="card-body">
                                 <form id="formData" enctype="multipart/form-data">
                                     @csrf
+                                    @if($data->id_pengajuan_pembelian)
+                                        <input type="hidden" name="id_pengajuan_pembelian" value="{{ $data->id_pengajuan_pembelian }}">
+                                        <div class="row mb-3"><label class="col-sm-2 col-form-label">Nomor Pengajuan</label><div class="col-sm-6"><input class="form-control" value="{{ $data->pengajuanPembelian?->nomor }}" readonly><small class="form-text text-muted">Barang mengikuti pengajuan. Jumlah penerimaan tidak boleh melebihi sisa pengajuan.</small></div></div>
+                                    @else
+                                        <div class="alert alert-info">Penerimaan lama tanpa referensi pengajuan pembelian.</div>
+                                    @endif
                                     <input type="hidden" id="primary_id" name="primary_id" value="{{ $data->id }}">
 
                                     <div class="row mb-3">
@@ -344,6 +350,11 @@
             }
             refreshRowNumbers();
             refreshSummary();
+            @if($data->id_pengajuan_pembelian)
+                row.find('.select-barang').prop('disabled', true);
+                $('<input>', { type: 'hidden', name: 'id_barang[]', value: item.id_barang }).appendTo(row.find('td').eq(1));
+                row.find('.remove-row').hide();
+            @endif
         }
 
         function updateSatuanField(selectEl) {
@@ -510,6 +521,11 @@
             if (isReadOnly) {
                 $('#id_supplier').prop('disabled', true).trigger('change.select2');
             }
+            @if($data->id_pengajuan_pembelian)
+                $('#id_supplier').prop('disabled', true).trigger('change.select2');
+                $('<input>', { type: 'hidden', name: 'id_supplier', value: @json($data->id_supplier) }).appendTo('#formData');
+                $('#addRowBtn').hide();
+            @endif
 
             if (existingDetails.length) {
                 existingDetails.forEach((item) => addRow(item));
@@ -679,6 +695,7 @@
                         });
 
                         let errors = xhr.responseJSON.errors || {};
+                        toastr.error(Object.values(errors).flat().join(' '), 'GAGAL!');
                         $.each(errors, function(key, val) {
                             const field = key.split('.')[0];
                             if (['lampiran_nota', 'lampiran_surat_jalan', 'lampiran_foto_barang'].includes(field)) {

@@ -247,7 +247,8 @@ class BarangController extends Controller
         DB::beginTransaction();
         try {
             $data = Barang::whereKey($id)->lockForUpdate()->firstOrFail();
-            if ($this->hasStockReferences($data->id)) {
+            if ($this->hasStockReferences($data->id) || (\Illuminate\Support\Facades\Schema::hasTable('pengajuan_pembelian_detail')
+                && DB::table('pengajuan_pembelian_detail')->where('id_barang', $id)->exists())) {
                 DB::rollBack();
                 return response()->json(['message' => 'Barang sudah digunakan dalam transaksi dan tidak dapat dihapus.'], 422);
             }

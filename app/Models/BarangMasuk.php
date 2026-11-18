@@ -14,6 +14,7 @@ class BarangMasuk extends Model
 
     protected $fillable = [
         'id_po',
+        'id_pengajuan_pembelian',
         'id_supplier',
         'tanggal',
         'jatuh_tempo',
@@ -27,6 +28,11 @@ class BarangMasuk extends Model
     public function detail()
     {
         return $this->hasMany(BarangMasukDetail::class, 'id_masuk');
+    }
+
+    public function pengajuanPembelian()
+    {
+        return $this->belongsTo(PengajuanPembelian::class, 'id_pengajuan_pembelian');
     }
 
     public function supplier()

@@ -194,7 +194,9 @@ class SupplierController extends Controller
         DB::beginTransaction();
         try {
             $data = Supplier::whereKey($id)->lockForUpdate()->firstOrFail();
-            if (DB::table('barang_masuk')->where('id_supplier', $id)->exists()) {
+            if (DB::table('barang_masuk')->where('id_supplier', $id)->exists()
+                || (\Illuminate\Support\Facades\Schema::hasTable('pengajuan_pembelian')
+                    && DB::table('pengajuan_pembelian')->where('id_supplier', $id)->exists())) {
                 DB::rollBack();
                 return response()->json(['message' => 'Data sudah digunakan dan tidak dapat dihapus.'], 422);
             }
