@@ -17,6 +17,8 @@ class Pengeluaran extends Model
         'diterima_dari',
         'nama_penerima',
         'id_bank',
+        'nama_bank',
+        'rekening_tujuan',
         'nominal',
         'lampiran',
         'id_kategori_transaksi',

@@ -42,9 +42,9 @@
                                         <tr>
                                             <th width="30px">No</th>
                                             <th>Tanggal</th>
-                                            <th>Nominal</th>
                                             <th>Kategori</th>
-                                            <th>Rekening</th>
+                                            <th>Keterangan</th>
+                                            <th>Nominal</th>
                                             <th width="220px" class="text-center">Action</th>
                                         </tr>
                                     </thead>
@@ -86,7 +86,16 @@
                                 <input type="text" class="form-control" id="no_tanda_terima" name="no_tanda_terima"
                                     placeholder="Contoh: TT-001">
                             </div>
-                            <label for="id_metode_bayar" class="col-sm-2 col-form-label">Metode Bayar</label>
+                        </div>
+                        <div class="form-group row">
+                            <label for="diterima_dari" class="col-sm-3 col-form-label">Telah Diterima Dari / Penyetor</label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" id="diterima_dari" name="diterima_dari"
+                                    placeholder="Nama pemberi atau penyetor">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="id_metode_bayar" class="col-sm-3 col-form-label">Metode Bayar</label>
                             <div class="col-sm-4">
                                 <select class="form-select select-metode-bayar" name="id_metode_bayar" id="id_metode_bayar">
                                     <option value=""></option>
@@ -97,13 +106,6 @@
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label for="diterima_dari" class="col-sm-3 col-form-label">Telah Diterima Dari / Penyetor</label>
-                            <div class="col-sm-9">
-                                <input type="text" class="form-control" id="diterima_dari" name="diterima_dari"
-                                    placeholder="Nama pemberi atau penyetor">
-                            </div>
-                        </div>
-                        <div class="form-group row">
                             <label for="nama_penerima" class="col-sm-3 col-form-label">Nama Penerima</label>
                             <div class="col-sm-9">
                                 <input type="text" class="form-control" id="nama_penerima" name="nama_penerima"
@@ -111,16 +113,15 @@
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label for="id_bank" class="col-sm-3 col-form-label">Rekening</label>
-                            <div class="col-sm-3">
-                                <select class="form-select select-bank" name="id_bank" id="id_bank">
-                                    <option value=""></option>
-                                    @foreach ($bankList as $item)
-                                        <option value="{{ $item->id }}">{{ $item->nama }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <label for="nominal" class="col-sm-2 col-form-label">Nominal</label>
+                            <label for="nama_bank" class="col-sm-3 col-form-label">Nama Bank</label>
+                            <div class="col-sm-9"><input type="text" class="form-control" id="nama_bank" name="nama_bank" maxlength="255"></div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="rekening_tujuan" class="col-sm-3 col-form-label">Rekening Tujuan</label>
+                            <div class="col-sm-9"><input type="text" class="form-control" id="rekening_tujuan" name="rekening_tujuan" maxlength="255"></div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="nominal" class="col-sm-3 col-form-label">Nominal</label>
                             <div class="col-sm-4">
                                 <div class="input-group">
                                     <div class="input-group-prepend">
@@ -130,25 +131,6 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="form-group row">
-                            <label class="col-sm-3 col-form-label">Lampiran</label>
-                            <div class="col-sm-4">
-                                <input type="file" class="mb-2" id="lampiran" name="lampiran"
-                                    accept=".jpg, .jpeg, .png, .pdf">
-                                <div class="img-thumbnail mb-2 d-flex align-items-center justify-content-center"
-                                    id="previewLampiran"
-                                    style="max-width: 150px; height: 150px; background-color: #f8f9fa; border: 1px solid #dee2e6; overflow: hidden;">
-                                    <span style="color: #6c757d;">Tidak ada berkas</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group row">
-                            <label for="keterangan" class="col-sm-3 col-form-label">Keterangan</label>
-                            <div class="col-sm-9">
-                                <textarea name="keterangan" id="keterangan" class="form-control" rows="2"></textarea>
-                            </div>
-                        </div>
-
                         <div class="form-group row">
                             <label for="id_kategori_transaksi" class="col-sm-3 col-form-label">Kategori Transaksi</label>
                             <div class="col-sm-6">
@@ -183,6 +165,25 @@
                             </div>
                         </div>
 
+                        <div class="form-group row">
+                            <label for="keterangan" class="col-sm-3 col-form-label">Keterangan</label>
+                            <div class="col-sm-9">
+                                <textarea name="keterangan" id="keterangan" class="form-control" rows="2"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-sm-3 col-form-label">Lampiran</label>
+                            <div class="col-sm-4">
+                                <input type="file" class="mb-2" id="lampiran" name="lampiran"
+                                    accept=".jpg, .jpeg, .png, .pdf">
+                                <div class="img-thumbnail mb-2 d-flex align-items-center justify-content-center"
+                                    id="previewLampiran"
+                                    style="max-width: 150px; height: 150px; background-color: #f8f9fa; border: 1px solid #dee2e6; overflow: hidden;">
+                                    <span style="color: #6c757d;">Tidak ada berkas</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
@@ -210,6 +211,14 @@
                 <input type="hidden" id="primary_id" name="primary_id">
                 <div class="modal-body">
                     <div class="form-group row">
+                        <label for="nama_bank_detail" class="col-sm-3 col-form-label">Nama Bank</label>
+                        <div class="col-sm-9"><input class="form-control" id="nama_bank_detail" readonly></div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="rekening_tujuan_detail" class="col-sm-3 col-form-label">Rekening Tujuan</label>
+                        <div class="col-sm-9"><input class="form-control" id="rekening_tujuan_detail" readonly></div>
+                    </div>
+                    <div class="form-group row">
                         <label for="tanggal_detail" class="col-sm-3 col-form-label">Tanggal Pengeluaran</label>
                         <div class="col-sm-3">
                             <input type="date" class="form-control" id="tanggal_detail" name="tanggal"
@@ -217,16 +226,7 @@
                         </div>
                     </div>
                     <div class="form-group row">
-                        <label for="id_bank_detail" class="col-sm-3 col-form-label">Rekening</label>
-                        <div class="col-sm-3">
-                            <select class="form-select select-bank" name="id_bank" id="id_bank_detail" readonly>
-                                <option value=""></option>
-                                @foreach ($bankList as $item)
-                                    <option value="{{ $item->id }}">{{ $item->nama }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <label for="nominal_detail" class="col-sm-2 col-form-label">Nominal</label>
+                        <label for="nominal_detail" class="col-sm-3 col-form-label">Nominal</label>
                         <div class="col-sm-4">
                             <div class="input-group">
                                 <div class="input-group-prepend">
@@ -275,6 +275,21 @@
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Keluar</button>
                 </div>
 
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="modalLampiran" tabindex="-1" role="dialog" aria-labelledby="modalLampiranLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-indigo">
+                    <h5 class="modal-title text-white" id="modalLampiranLabel">Lampiran Pengeluaran</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Tutup"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body text-center" id="lampiranContent"></div>
+                <div class="modal-footer">
+                    <a id="lampiranDownload" class="btn btn-outline-primary" target="_blank" rel="noopener">Buka Lampiran</a>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                </div>
             </div>
         </div>
     </div>
@@ -353,6 +368,32 @@
 
         var permissions = @json($permissions);
         var showActionColumn = true;
+        $(document).on('click', '.attachment-button', function() {
+            const url = $(this).attr('data-url');
+            const filename = $(this).attr('data-filename') || '';
+            const container = $('#lampiranContent').empty();
+            $('#lampiranDownload').attr('href', url);
+            if (/\.pdf$/i.test(filename)) {
+                $('<iframe>', { src: url, title: 'Lampiran PDF Pengeluaran' })
+                    .css({ width: '100%', height: '70vh', border: 0 }).appendTo(container);
+                $('<p>', { class: 'text-muted mt-2', text: 'Jika PDF tidak tampil, gunakan tombol Buka Lampiran.' }).appendTo(container);
+            } else if (/\.(jpe?g|png|webp)$/i.test(filename)) {
+                $('<img>', { src: url, alt: 'Lampiran Pengeluaran', class: 'img-fluid' })
+                    .css({ maxHeight: '70vh' })
+                    .on('error', function() {
+                        container.empty().append($('<p>', { text: 'Lampiran tidak dapat dimuat. Gunakan tombol Buka Lampiran.' }));
+                    }).appendTo(container);
+            } else {
+                $('<p>', { text: 'Pratinjau tidak tersedia. Gunakan tombol Buka Lampiran.' }).appendTo(container);
+            }
+            $('#modalLampiran').modal('show');
+        });
+        $('#modalLampiran').on('hidden.bs.modal', function() {
+            $('#lampiranContent').empty();
+            $('#lampiranDownload').removeAttr('href');
+        });
+
+
 
         $(function() {
             var table = $('.data-table').DataTable({
@@ -379,22 +420,23 @@
                         searchable: true
                     },
                     {
-                        data: 'nominal',
-                        name: 'nominal',
-                        orderable: false,
-                        searchable: false
-                    },
-                    {
                         data: 'id_kategori_transaksi',
                         name: 'id_kategori_transaksi',
                         orderable: false,
                         searchable: true
                     },
                     {
-                        data: 'rekening',
-                        name: 'rekening',
+                        data: 'keterangan',
+                        name: 'keterangan',
                         orderable: false,
-                        searchable: true
+                        searchable: true,
+                        render: $.fn.dataTable.render.text()
+                    },
+                    {
+                        data: 'nominal',
+                        name: 'nominal',
+                        orderable: false,
+                        searchable: false
                     },
                     {
                         data: 'action',
@@ -427,6 +469,8 @@
                     $('#no_tanda_terima').val(response.data.no_tanda_terima);
                     $('#diterima_dari').val(response.data.diterima_dari);
                     $('#nama_penerima').val(response.data.nama_penerima);
+                    $('#nama_bank').val(response.data.nama_bank);
+                    $('#rekening_tujuan').val(response.data.rekening_tujuan);
                     $('#id_metode_bayar').val(response.data.id_metode_bayar).trigger('change');
                     $('#keterangan').val(response.data.keterangan);
 
@@ -449,7 +493,6 @@
                     } else {
                         $('#id_kategori_transaksi').prop('disabled', false);
                     }
-                    $('#id_bank').val(response.data.id_bank).trigger('change');
                     $('#id_hutang').prop('disabled', true);
                     $('#modalForm').modal('show');
                 }
@@ -463,6 +506,8 @@
                     $('#modalDetailLabel').text('Detail Pengeluaran');
                     $('#tanggal_detail').val(response.data.tanggal);
                     $('#keterangan_detail').val(response.data.keterangan);
+                    $('#nama_bank_detail').val(response.data.nama_bank);
+                    $('#rekening_tujuan_detail').val(response.data.rekening_tujuan);
 
                     let nominal = parseFloat(response.data.nominal);
                     if (!isNaN(nominal)) {
@@ -475,11 +520,9 @@
                     setPreview(response.data.lampiran, 'assets/keuangan/pengeluaran',
                         'previewLampiranDetail');
 
-                    $('#id_bank_detail').val(response.data.id_bank).trigger('change');
                     const kategori = response.data.id_kategori_transaksi;
                     $('#id_kategori_transaksi_detail').val(kategori).trigger('change');
 
-                    $('#id_bank_detail').prop('disabled', true);
                     $('#id_kategori_transaksi_detail').prop('disabled', true);
                     $('#lampiran_detail').prop('disabled', true);
                     $('#modalDetail').modal('show');
@@ -490,8 +533,8 @@
         $('#modalForm').on('hidden.bs.modal', function() {
             $('#formData')[0].reset();
             $('#primary_id').val('');
-            $('#id_bank').val('').trigger('change');
             $('#id_metode_bayar').val('').trigger('change');
+            $('#nama_bank, #rekening_tujuan').val('');
             $('#id_kategori_transaksi').val('').trigger('change');
             $('#id_kategori_transaksi').prop('disabled', false);
             $('#id_hutang').val('').trigger('change');
@@ -511,7 +554,6 @@
 
         $('#modalDetail').on('hidden.bs.modal', function() {
             $('#id_kategori_transaksi_detail').val('').trigger('change');
-            $('#id_bank_detail').val('').trigger('change');
 
             $('#previewLampiranDetail').html(`<span style="color: #6c757d;">Tidak ada berkas</span>`);
         });

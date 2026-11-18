@@ -44,16 +44,16 @@ class PengeluaranController extends Controller
                     </div>';
                 })
                 ->addColumn('rekening', function ($row) {
+                    if ($row->nama_bank || $row->rekening_tujuan) {
+                        return trim(($row->nama_bank ?? '') . ' - ' . ($row->rekening_tujuan ?? ''), ' -');
+                    }
                     $bank = Bank::find($row->id_bank);
                     return $bank ? $bank->nama : 'Bank Tidak Diketahui';
                 })
                 ->addColumn('id_kategori_transaksi', function ($row) {
                     $kategori = KategoriTransaksi::find($row->id_kategori_transaksi);
                     $nama     = $kategori ? $kategori->kategori : 'Tidak Diketahui';
-                    if ($row->keterangan) {
-                        return '<div><strong>' . $nama . '</strong><br><small>' . e($row->keterangan) . '</small></div>';
-                    }
-                    return $nama;
+                    return e($nama);
                 })
                 ->filter(function ($query) use ($request) {
                     if ($request->has('search') && $request->input('search.value') != '') {
@@ -65,6 +65,8 @@ class PengeluaranController extends Controller
                         $query->where(function ($q) use ($kategoriIds, $bankIds, $search) {
                             $q->whereIn('id_kategori_transaksi', $kategoriIds)
                                 ->orWhereIn('id_bank', $bankIds)
+                                ->orWhere('nama_bank', 'like', "%$search%")
+                                ->orWhere('rekening_tujuan', 'like', "%$search%")
                                 ->orWhere('keterangan', 'like', "%$search%");
                         });
                     }
@@ -85,36 +87,44 @@ class PengeluaranController extends Controller
                     $row->id_mutasi != 0;
 
                     $btn = '<div class="d-flex justify-content-center">';
-                    $btn .= '<a href="' . e($cetakUrl) . '" target="_blank" class="btn btn-success btn-sm mx-1" title="Cetak Tanda Terima">
-                        <i class="fas fa-print"></i> Cetak
+                    if ($row->lampiran) {
+                        $attachmentUrl = asset('assets/keuangan/pengeluaran/' . rawurlencode(basename($row->lampiran)));
+                        $btn .= '<button type="button" class="btn btn-info btn-sm mx-1 attachment-button"'
+                            . ' data-url="' . e($attachmentUrl) . '"'
+                            . ' data-filename="' . e(basename($row->lampiran)) . '"'
+                            . ' title="Lihat Lampiran" aria-label="Lihat Lampiran">'
+                            . '<i class="fas fa-paperclip" aria-hidden="true"></i></button>';
+                    }
+                    $btn .= '<a href="' . e($cetakUrl) . '" target="_blank" class="btn btn-success btn-sm mx-1" title="Cetak Tanda Terima" aria-label="Cetak Tanda Terima">
+                        <i class="fas fa-print" aria-hidden="true"></i>
                     </a>';
 
                     if ($isDetailOnly) {
-                        $btn .= '<button class="btn btn-primary btn-sm mx-1 detail-button"
+                        $btn .= '<button class="btn btn-primary btn-sm mx-1 detail-button" title="Lihat Detail" aria-label="Lihat Detail"
             data-id="' . e($row->id) . '"
             data-url="' . e($detailUrl) . '">
-            Detail
+            <i class="fas fa-eye" aria-hidden="true"></i>
         </button>';
                     } else {
                         if ($permissions['edit']) {
-                            $btn .= '<button class="btn btn-primary btn-sm mx-1 edit-button"
+                            $btn .= '<button class="btn btn-primary btn-sm mx-1 edit-button" title="Edit" aria-label="Edit"
                 data-id="' . e($row->id) . '"
                 data-url="' . e($editUrl) . '">
-                Edit
+                <i class="fas fa-edit" aria-hidden="true"></i>
             </button>';
                         }
                     }
 
                     if ($permissions['hapus']) {
                         if ($isDetailOnly) {
-                            $btn .= '<button class="btn btn-danger btn-sm mx-1" disabled>
-                Hapus
+                            $btn .= '<button class="btn btn-danger btn-sm mx-1" title="Hapus tidak tersedia" aria-label="Hapus tidak tersedia" disabled>
+                <i class="fas fa-trash" aria-hidden="true"></i>
             </button>';
                         } else {
                             $btn .= '<form action="' . e($deleteUrl) . '" method="POST" style="display:inline;">
                 ' . csrf_field() . method_field('DELETE') . '
-                <button type="submit" class="delete-button btn btn-danger btn-sm mx-1">
-                    Hapus
+                <button type="submit" class="delete-button btn btn-danger btn-sm mx-1" title="Hapus" aria-label="Hapus">
+                    <i class="fas fa-trash" aria-hidden="true"></i>
                 </button>
             </form>';
                         }
@@ -138,10 +148,9 @@ class PengeluaranController extends Controller
 
         $HutangList = Hutang::where('status', 1)->get();
 
-        $bankList = Bank::all();
         $metodeBayarList = MetodeBayar::whereIn('id', [1, 2])->get();
 
-        return view('admin.keuangan.pengeluaran.index', compact('paymentCategoryId', 'permissions', 'kategoriTransaksi', 'kategoriTransaksiDetail', 'HutangList', 'bankList', 'metodeBayarList'));
+        return view('admin.keuangan.pengeluaran.index', compact('paymentCategoryId', 'permissions', 'kategoriTransaksi', 'kategoriTransaksiDetail', 'HutangList', 'metodeBayarList'));
     }
 
     public function edit($id)
@@ -172,7 +181,8 @@ class PengeluaranController extends Controller
             'diterima_dari'         => 'required|max:255',
             'nama_penerima'         => 'required|max:255',
             'nominal'               => 'required',
-            'id_bank'               => 'required',
+            'nama_bank'             => 'nullable|string|max:255',
+            'rekening_tujuan'       => 'nullable|string|max:255',
             'id_metode_bayar'       => 'required',
             'lampiran'              => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'id_kategori_transaksi' => 'required',
@@ -185,7 +195,6 @@ class PengeluaranController extends Controller
             'diterima_dari.required'         => 'Nama pemberi/penyetor wajib diisi.',
             'nama_penerima.required'         => 'Nama penerima wajib diisi.',
             'nominal.required'               => 'Nominal wajib diisi.',
-            'id_bank.required'               => 'Rekening wajib diisi.',
             'id_metode_bayar.required'       => 'Metode pembayaran wajib dipilih.',
             'lampiran.required'              => 'Lampiran wajib diisi.',
             'lampiran.file'                  => 'Lampiran harus berupa file.',
@@ -214,7 +223,9 @@ class PengeluaranController extends Controller
             'id_piutang'            => 0,
             'id_po'                 => 0,
             'id_mutasi'             => 0,
-            'id_bank'               => $request->id_bank,
+            'id_bank'               => 0,
+            'nama_bank'             => $request->nama_bank,
+            'rekening_tujuan'       => $request->rekening_tujuan,
             'tanggal'               => $request->tanggal,
             'no_tanda_terima'       => $request->no_tanda_terima,
             'diterima_dari'         => $request->diterima_dari,
@@ -273,7 +284,8 @@ class PengeluaranController extends Controller
             'diterima_dari' => 'required|max:255',
             'nama_penerima' => 'required|max:255',
             'nominal' => 'required',
-            'id_bank' => 'required',
+            'nama_bank' => 'nullable|string|max:255',
+            'rekening_tujuan' => 'nullable|string|max:255',
             'id_metode_bayar' => 'required',
         ];
 
@@ -295,7 +307,6 @@ class PengeluaranController extends Controller
             'diterima_dari.required'         => 'Nama pemberi/penyetor wajib diisi.',
             'nama_penerima.required'         => 'Nama penerima wajib diisi.',
             'nominal.required'               => 'Nominal wajib diisi.',
-            'id_bank.required'               => 'Rekening wajib diisi.',
             'id_metode_bayar.required'       => 'Metode pembayaran wajib dipilih.',
             'lampiran.required'              => 'Lampiran wajib diisi.',
             'lampiran.file'                  => 'Lampiran harus berupa file.',
@@ -309,7 +320,8 @@ class PengeluaranController extends Controller
             'no_tanda_terima' => $request->no_tanda_terima,
             'diterima_dari' => $request->diterima_dari,
             'nama_penerima' => $request->nama_penerima,
-            'id_bank'    => $request->id_bank,
+            'nama_bank' => $request->nama_bank,
+            'rekening_tujuan' => $request->rekening_tujuan,
             'id_metode_bayar' => $request->id_metode_bayar,
             'keterangan' => $request->keterangan ?? '',
             'nominal'    => str_replace('.', '', $request->nominal),
@@ -411,6 +423,7 @@ class PengeluaranController extends Controller
         $templateId = $pdf->importPage(1);
         $pdf->AddPage('P', 'A4');
         $pdf->useTemplate($templateId, 0, 0, 210, 297);
+        $this->drawReceiptLetterhead($pdf);
 
         $nomor = $pengeluaran->no_tanda_terima ?: 'TT-' . str_pad((string) $pengeluaran->id, 6, '0', STR_PAD_LEFT);
         $tanggal = Carbon::parse($pengeluaran->tanggal)->translatedFormat('d F Y');
@@ -418,10 +431,11 @@ class PengeluaranController extends Controller
 
         $pdf->SetTextColor(0, 0, 0);
         $pdf->SetFont('times', 'B', 10);
-        $pdf->SetXY(164, 22.2);
-        $pdf->Cell(29, 5, $nomor, 0, 0, 'L');
-        $pdf->SetXY(164, 27.2);
-        $pdf->Cell(29, 5, $tanggal, 0, 0, 'L');
+        $pdf->SetXY(165, 22.2);
+        $pdf->Cell(26, 5, $nomor, 0, 0, 'L', false, '', 1);
+        $pdf->SetFont('times', 'B', 9);
+        $pdf->SetXY(165, 27.2);
+        $pdf->Cell(26, 5, $tanggal, 0, 0, 'L', false, '', 1);
 
         $pdf->SetFont('times', '', 10);
         $pdf->SetXY(56, 40.8);
@@ -434,8 +448,8 @@ class PengeluaranController extends Controller
         $pdf->MultiCell(137, 5, $pengeluaran->keterangan ?: '-', 0, 'L', false, 1, '', '', true, 0, false, true, 10, 'T');
 
         $pdf->SetFont('times', 'B', 12);
-        $pdf->SetXY(25, 62.8);
-        $pdf->Cell(68, 6, number_format((int) $pengeluaran->nominal, 0, ',', '.') . ',-', 0, 0, 'L');
+        $pdf->SetXY(31, 62.8);
+        $pdf->Cell(60, 6, number_format((int) $pengeluaran->nominal, 0, ',', '.') . ',-', 0, 0, 'L', false, '', 1);
 
         $metodeX = str_contains($metodeNama, 'transfer')
             ? 37
@@ -455,6 +469,53 @@ class PengeluaranController extends Controller
         $filename = 'Tanda-Terima-' . preg_replace('/[^A-Za-z0-9_-]/', '-', $nomor) . '.pdf';
         $pdf->Output($filename, 'I');
         exit;
+    }
+
+    private function drawReceiptLetterhead(Fpdi $pdf): void
+    {
+        $perusahaan = \App\Models\Perusahaan::orderBy('id')->first();
+        $logo = \App\Models\PengaturanMedia::where('jenis_data', 'Logo Login')->first();
+
+        // Replace the template's old identity, keeping its receipt fields and border.
+        $pdf->SetFillColor(255, 255, 255);
+        $pdf->Rect(13, 8, 181, 28, 'F');
+        $logoPath = $logo?->nama_file ? public_path('config_media/' . $logo->nama_file) : '';
+        if (! is_file($logoPath)) {
+            $logoPath = public_path('assets/img/logo-kwitansi.png');
+        }
+        if (is_file($logoPath) && ($size = @getimagesize($logoPath))
+            && $size[0] * $size[1] <= 4000000) {
+            $scale = min(22 / $size[0], 24 / $size[1]);
+            $pdf->Image($logoPath, 14, 10, $size[0] * $scale, $size[1] * $scale);
+        }
+
+        $pdf->SetTextColor(233, 139, 25);
+        $pdf->SetFont('times', 'B', 15);
+        $pdf->SetXY(39, 9);
+        $pdf->Cell(106, 6, $perusahaan?->nama_perusahaan ?: 'KWITANSI PEMBAYARAN', 0, 0, 'C', false, '', 1);
+        $pdf->SetFont('times', 'B', 8);
+        $pdf->SetXY(39, 15.5);
+        $pdf->Cell(106, 4, 'DEVELOPER DAN CONTRACTOR', 0, 0, 'C');
+        $pdf->SetTextColor(34, 34, 34);
+        $pdf->SetFont('times', '', 9);
+        $pdf->SetXY(39, 20);
+        $pdf->MultiCell(106, 4, $perusahaan?->alamat_perusahaan ?: '', 0, 'C', false, 1, '', '', true, 0, false, true, 8, 'T', true);
+        if ($perusahaan?->telp_perusahaan) {
+            $pdf->SetXY(39, 29);
+            $pdf->Cell(106, 4, 'No. HP: ' . $perusahaan->telp_perusahaan, 0, 0, 'C');
+        }
+
+        $pdf->SetFont('times', 'B', 9);
+        $pdf->SetXY(148, 11);
+        $pdf->MultiCell(45, 4, 'TANDA TERIMA PEMBAYARAN', 0, 'C');
+        $pdf->SetDrawColor(34, 34, 34);
+        $pdf->SetLineWidth(0.2);
+        $pdf->Rect(148, 21.5, 45, 11.5);
+        $pdf->SetFont('times', 'B', 9);
+        $pdf->SetXY(151, 22.2);
+        $pdf->Cell(13, 5, 'Nomor :');
+        $pdf->SetXY(151, 27.2);
+        $pdf->Cell(13, 5, 'Tanggal :');
     }
 
     private function terbilang(int $angka): string

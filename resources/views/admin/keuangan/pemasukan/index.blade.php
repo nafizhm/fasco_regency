@@ -42,9 +42,9 @@
                                         <tr>
                                             <th width="30px">No</th>
                                             <th>Tanggal</th>
-                                            <th>Nominal</th>
                                             <th>Kategori</th>
-                                            <th>Rekening</th>
+                                            <th>Keterangan</th>
+                                            <th>Nominal</th>
                                             <th width="100px" class="text-center">Action</th>
                                         </tr>
                                     </thead>
@@ -81,16 +81,7 @@
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label for="id_bank" class="col-sm-3 col-form-label">Rekening</label>
-                            <div class="col-sm-3">
-                                <select class="form-select select-bank" name="id_bank" id="id_bank">
-                                    <option value=""></option>
-                                    @foreach ($bankList as $item)
-                                        <option value="{{ $item->id }}">{{ $item->nama }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <label for="nominal" class="col-sm-2 col-form-label">Nominal</label>
+                            <label for="nominal" class="col-sm-3 col-form-label">Nominal</label>
                             <div class="col-sm-4">
                                 <div class="input-group">
                                     <div class="input-group-prepend">
@@ -187,16 +178,7 @@
                         </div>
                     </div>
                     <div class="form-group row">
-                        <label for="id_bank_detail" class="col-sm-3 col-form-label">Rekening</label>
-                        <div class="col-sm-3">
-                            <select class="form-select select-bank" name="id_bank" id="id_bank_detail" readonly>
-                                <option value=""></option>
-                                @foreach ($bankList as $item)
-                                    <option value="{{ $item->id }}">{{ $item->nama }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <label for="nominal_detail" class="col-sm-2 col-form-label">Nominal</label>
+                        <label for="nominal_detail" class="col-sm-3 col-form-label">Nominal</label>
                         <div class="col-sm-4">
                             <div class="input-group">
                                 <div class="input-group-prepend">
@@ -245,6 +227,21 @@
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Keluar</button>
                 </div>
 
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="modalLampiran" tabindex="-1" role="dialog" aria-labelledby="modalLampiranLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-indigo">
+                    <h5 class="modal-title text-white" id="modalLampiranLabel">Lampiran Pemasukan</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Tutup"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body text-center" id="lampiranContent"></div>
+                <div class="modal-footer">
+                    <a id="lampiranDownload" class="btn btn-outline-primary" target="_blank" rel="noopener">Buka Lampiran</a>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                </div>
             </div>
         </div>
     </div>
@@ -317,7 +314,30 @@
         });
 
         var permissions = @json($permissions);
-        var showActionColumn = (permissions['edit'] == 1 || permissions['hapus'] == 1);
+        $(document).on('click', '.attachment-button', function() {
+            const url = $(this).attr('data-url');
+            const filename = $(this).attr('data-filename') || '';
+            const container = $('#lampiranContent').empty();
+            $('#lampiranDownload').attr('href', url);
+            if (/\.pdf$/i.test(filename)) {
+                $('<iframe>', { src: url, title: 'Lampiran PDF Pemasukan' })
+                    .css({ width: '100%', height: '70vh', border: 0 }).appendTo(container);
+                $('<p>', { class: 'text-muted mt-2', text: 'Jika PDF tidak tampil, gunakan tombol Buka Lampiran.' }).appendTo(container);
+            } else if (/\.(jpe?g|png|webp)$/i.test(filename)) {
+                $('<img>', { src: url, alt: 'Lampiran Pemasukan', class: 'img-fluid' })
+                    .css({ maxHeight: '70vh' })
+                    .on('error', function() {
+                        container.empty().append($('<p>', { text: 'Lampiran tidak dapat dimuat. Gunakan tombol Buka Lampiran.' }));
+                    }).appendTo(container);
+            } else {
+                $('<p>', { text: 'Pratinjau tidak tersedia. Gunakan tombol Buka Lampiran.' }).appendTo(container);
+            }
+            $('#modalLampiran').modal('show');
+        });
+        $('#modalLampiran').on('hidden.bs.modal', function() {
+            $('#lampiranContent').empty();
+            $('#lampiranDownload').removeAttr('href');
+        });
 
         $(function() {
             var table = $('.data-table').DataTable({
@@ -344,29 +364,29 @@
                         searchable: true
                     },
                     {
-                        data: 'nominal',
-                        name: 'nominal',
-                        orderable: false,
-                        searchable: false
-                    },
-                    {
                         data: 'id_kategori_transaksi',
                         name: 'id_kategori_transaksi',
                         orderable: false,
                         searchable: true
                     },
                     {
-                        data: 'rekening',
-                        name: 'rekening',
+                        data: 'keterangan',
+                        name: 'keterangan',
                         orderable: false,
-                        searchable: true
+                        searchable: true,
+                        render: $.fn.dataTable.render.text()
+                    },
+                    {
+                        data: 'nominal',
+                        name: 'nominal',
+                        orderable: false,
+                        searchable: false
                     },
                     {
                         data: 'action',
                         name: 'action',
                         orderable: false,
                         searchable: false,
-                        visible: showActionColumn,
                         className: 'text-center'
                     }
                 ],
@@ -401,7 +421,6 @@
 
                     setPreview(response.data.lampiran, 'assets/keuangan/pemasukan', 'previewLampiran');
 
-                    $('#id_bank').val(response.data.id_bank).trigger('change');
                     const kategori = response.data.id_kategori_transaksi;
                     $('#id_kategori_transaksi').val(kategori).trigger('change');
 
@@ -438,11 +457,9 @@
                     setPreview(response.data.lampiran, 'assets/keuangan/pemasukan',
                         'previewLampiranDetail');
 
-                    $('#id_bank_detail').val(response.data.id_bank).trigger('change');
                     const kategori = response.data.id_kategori_transaksi;
                     $('#id_kategori_transaksi_detail').val(kategori).trigger('change');
 
-                    $('#id_bank_detail').prop('disabled', true);
                     $('#id_kategori_transaksi_detail').prop('disabled', true);
                     $('#lampiran_detail').prop('disabled', true);
                     $('#modalDetail').modal('show');
@@ -454,7 +471,6 @@
             $('#formData')[0].reset();
             $('#primary_id').val('');
             $('#id_kategori_transaksi').val('').trigger('change');
-            $('#id_bank').val('').trigger('change');
             $('#id_piutang').val('').trigger('change');
             $('#id_piutang').prop('disabled', false);
             $('#id_kategori_transaksi').prop('disabled', false);
@@ -473,7 +489,6 @@
 
         $('#modalDetail').on('hidden.bs.modal', function() {
             $('#id_kategori_transaksi_detail').val('').trigger('change');
-            $('#id_bank_detail').val('').trigger('change');
 
             $('#previewLampiranDetail').html(`<span style="color: #6c757d;">Tidak ada berkas</span>`);
         });

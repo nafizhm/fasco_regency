@@ -697,6 +697,8 @@
                 data: formData,
                 contentType: false,
                 processData: false,
+                dataType: 'json',
+                headers: { Accept: 'application/json' },
                 success: function(response) {
                     $('#modalAcc').modal('hide');
                     audio.play();
@@ -717,7 +719,7 @@
                             positionClass: "toast-bottom-right",
                         });
 
-                        let errors = xhr.responseJSON.errors;
+                        let errors = xhr.responseJSON?.errors || {};
                         $.each(errors, function(key, val) {
                             let input = $('#' + key);
                             if (input.is('[type="file"]') && input.parent().hasClass('dropzone-wrapper')) {
@@ -736,10 +738,28 @@
                             }
                         });
 
-                        spinner.addClass('d-none');
-                        btnText.text('Simpan');
-                        submitBtn.prop('disabled', false);
+                    } else {
+                        let message = 'Gagal menyimpan SP3K (HTTP ' + xhr.status + '). Periksa log server atau hubungi admin.';
+                        if (xhr.status === 419 || xhr.status === 401) {
+                            message = 'Sesi telah berakhir. Muat ulang halaman dan login kembali.';
+                        } else if (xhr.status === 413) {
+                            message = 'Upload ditolak server karena terlalu besar. Batas lampiran SP3K maksimal 2 MB.';
+                        } else if (xhr.status === 0) {
+                            message = 'Koneksi terputus. Periksa daftar SP3K sebelum mencoba simpan kembali.';
+                        } else if (xhr.status === 200) {
+                            message = 'Respons server tidak valid. Muat ulang halaman dan periksa daftar SP3K sebelum mencoba kembali.';
+                        }
+                        toastr.error(message, 'GAGAL!', {
+                            progressBar: true,
+                            timeOut: 7000,
+                            positionClass: 'toast-bottom-right',
+                        });
                     }
+                },
+                complete: function() {
+                    spinner.addClass('d-none');
+                    btnText.text('Simpan');
+                    submitBtn.prop('disabled', false);
                 }
             });
         });

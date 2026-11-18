@@ -23,7 +23,11 @@ class PemasukanController extends Controller
         $permissions = HakAksesController::getUserPermissions();
 
         if ($request->ajax()) {
-            $data = Pemasukan::with(['kategori'])->orderByDesc('tanggal');
+            $data = Pemasukan::with(['kategori'])
+                ->where(function ($query) {
+                    $query->whereNull('id_customer')->orWhere('id_customer', 0);
+                })
+                ->orderByDesc('tanggal');
 
             if ($request->filled('filter_tanggal')) {
                 $data->whereDate('tanggal', $request->filter_tanggal);
@@ -78,32 +82,41 @@ class PemasukanController extends Controller
 
                     $btn = '<div class="d-flex justify-content-center">';
 
+                    if ($row->lampiran) {
+                        $attachmentUrl = asset('assets/keuangan/pemasukan/' . rawurlencode(basename($row->lampiran)));
+                        $btn .= '<button type="button" class="btn btn-info btn-sm mx-1 attachment-button"'
+                            . ' data-url="' . e($attachmentUrl) . '"'
+                            . ' data-filename="' . e(basename($row->lampiran)) . '"'
+                            . ' title="Lihat Lampiran" aria-label="Lihat Lampiran">'
+                            . '<i class="fas fa-paperclip" aria-hidden="true"></i></button>';
+                    }
+
                     if ($isDetailOnly) {
-                        $btn .= '<button class="btn btn-primary btn-sm mx-1 detail-button"
+                        $btn .= '<button class="btn btn-primary btn-sm mx-1 detail-button" title="Lihat Detail" aria-label="Lihat Detail"
             data-id="' . e($row->id) . '"
             data-url="' . e($detailUrl) . '">
-            Detail
+            <i class="fas fa-eye" aria-hidden="true"></i>
         </button>';
                     } else {
                         if ($permissions['edit']) {
-                            $btn .= '<button class="btn btn-primary btn-sm mx-1 edit-button"
+                            $btn .= '<button class="btn btn-primary btn-sm mx-1 edit-button" title="Edit" aria-label="Edit"
                 data-id="' . e($row->id) . '"
                 data-url="' . e($editUrl) . '">
-                Edit
+                <i class="fas fa-edit" aria-hidden="true"></i>
             </button>';
                         }
                     }
 
                     if ($permissions['hapus']) {
                         if ($isDetailOnly) {
-                            $btn .= '<button class="btn btn-danger btn-sm mx-1" disabled>
-                Hapus
+                            $btn .= '<button class="btn btn-danger btn-sm mx-1" title="Hapus tidak tersedia" aria-label="Hapus tidak tersedia" disabled>
+                <i class="fas fa-trash" aria-hidden="true"></i>
             </button>';
                         } else {
                             $btn .= '<form action="' . e($deleteUrl) . '" method="POST" style="display:inline;">
                 ' . csrf_field() . method_field('DELETE') . '
-                <button type="submit" class="delete-button btn btn-danger btn-sm mx-1">
-                    Hapus
+                <button type="submit" class="delete-button btn btn-danger btn-sm mx-1" title="Hapus" aria-label="Hapus">
+                    <i class="fas fa-trash" aria-hidden="true"></i>
                 </button>
             </form>';
                         }
@@ -129,9 +142,8 @@ class PemasukanController extends Controller
         $PiutangList = Piutang::with('customer')->where('sisa_bayar', '>', 0)
             ->orderBy('id_customer')->orderBy('id')->get();
 
-        $bankList = Bank::all();
 
-        return view('admin.keuangan.pemasukan.index', compact('paymentCategoryId', 'permissions', 'kategoriTransaksi', 'kategoriTransaksiDetail', 'PiutangList', 'bankList'));
+        return view('admin.keuangan.pemasukan.index', compact('paymentCategoryId', 'permissions', 'kategoriTransaksi', 'kategoriTransaksiDetail', 'PiutangList'));
     }
     public function edit($id)
     {
@@ -160,7 +172,6 @@ class PemasukanController extends Controller
         $request->validate([
             'tanggal'               => 'required|date',
             'nominal'               => 'required',
-            'id_bank'               => 'required',
             'lampiran'              => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'id_kategori_transaksi' => 'required',
             'id_piutang'            => 'required_if:id_kategori_transaksi,' . KategoriTransaksi::where('kategori', 'Pembayaran Piutang')->where('jenis_kategori', 'PEMASUKAN')->value('id') . '|nullable|integer|min:1|exists:piutang,id',
@@ -168,7 +179,6 @@ class PemasukanController extends Controller
             'tanggal.required'               => 'Tanggal wajib diisi.',
             'tanggal.date'                   => 'Tanggal harus berupa tanggal.',
             'nominal.required'               => 'Nominal wajib diisi.',
-            'id_bank.required'               => 'Rekening wajib dipilih.',
             'lampiran.required'              => 'Lampiran wajib diisi.',
             'lampiran.file'                  => 'Lampiran harus berupa file.',
             'lampiran.mimes'                 => 'Format lampiran harus jpg, jpeg, png, atau pdf.',
@@ -199,7 +209,7 @@ class PemasukanController extends Controller
             'id_hutang'             => 0,
             'id_invoice'            => 0,
             'id_mutasi'             => 0,
-            'id_bank'               => $request->id_bank,
+            'id_bank'               => 0,
             'tanggal'               => $request->tanggal,
             'nominal'               => str_replace('.', '', $request->nominal),
             'id_kategori_transaksi' => $request->id_kategori_transaksi,
@@ -231,7 +241,6 @@ class PemasukanController extends Controller
         $rules = [
             'tanggal' => 'required|date',
             'nominal' => 'required',
-            'id_bank' => 'required',
         ];
 
         if ($request->id_kategori_transaksi == 2) {
@@ -248,7 +257,6 @@ class PemasukanController extends Controller
             'tanggal.required'  => 'Tanggal wajib diisi.',
             'tanggal.date'      => 'Tanggal harus berupa tanggal.',
             'nominal.required'  => 'Nominal wajib diisi.',
-            'id_bank.required'  => 'Rekening wajib dipilih.',
             'lampiran.required' => 'Lampiran wajib diisi.',
             'lampiran.file'     => 'Lampiran harus berupa file.',
             'lampiran.mimes'    => 'Format lampiran harus jpg, jpeg, png, atau pdf.',
@@ -257,7 +265,6 @@ class PemasukanController extends Controller
 
         $db = [
             'tanggal'    => $request->tanggal,
-            'id_bank'    => $request->id_bank,
             'keterangan' => $request->keterangan ?? '',
             'nominal'    => str_replace('.', '', $request->nominal),
         ];
