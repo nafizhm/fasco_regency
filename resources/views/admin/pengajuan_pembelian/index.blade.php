@@ -9,14 +9,15 @@
         @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
         @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
         <div class="table-responsive"><table class="table table-bordered table-striped">
-            <thead><tr><th>Tanggal</th><th>Nomor Pengajuan</th><th>Supplier</th><th>Keterangan</th><th>Jumlah Item</th><th>Penerimaan</th><th>Status</th><th>Action</th></tr></thead>
+            <thead><tr><th>Tanggal</th><th>Nomor Pengajuan</th><th>Supplier</th><th>Rincian Nama Barang</th><th>Penerimaan</th><th>Status</th><th>Action</th></tr></thead>
             <tbody>@forelse($items as $item)<tr>
                 <td>{{ \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y') }}</td><td>{{ $item->nomor }}</td>
-                <td>{{ $item->supplier?->nama ?? '-' }}</td><td>{{ $item->keterangan ?: '-' }}</td>
-                <td>{{ $item->detail_count }}</td><td>{{ $item->penerimaan_count }} kali</td>
+                <td>{{ $item->supplier?->nama ?? '-' }}</td>
+                <td>@forelse($item->detail as $detail)<div>{{ $detail->barang?->nama ?? '-' }}</div>@empty-@endforelse</td>
+                <td>{{ $item->penerimaan_count }} kali</td>
                 <td><span class="badge {{ $item->masih_terpesan || !$item->detail_count ? 'badge-warning' : 'badge-success' }}">{{ $item->masih_terpesan || !$item->detail_count ? 'Masih Terpesan' : 'Sudah Diterima' }}</span></td>
                 <td><a class="btn btn-info btn-sm purchase-detail" href="{{ route('pengajuan-pembelian.show', $item->id) }}" title="Lihat Detail" aria-label="Lihat Detail"><i class="fas fa-eye"></i></a></td>
-            </tr>@empty<tr><td colspan="8" class="text-center">Belum ada pengajuan pembelian.</td></tr>@endforelse</tbody>
+            </tr>@empty<tr><td colspan="7" class="text-center">Belum ada pengajuan pembelian.</td></tr>@endforelse</tbody>
         </table></div>{{ $items->links() }}
     </div>
 </div></div></section></div>

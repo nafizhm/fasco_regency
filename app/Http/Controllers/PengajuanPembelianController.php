@@ -27,7 +27,7 @@ class PengajuanPembelianController extends Controller
     public function index()
     {
         $this->authorizeInventory('pengajuan-pembelian.index');
-        $items = PengajuanPembelian::with('supplier')->withCount('detail', 'penerimaan')
+        $items = PengajuanPembelian::with(['supplier', 'detail.barang'])->withCount('detail', 'penerimaan')
             ->withExists(['detail as masih_terpesan' => function ($query) {
                 $query->whereRaw('pengajuan_pembelian_detail.jumlah > (SELECT COALESCE(SUM(d.jumlah), 0) FROM barang_masuk_detail d JOIN barang_masuk m ON m.id = d.id_masuk WHERE m.id_pengajuan_pembelian = pengajuan_pembelian_detail.id_pengajuan AND d.id_barang = pengajuan_pembelian_detail.id_barang)');
             }])->orderByDesc('id')->paginate(25);
