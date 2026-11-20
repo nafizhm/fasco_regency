@@ -53,6 +53,24 @@ class InventoryTransactionsTest extends TestCase
         return (int) BarangMasuk::latest('id')->value('id');
     }
 
+    public function test_incoming_nota_opens_as_pdf_with_receipt_filename_and_requires_access(): void
+    {
+        $this->mock(\App\Services\InventoryCompany::class, function ($mock) {
+            $mock->shouldReceive('details')->once()->andReturn([
+                'nama_perusahaan' => 'Perusahaan Test', 'alamat' => 'Malang', 'telp' => '',
+                'kota' => 'Malang', 'nama_penandatangan' => 'Nama Lama', 'jabatan_penandatangan' => 'Admin',
+            ]);
+        });
+        $id = $this->createIncoming();
+        $response = $this->get(route('barang-masuk.nota', $id))->assertOk()
+            ->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF-', $response->getContent());
+        $this->assertStringContainsString('inline', $response->headers->get('Content-Disposition'));
+        $this->assertStringContainsString('BM-00001.pdf', $response->headers->get('Content-Disposition'));
+        DB::table('hak_akses')->update(['lihat' => 0]);
+        $this->get(route('barang-masuk.nota', $id))->assertForbidden();
+    }
+
     public function test_incoming_create_update_delete_rebuilds_stock_and_history(): void
     {
         $id = $this->createIncoming();
@@ -244,6 +262,20 @@ class InventoryTransactionsTest extends TestCase
             ->assertOk()->assertSee('Subtotal (Rp)')->assertSee('Sudah diterima semua')->assertDontSee('content-wrapper');
         $this->deleteJson(route('barang-masuk.destroy', 1))->assertOk();
         $this->get(route('pengajuan-pembelian.index'))->assertOk()->assertSee('Masih Terpesan');
+    }
+
+    public function test_purchase_list_prioritizes_unreceived_and_includes_all_datatable_rows(): void
+    {
+        $this->enablePurchases();
+        DB::table('pengajuan_pembelian_detail')->update(['jumlah' => 10]);
+        $this->postJson(route('barang-masuk.store'), $this->payload('10'))->assertOk();
+        for ($i = 2; $i <= 28; $i++) {
+            DB::table('pengajuan_pembelian')->insert(['id' => $i, 'nomor' => 'PP-PENDING-'.$i, 'tanggal' => '2026-11-01', 'id_supplier' => 1]);
+            DB::table('pengajuan_pembelian_detail')->insert(['id_pengajuan' => $i, 'id_barang' => 1, 'jumlah' => 10]);
+        }
+        $this->get(route('pengajuan-pembelian.index'))->assertOk()
+            ->assertViewHas('items', fn ($items) => $items->count() === 28 && $items->first()->id === 28 && $items->last()->id === 1)
+            ->assertSee('id="purchaseTable"', false)->assertSee('PP-PENDING-2');
     }
 
     public function test_partial_receipts_prefill_all_goods_and_reject_over_delivery(): void

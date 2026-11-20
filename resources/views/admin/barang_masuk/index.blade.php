@@ -30,8 +30,7 @@
                                             <th>Tanggal</th>
                                             <th>Nomor Pengajuan</th>
                                             <th>Supplier</th>
-                                            <th>Penerima</th>
-                                            <th width="100px">Jml Item</th>
+                                            <th>Detail Barang Diterima</th>
                                             <th width="170px">Total Harga</th>
                                             <th width="140px">Status</th>
                                             <th width="180px">Action</th>
@@ -215,15 +214,9 @@
                         searchable: false
                     },
                     {
-                        data: 'nama_penerima',
-                        name: 'nama_penerima',
+                        data: 'detail_barang',
+                        name: 'detail_barang',
                         searchable: false
-                    },
-                    {
-                        data: 'jum_item',
-                        name: 'jum_item',
-                        searchable: false,
-                        className: 'text-center'
                     },
                     {
                         data: 'total_harga',

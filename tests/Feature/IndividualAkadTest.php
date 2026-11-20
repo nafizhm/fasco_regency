@@ -29,6 +29,7 @@ class IndividualAkadTest extends TestCase
             $t->id(); $t->integer('id_akad'); $t->integer('id_customer');
             $t->string('status');
             $t->string('jenis_akad'); $t->string('keterangan');
+            $t->decimal('biaya_kpr', 18, 2)->nullable();
         });
         DB::table('customer')->insert([['id' => 1], ['id' => 2]]);
         Route::post('/test-akad', [AkadController::class, 'store']);
@@ -40,6 +41,41 @@ class IndividualAkadTest extends TestCase
     private function input(array $changes = []): array
     {
         return array_merge(['id_customer' => 1, 'tgl_akad' => now('Asia/Jakarta')->toDateString(), 'jenis_akad' => 'AJB'], $changes);
+    }
+
+    public function test_rekap_kpr_displays_completed_akad_totals_and_missing_costs(): void
+    {
+        Schema::create('menu', function (Blueprint $t) { $t->id(); $t->string('route_name'); });
+        Schema::table('customer', function (Blueprint $t) { $t->integer('id_kavling')->nullable(); });
+        Schema::create('kavling_peta', function (Blueprint $t) {
+            $t->id(); $t->string('nama_cluster'); $t->string('kode_kavling');
+        });
+        Route::get('/test-akad-rekap', [AkadController::class, 'index'])->name('test.akad.rekap');
+        $this->get('/test-akad-rekap?rekap_biaya_kpr=1')->assertOk()->assertSee('Belum ada data akad selesai.');
+        $this->postJson('/test-akad', $this->input(['biaya_kpr' => '2500000', 'tgl_akad' => '2024-02-01']))->assertOk();
+        $this->postJson('/test-akad', $this->input(['id_customer' => 2]))->assertOk();
+        DB::table('akad')->insert(['id' => 3, 'tgl_akad' => null, 'keterangan' => '']);
+        DB::table('detail_akad')->insert(['id_akad' => 3, 'id_customer' => 1, 'status' => 1, 'jenis_akad' => '', 'keterangan' => '', 'biaya_kpr' => 999999]);
+        $this->get('/test-akad-rekap?rekap_biaya_kpr=1')->assertOk()
+            ->assertSee('Rp 2.500.000')->assertSee('01 Februari 2024')->assertSee('Biaya Belum Diisi')
+            ->assertDontSee('Rp 999.999')
+            ->assertViewHas('records', fn ($records) => $records->count() === 2
+                && $records->sum('biaya_kpr') == 2500000 && $records->whereNull('biaya_kpr')->count() === 1);
+    }
+
+    public function test_biaya_kpr_is_saved_loaded_updated_and_can_be_cleared(): void
+    {
+        $this->postJson('/test-akad', $this->input(['biaya_kpr' => '2500000']))->assertOk();
+        $this->assertDatabaseHas('detail_akad', ['id' => 1, 'biaya_kpr' => 2500000]);
+        $this->assertEquals(2500000, $this->getJson('/test-akad/1/edit')->assertOk()->json('data.biaya_kpr'));
+        $this->putJson('/test-akad/1', $this->input(['biaya_kpr' => '3000000']))->assertOk();
+        $this->assertDatabaseHas('detail_akad', ['id' => 1, 'biaya_kpr' => 3000000]);
+        foreach (['-1', 'abc', '1.234', '2500.50', '1e6', '10000000000000000'] as $invalid) {
+            $this->putJson('/test-akad/1', $this->input(['biaya_kpr' => $invalid]))
+                ->assertUnprocessable()->assertJsonValidationErrors('biaya_kpr');
+        }
+        $this->putJson('/test-akad/1', $this->input(['biaya_kpr' => null]))->assertOk();
+        $this->assertDatabaseHas('detail_akad', ['id' => 1, 'biaya_kpr' => null]);
     }
 
     public function test_akad_edit_updates_buyer_bank_and_historical_dates_atomically(): void

@@ -5,10 +5,12 @@ use Illuminate\Support\Facades\Route;
 Route::get('admin/spk/{spk}/word', [\App\Http\Controllers\SpkController::class, 'word'])->name('spk.word');
 Route::post('admin/spk/{spk}/pembayaran', [\App\Http\Controllers\SpkController::class, 'payment'])->name('spk.payment');
 Route::resource('admin/spk', \App\Http\Controllers\SpkController::class);
+Route::get('admin/rekap-transaksi', [\App\Http\Controllers\RekapTransaksiController::class, 'index'])->name('rekap-transaksi.index');
 Route::get('admin/spk/{spk}/pembayaran/{payment}/bukti', [\App\Http\Controllers\SpkController::class, 'proof'])->name('spk.proof');
 
 Route::get('admin/tukang/absen', [\App\Http\Controllers\Pengaturan\AbsenTukangController::class, 'index'])->name('absen-tukang.index');
 Route::post('admin/tukang/absen', [\App\Http\Controllers\Pengaturan\AbsenTukangController::class, 'store'])->name('absen-tukang.store');
+Route::get('admin/tukang/laporan', [\App\Http\Controllers\Pengaturan\LaporanTukangController::class, 'index'])->name('laporan-tukang.index');
 
 Route::get('admin/master/barang/{barang}/history', [\App\Http\Controllers\Master\BarangController::class, 'history'])->name('barang.history');
 Route::resource('admin/master/barang', \App\Http\Controllers\Master\BarangController::class)->except(['create', 'show']);

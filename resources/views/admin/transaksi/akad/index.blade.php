@@ -36,6 +36,9 @@
                                 <div class="d-flex align-content-center justify-content-between">
                                     <h3 class="font-weight-bold text-lg">Data Akad</h3>
                                     <div class="d-flex align-items-center">
+                                        <button type="button" class="btn btn-success btn-sm mr-2" data-toggle="modal" data-target="#modalRekapKpr">
+                                            <i class="fas fa-file-invoice-dollar" aria-hidden="true"></i> Rekap Biaya KPR
+                                        </button>
                                         @if ($permissions['tambah'])
                                             <button class="btn btn-primary btn-sm" data-toggle="modal"
                                                 data-target="#modalForm"><i class="fas fa-plus"></i>
@@ -75,6 +78,19 @@
             <!-- /.container-fluid -->
         </section>
         <!-- /.content -->
+    </div>
+
+    <div class="modal fade" id="modalRekapKpr" tabindex="-1" role="dialog" aria-labelledby="rekapKprTitle" aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-success">
+                    <h5 class="modal-title" id="rekapKprTitle">Rekap Pembayaran Biaya KPR</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Tutup"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body" id="rekapKprContent" style="max-height: 70vh; overflow-y: auto;" aria-live="polite"></div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button></div>
+            </div>
+        </div>
     </div>
 
     <!-- Modal -->
@@ -121,6 +137,10 @@
                                     <input type="date" id="tgl_akad" class="form-control" name="tgl_akad"
                                         required max="{{ now('Asia/Jakarta')->toDateString() }}" value="{{ now('Asia/Jakarta')->toDateString() }}">
                                 </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="biaya_kpr">Biaya KPR (Rp) <span class="text-muted font-weight-normal">(opsional)</span></label>
+                                <input type="text" id="biaya_kpr" name="biaya_kpr" class="form-control" inputmode="numeric" pattern="[0-9]+(\.[0-9]{3})*" maxlength="21" placeholder="Contoh: 2.500.000">
                             </div>
                             <div class="form-group mb-0">
                                 <label for="keterangan">Keterangan <span class="text-muted font-weight-normal">(opsional)</span></label>
@@ -260,6 +280,35 @@
             });
         });
 
+        $('#modalRekapKpr').on('show.bs.modal', function() {
+            $('#rekapKprContent').html('<p class="text-muted mb-0">Memuat rekap biaya KPR...</p>');
+            $.ajax({
+                url: "{{ route('akad.index') }}",
+                data: { rekap_biaya_kpr: 1 },
+                dataType: 'html',
+                success: function(html) { $('#rekapKprContent').html(html); },
+                error: function() {
+                    $('#rekapKprContent').html('<p class="text-danger mb-0">Gagal memuat rekap. Tutup dan buka kembali untuk mencoba lagi.</p>');
+                }
+            });
+        });
+
+        function formatBiayaKpr(value) {
+            return String(value ?? '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        }
+
+        $('#biaya_kpr').on('input', function() {
+            const digitsBeforeCursor = this.value.slice(0, this.selectionStart).replace(/\D/g, '').length;
+            this.value = formatBiayaKpr(this.value);
+            let position = 0;
+            let digits = 0;
+            while (position < this.value.length && digits < digitsBeforeCursor) {
+                if (/\d/.test(this.value[position])) digits++;
+                position++;
+            }
+            this.setSelectionRange(position, position);
+        });
+
         $(document).on('click', '.edit-button', function() {
             var url = $(this).data('url');
             $.get(url, function(response) {
@@ -274,6 +323,7 @@
                     $('#jenis_akad').val(response.data.jenis_akad);
                     $('#tgl_akad').val(response.data.tgl_akad);
                     $('#keterangan').val(response.data.keterangan);
+                    $('#biaya_kpr').val(formatBiayaKpr(String(response.data.biaya_kpr ?? '').split('.')[0]));
 
                     $('#modalForm').modal('show');
                 }
@@ -319,6 +369,7 @@
             $('.invalid-feedback').remove();
 
             let formData = new FormData(this);
+            formData.set('biaya_kpr', $('#biaya_kpr').val().replace(/\D/g, ''));
             if (id) formData.set('id_customer', $('#id_customer').val());
             formData.append('_method', method);
 

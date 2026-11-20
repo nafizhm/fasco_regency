@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nota Barang Masuk - {{ $nota['no_nota'] }}</title>
     <style>
+        @page { margin: 24px; }
         * {
             margin: 0;
             padding: 0;
@@ -45,8 +46,7 @@
         }
 
         .info {
-            display: flex;
-            justify-content: space-between;
+            width: 100%;
             margin-bottom: 15px;
         }
 
@@ -76,11 +76,11 @@
             text-align: center;
         }
 
-        .text-right {
+        .text-right, table.detail td.text-right {
             text-align: right;
         }
 
-        .text-center {
+        .text-center, table.detail td.text-center {
             text-align: center;
         }
 
@@ -106,9 +106,10 @@
         }
 
         .signature {
-            display: flex;
-            justify-content: flex-end;
+            width: 250px;
+            margin-left: auto;
             margin-top: 40px;
+            page-break-inside: avoid;
         }
 
         .signature div {
@@ -122,34 +123,12 @@
             text-decoration: underline;
         }
 
-        .btn-print {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            padding: 8px 16px;
-            background: #007bff;
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        @media print {
-            .btn-print {
-                display: none;
-            }
-
-            body {
-                padding: 0;
-            }
-        }
+        thead { display: table-header-group; }
+        tr { page-break-inside: avoid; }
     </style>
 </head>
 
 <body>
-    <button type="button" class="btn-print" onclick="window.print()">Cetak</button>
-
     <div class="header">
         <h2>{{ $company['nama_perusahaan'] }}</h2>
         <p>{{ $company['alamat'] }}</p>
@@ -158,7 +137,7 @@
 
     <div class="title">NOTA BARANG MASUK</div>
 
-    <div class="info">
+    <table class="info"><tr><td style="width: 60%; vertical-align: top;">
         <table>
             <tr>
                 <td>No. Nota</td>
@@ -181,14 +160,14 @@
                 <td>{{ $nota['nama_penerima'] }}</td>
             </tr>
         </table>
-        <table>
+        </td><td style="vertical-align: top;"><table>
             <tr>
                 <td>Status Pembayaran</td>
                 <td>:</td>
                 <td>{{ $nota['status_pembayaran'] }}</td>
             </tr>
         </table>
-    </div>
+    </td></tr></table>
 
     <table class="detail">
         <thead>
@@ -262,7 +241,7 @@
     <div class="signature">
         <div>
             <div>{{ $company['kota'] }}, {{ $nota['tanggal'] }}</div>
-            <div class="name">{{ $company['nama_penandatangan'] }}</div>
+            <div class="name">Laji Siswanto</div>
             <div>{{ $company['jabatan_penandatangan'] }}</div>
         </div>
     </div>

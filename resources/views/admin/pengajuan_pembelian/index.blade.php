@@ -8,19 +8,19 @@
     <div class="card-body">
         @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
         @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
-        <div class="table-responsive"><table class="table table-bordered table-striped">
+        <div class="table-responsive"><table id="purchaseTable" class="table table-bordered table-striped w-100">
             <thead><tr><th>No.</th><th>Tanggal</th><th>Nomor Pengajuan</th><th>Supplier</th><th>Rincian Nama Barang</th><th class="text-right">Total Pengajuan (Rp)</th><th>Penerimaan</th><th>Status</th><th>Action</th></tr></thead>
-            <tbody>@forelse($items as $item)<tr>
-                <td>{{ $items->firstItem() + $loop->index }}</td>
-                <td>{{ \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y') }}</td><td>{{ $item->nomor }}</td>
+            <tbody>@foreach($items as $item)<tr>
+                <td>{{ $loop->iteration }}</td>
+                <td data-order="{{ $item->tanggal }}">{{ \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y') }}</td><td>{{ $item->nomor }}</td>
                 <td>{{ $item->supplier?->nama ?? '-' }}</td>
                 <td>@forelse($item->detail as $detail)<div>{{ $detail->barang?->nama ?? '-' }}</div>@empty-@endforelse</td>
-                <td class="text-right text-nowrap">{{ number_format($item->detail->sum(fn ($detail) => $detail->jumlah * $detail->harga), 0, ',', '.') }}</td>
-                <td>{{ $item->penerimaan_count }} kali</td>
-                <td><span class="badge {{ $item->masih_terpesan || !$item->detail_count ? 'badge-warning' : 'badge-success' }}">{{ $item->masih_terpesan || !$item->detail_count ? 'Masih Terpesan' : 'Sudah Diterima' }}</span></td>
+                <td class="text-right text-nowrap" data-order="{{ $item->detail->sum(fn ($detail) => $detail->jumlah * $detail->harga) }}">{{ number_format($item->detail->sum(fn ($detail) => $detail->jumlah * $detail->harga), 0, ',', '.') }}</td>
+                <td data-order="{{ $item->penerimaan_count }}">{{ $item->penerimaan_count }} kali</td>
+                <td data-order="{{ $item->masih_terpesan || !$item->detail_count ? 0 : 1 }}"><span class="badge {{ $item->masih_terpesan || !$item->detail_count ? 'badge-warning' : 'badge-success' }}">{{ $item->masih_terpesan || !$item->detail_count ? 'Masih Terpesan' : 'Sudah Diterima' }}</span></td>
                 <td><a class="btn btn-info btn-sm purchase-detail" href="{{ route('pengajuan-pembelian.show', $item->id) }}" title="Lihat Detail" aria-label="Lihat Detail"><i class="fas fa-eye"></i></a></td>
-            </tr>@empty<tr><td colspan="9" class="text-center">Belum ada pengajuan pembelian.</td></tr>@endforelse</tbody>
-        </table></div>{{ $items->links() }}
+            </tr>@endforeach</tbody>
+        </table></div>
     </div>
 </div></div></section></div>
 <div class="modal fade" id="purchaseDetailModal" tabindex="-1" aria-labelledby="purchaseDetailTitle" aria-hidden="true">
@@ -33,6 +33,26 @@
 @endsection
 @push('scripts')
 <script>
+    $(function() {
+        const table = $('#purchaseTable').DataTable({
+            pageLength: 25,
+            lengthMenu: [10, 25, 50, 100],
+            order: [],
+            orderFixed: { pre: [[7, 'asc']] },
+            columnDefs: [{ targets: [0, 8], orderable: false, searchable: false }],
+            language: {
+                search: 'Cari:', lengthMenu: 'Tampilkan _MENU_ data',
+                info: 'Menampilkan _START_–_END_ dari _TOTAL_ pengajuan',
+                infoEmpty: 'Belum ada pengajuan pembelian', infoFiltered: '(disaring dari _MAX_ pengajuan)',
+                emptyTable: 'Belum ada pengajuan pembelian.', zeroRecords: 'Tidak ada pengajuan yang sesuai.',
+                paginate: { first: 'Pertama', last: 'Terakhir', next: 'Berikutnya', previous: 'Sebelumnya' }
+            }
+        });
+        table.on('draw.dt', function() {
+            const start = table.page.info().start;
+            table.column(0, { page: 'current' }).nodes().each(function(cell, i) { cell.textContent = start + i + 1; });
+        }).draw();
+    });
     let purchaseDetailRequest;
     $(document).on('click', '.purchase-detail', function(event) {
         event.preventDefault();

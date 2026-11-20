@@ -33,6 +33,7 @@ class TukangAttendanceTest extends TestCase
         (require database_path('migrations/2026_11_14_010000_add_tukang_attendance.php'))->up();
         (require database_path('migrations/2026_11_16_010000_add_jenis_to_tukang_table.php'))->up();
         (require database_path('migrations/2026_11_17_030000_add_bonus_to_absen_tukang.php'))->up();
+        (require database_path('migrations/2026_11_20_010000_add_laporan_tukang_menu.php'))->up();
         DB::table('tukang')->where('id', 1)->update(['gaji_per_hari' => 150000]);
         $user = new User(); $user->id = 1; $user->username = 'test'; $this->actingAs($user);
     }
@@ -41,6 +42,51 @@ class TukangAttendanceTest extends TestCase
     {
         return ['mulai' => '2026-11-09', 'versi' => 0,
             'rows' => [['id' => 1, 'hari' => ['07:30', 'M', '½', 'I', 'S', '']]]];
+    }
+
+    public function test_reports_start_with_form_and_weekly_preview_uses_saved_rate_and_bonus(): void
+    {
+        $this->get(route('laporan-tukang.index'))->assertOk()->assertSee('Tampilkan Preview')->assertDontSee('Cetak PDF');
+        $payload = $this->payload();
+        $payload['rows'][0]['tambahan_gaji'] = 50000;
+        $this->postJson(route('absen-tukang.store'), $payload)->assertOk();
+        DB::table('tukang')->where('id', 1)->update(['gaji_per_hari' => 900000]);
+        $this->get(route('laporan-tukang.index', ['jenis' => 'mingguan', 'minggu' => '2026-11-12', 'preview' => 1]))
+            ->assertOk()->assertSee('Cetak PDF')->assertSee('Rp 425.000')
+            ->assertViewHas('report', fn ($r) => $r['grandTotal'] == 425000 && $r['rows'][0]['cells'][0]['count'] === 2.5);
+    }
+
+    public function test_monthly_report_groups_full_weeks_by_saturday_without_double_counting(): void
+    {
+        foreach (['2026-09-28', '2026-10-26', '2026-11-02'] as $start) {
+            $payload = $this->payload(); $payload['mulai'] = $start;
+            $payload['rows'][0]['hari'] = ['M', 'M', 'M', 'M', 'M', 'M'];
+            $payload['rows'][0]['tambahan_gaji'] = 10000;
+            $this->postJson(route('absen-tukang.store'), $payload)->assertOk();
+        }
+        $this->get(route('laporan-tukang.index', ['jenis' => 'bulanan', 'bulan' => '2026-10', 'preview' => 1]))
+            ->assertOk()->assertSee('TOTAL GAJI')->assertSee('Rp 1.820.000')->assertSee('Belum disimpan')
+            ->assertViewHas('report', fn ($r) => count($r['columns']) === 5 && $r['grandTotal'] == 1820000
+                && $r['columns'][0]['start']->toDateString() === '2026-09-28'
+                && $r['columns'][4]['end']->toDateString() === '2026-10-31');
+        $this->get(route('laporan-tukang.index', ['jenis' => 'bulanan', 'bulan' => '2026-11', 'preview' => 1]))
+            ->assertOk()->assertViewHas('report', fn ($r) => count($r['columns']) === 4 && $r['grandTotal'] == 910000);
+    }
+
+    public function test_report_pdf_is_generated_and_access_and_dates_are_validated(): void
+    {
+        $this->postJson(route('absen-tukang.store'), $this->payload())->assertOk();
+        foreach (['mingguan', 'bulanan'] as $type) {
+            $response = $this->get(route('laporan-tukang.index', ['jenis' => $type, 'minggu' => '2026-11-09', 'bulan' => '2026-11', 'format' => 'pdf']))
+                ->assertOk()->assertHeader('Content-Type', 'application/pdf');
+            $this->assertStringStartsWith('%PDF-', $response->getContent());
+        }
+        $this->getJson(route('laporan-tukang.index', ['bulan' => '2026-13', 'preview' => 1]))->assertUnprocessable();
+        $this->getJson(route('laporan-tukang.index', ['jenis' => 'lainnya']))->assertUnprocessable();
+        $menu = DB::table('menu')->where('route_name', 'laporan-tukang.index')->value('id');
+        DB::table('hak_akses')->where('id_menu', $menu)->update(['lihat' => 0]);
+        $this->get(route('laporan-tukang.index'))->assertForbidden();
+        $this->get(route('laporan-tukang.index', ['format' => 'pdf']))->assertForbidden();
     }
 
     public function test_week_is_saved_reopened_and_rate_is_preserved(): void

@@ -16,7 +16,7 @@
                             <div class="card-header p-3">
                                 <div class="d-flex align-content-center justify-content-between">
                                     <h3 class="font-weight-bold text-lg mb-0">{{ $isLunas ? 'View Barang Masuk' : 'Edit Barang Masuk' }}</h3>
-                                    <a href="{{ route('barang-masuk.nota', $data->id) }}" target="_blank" class="btn btn-info btn-sm"><i class="fas fa-print"></i> Cetak Nota</a>
+                                    <a href="{{ route('barang-masuk.nota', $data->id) }}" target="_blank" rel="noopener" class="btn btn-info btn-sm"><i class="fas fa-file-pdf"></i> Cetak Nota PDF</a>
                                 </div>
                             </div>
                             <div class="card-body">

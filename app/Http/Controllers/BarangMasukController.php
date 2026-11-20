@@ -32,7 +32,7 @@ class BarangMasukController extends Controller
         $permissions = HakAksesController::getUserPermissions();
 
         if ($request->ajax()) {
-            $data = BarangMasuk::with(['lampiran', 'pengajuanPembelian'])
+            $data = BarangMasuk::with(['lampiran', 'pengajuanPembelian', 'detail.barang.satuan'])
                 ->orderByRaw('CASE WHEN total_harga > 0 AND terbayar >= total_harga THEN 1 ELSE 0 END')
                 ->orderByRaw('CASE WHEN jatuh_tempo IS NULL THEN 1 ELSE 0 END')
                 ->orderBy('jatuh_tempo')
@@ -46,6 +46,15 @@ class BarangMasukController extends Controller
                 })
                 ->addColumn('supplier', function ($row) {
                     return Supplier::find($row->id_supplier)?->nama ?? 'Supplier Tidak Diketahui';
+                })
+                ->addColumn('detail_barang', function ($row) {
+                    if ($row->detail->isEmpty()) return '-';
+                    return $row->detail->map(function ($detail) {
+                        $name = $detail->barang?->nama ?? 'Barang tidak tersedia';
+                        $unit = $detail->barang?->satuan?->nama_satuan ?? '';
+                        $quantity = number_format((int) $detail->jumlah, 0, ',', '.');
+                        return '<div>'.e($name).' <span class="text-muted">('.e(trim($quantity.' '.$unit)).')</span></div>';
+                    })->implode('');
                 })
                 ->editColumn('jatuh_tempo', fn ($row) => $row->jatuh_tempo
                     ? Carbon::parse($row->jatuh_tempo)->translatedFormat('d F Y') : '-')
@@ -106,7 +115,7 @@ class BarangMasukController extends Controller
 
                     return $btn;
                 })
-                ->rawColumns(['action', 'total_harga', 'status_pembayaran'])
+                ->rawColumns(['action', 'total_harga', 'status_pembayaran', 'detail_barang'])
                 ->make(true);
         }
 
@@ -154,7 +163,7 @@ class BarangMasukController extends Controller
         $this->authorizeInventory('barang-masuk.index', 'lihat');
         Carbon::setLocale('id');
 
-        $data = BarangMasuk::with(['detail.barang', 'supplier'])->findOrFail($id);
+        $data = BarangMasuk::with(['detail.barang.satuan', 'supplier'])->findOrFail($id);
         $detailList = $data->detail;
         $pembayaranList = BarangMasukPembayaran::where('id_barang_masuk', $data->id)->orderBy('tanggal_pembayaran')->get();
 
@@ -172,7 +181,8 @@ class BarangMasukController extends Controller
             'status_pembayaran' => $this->labelStatusPembayaran($data),
         ];
 
-        return view('admin.barang_masuk.nota', compact('company', 'nota', 'detailList', 'pembayaranList'));
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.barang_masuk.nota', compact('company', 'nota', 'detailList', 'pembayaranList'))
+            ->setPaper('a4', 'portrait')->stream($nota['no_nota'].'.pdf');
     }
 
     private function labelStatusPembayaran(BarangMasuk $data): string

@@ -19,6 +19,17 @@ class AkadController extends Controller
     public function index(Request $request)
     {
         $permissions = HakAksesController::getUserPermissions();
+        if ($request->boolean('rekap_biaya_kpr')) {
+            $records = DB::table('detail_akad as d')
+                ->join('akad as a', 'a.id', '=', 'd.id_akad')
+                ->leftJoin('customer as c', 'c.id', '=', 'd.id_customer')
+                ->leftJoin('kavling_peta as k', 'k.id', '=', 'c.id_kavling')
+                ->leftJoin('bank_kpr as b', 'b.id', '=', 'c.id_bank_kpr')
+                ->where('d.status', 2)
+                ->select('a.tgl_akad', 'c.nama_lengkap', 'k.nama_cluster', 'k.kode_kavling', 'b.nama as bank_kpr', 'd.biaya_kpr')
+                ->orderByDesc('a.tgl_akad')->orderByDesc('d.id')->get();
+            return view('admin.transaksi.akad.rekap-biaya-kpr', compact('records'));
+        }
         if ($request->ajax()) {
             $data = DB::table('detail_akad as d')->join('akad as a', 'a.id', '=', 'd.id_akad')
                 ->leftJoin('customer as c', 'c.id', '=', 'd.id_customer')
@@ -28,6 +39,7 @@ class AkadController extends Controller
                 ->orderByDesc('d.id');
             return DataTables::of($data)->addIndexColumn()
                 ->editColumn('tgl_akad', fn ($row) => $row->tgl_akad ? Carbon::parse($row->tgl_akad)->locale('id')->translatedFormat('d F Y') : 'Belum diisi')
+                ->editColumn('tgl_booking', fn ($row) => $row->tgl_booking ? Carbon::parse($row->tgl_booking)->locale('id')->translatedFormat('d F Y') : 'Belum diisi')
                 ->addColumn('status_label', fn ($row) => (int) $row->status === 2
                     ? '<span class="badge badge-success">Selesai akad</span>'
                     : '<span class="badge badge-warning">Data jadwal lama (belum selesai)</span>')
@@ -58,6 +70,7 @@ class AkadController extends Controller
             'tgl_akad' => [$unknownDate ? 'nullable' : 'required', 'date_format:Y-m-d', 'before_or_equal:'.now('Asia/Jakarta')->toDateString()],
             'jenis_akad' => ['required', Rule::in(['AJB', 'PPJB'])],
             'keterangan' => ['nullable', 'string', 'max:255'],
+            'biaya_kpr' => ['nullable', 'regex:/^[0-9]{1,16}$/'],
             'buyer' => ['sometimes', 'array:nama_lengkap,nik,no_telp,alamat_ktp,tgl_booking,id_bank_kpr,id_marketing'],
             'buyer.nama_lengkap' => ['required_with:buyer', 'string', 'max:100'],
             'buyer.nik' => ['nullable', 'string', 'max:50'],
@@ -106,6 +119,7 @@ class AkadController extends Controller
                 'id_akad' => $akad->id, 'id_customer' => $input['id_customer'],
                 'status' => 2, 'jenis_akad' => $input['jenis_akad'],
                 'keterangan' => $input['keterangan'] ?? '',
+                'biaya_kpr' => $input['biaya_kpr'] ?? null,
             ]);
             $detail->save();
             Customer::whereKey($input['id_customer'])->update(['id_status_progres' => 3]);
