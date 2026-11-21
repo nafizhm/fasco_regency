@@ -11,12 +11,21 @@
     .transaction-report .center { text-align: center; }
     .transaction-report tr { page-break-inside: avoid; }
     .transaction-report .summary { font-size: 13px; margin-bottom: 14px; }
+    .transaction-report table.summary { width: auto; }
+    .transaction-report .summary th, .transaction-report .summary td { border: 0; padding: 2px 6px !important; }
+    .transaction-report .summary th { text-align: left; font-weight: normal; white-space: nowrap; padding-left: 0 !important; }
 </style>
 <div class="transaction-report">
     <h2>Rekap Transaksi — {{ ucfirst($report['mode']) }}</h2>
     <p class="period">{{ \Carbon\Carbon::parse($report['start'])->locale('id')->translatedFormat('d F Y') }} s.d. {{ \Carbon\Carbon::parse($report['end'])->locale('id')->translatedFormat('d F Y') }}</p>
-    <p>Sumber: Pemasukan, Pengeluaran, pembayaran Barang Masuk, dan pembayaran SPK.</p>
-    <p class="summary">Total Pemasukan: <strong>Rp {{ number_format($report['income'], 0, ',', '.') }}</strong><br>Total Pengeluaran: <strong>Rp {{ number_format($report['expense'], 0, ',', '.') }}</strong><br>Selisih: <strong>Rp {{ number_format($report['income'] - $report['expense'], 0, ',', '.') }}</strong></p>
+    <p>Sumber: Pemasukan dan Pengeluaran.</p>
+    <table class="summary">
+        <tbody>
+            <tr><th scope="row">Total Pemasukan</th><td>:</td><td class="money"><strong>Rp {{ number_format($report['income'], 0, ',', '.') }}</strong></td></tr>
+            <tr><th scope="row">Total Pengeluaran</th><td>:</td><td class="money"><strong>Rp {{ number_format($report['expense'], 0, ',', '.') }}</strong></td></tr>
+            <tr><th scope="row">Selisih</th><td>:</td><td class="money"><strong>Rp {{ number_format($report['income'] - $report['expense'], 0, ',', '.') }}</strong></td></tr>
+        </tbody>
+    </table>
     <table>
         <thead><tr><th>No</th>
             @if($report['mode'] === 'detail')<th>Tanggal</th><th>Sumber</th><th>Referensi</th>@endif
