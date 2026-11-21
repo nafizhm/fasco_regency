@@ -1,4 +1,8 @@
--- Perubahan SQL mulai sesi 20 November 2026: Biaya KPR pada tambah/edit akad.
+-- Paket lengkap perubahan SQL sesi 20 November 2026.
+-- 1. Kolom Biaya KPR pada tambah/edit akad.
+-- 2. Submenu Laporan Tukang beserta hak akses.
+-- 3. Menu Rekap Transaksi setelah SPK beserta hak akses dan urutan menu.
+-- Prasyarat: database sudah memuat perubahan sebelum sesi ini, termasuk modul Tukang dan SPK.
 -- Jalankan pada database aplikasi yang dituju. Data lama tetap NULL.
 SET @biaya_kpr_sql = IF(
     (SELECT COUNT(*) FROM information_schema.COLUMNS

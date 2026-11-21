@@ -93,16 +93,18 @@ class RekapTransaksiTest extends TestCase
         $this->getJson(route('rekap-transaksi.index', $this->filters(['tampilan' => 'lainnya'])))->assertUnprocessable();
     }
 
-    public function test_summary_groups_categories_and_detail_includes_all_sources_and_both_boundary_days(): void
+    public function test_summary_and_detail_only_include_income_and_expenses_and_both_boundary_days(): void
     {
         $this->transactions();
         $this->get(route('rekap-transaksi.index', $this->filters()))->assertOk()
-            ->assertViewHas('report', fn ($r) => $r['income'] == 310 && $r['expense'] == 150 && $r['rows']->count() === 4
+            ->assertDontSee('Pembayaran Barang Masuk')->assertDontSee('Pembayaran SPK')
+            ->assertViewHas('report', fn ($r) => $r['income'] == 310 && $r['expense'] == 50 && $r['rows']->count() === 2
                 && $r['rows']->firstWhere('kategori', 'Operasional')->pemasukan == 300
                 && $r['rows']->firstWhere('kategori', 'Operasional')->pengeluaran == 50);
         $this->get(route('rekap-transaksi.index', $this->filters(['tampilan' => 'detail'])))->assertOk()
-            ->assertSee('BM-00012')->assertSee('SPK-TEST')->assertSee('&lt;script&gt;', false)->assertDontSee('<script>alert(1)</script>', false)
-            ->assertViewHas('report', fn ($r) => $r['income'] == 310 && $r['expense'] == 150 && $r['rows']->count() === 6);
+            ->assertDontSee('BM-00012')->assertDontSee('SPK-TEST')->assertSee('&lt;script&gt;', false)->assertDontSee('<script>alert(1)</script>', false)
+            ->assertViewHas('report', fn ($r) => $r['income'] == 310 && $r['expense'] == 50 && $r['rows']->count() === 4
+                && $r['rows']->every(fn ($row) => in_array($row->sumber, ['Pemasukan', 'Pengeluaran'], true)));
     }
 
     public function test_both_modes_generate_inline_pdf(): void
