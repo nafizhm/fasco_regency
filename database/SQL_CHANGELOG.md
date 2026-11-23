@@ -16,6 +16,8 @@ Tambahkan perubahan SQL berikutnya pada sesi ini ke paket tersebut.
 
 5. Migrasi `2026_11_23_010000_move_fee_marketing_to_main_menu`: ubah `menu.id_parent` menjadi `0` untuk `fee-marketing.index` agar tampil sebagai menu utama. Data dan hak akses tetap. Query khusus tersedia di `database/sql/2026-11-23-fee-marketing-menu-utama.sql` dan juga ditambahkan ke paket SQL sesi.
 
+6. Migrasi `2026_11_23_020000_add_delegated_to_to_work_priorities`: tambah `work_priorities.delegated_to VARCHAR(200) NULL` beserta indeks. Nilai NULL tetap menjadi Prioritas Pekerjaan; nama terisi menjadi Delegasi Pekerjaan. Dashboard menampilkan dua panel 50:50 pada desktop dan bertumpuk pada layar kecil, dengan tambah tugas dan pembaruan status masing-masing. SQL khusus hosting: `database/sql/2026-11-23-delegasi-pekerjaan.sql`, juga digabung ke paket SQL sesi. Prasyarat: tabel `work_priorities` dari fitur Prioritas Pekerjaan sudah tersedia.
+
 ## Catatan baseline sebelumnya
 
 Permintaan pengguna pada 10 November 2026: SQL berikutnya harus dimulai dari penambahan jatuh tempo pembayaran Barang Masuk pada sesi ini.

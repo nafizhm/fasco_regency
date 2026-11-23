@@ -158,6 +158,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('admin/beranda', [BerandaController::class, 'index'])->name('beranda.index');
     Route::post('admin/prioritas-pekerjaan', [\App\Http\Controllers\WorkPriorityController::class, 'store'])->name('work-priorities.store');
+    Route::post('admin/delegasi-pekerjaan', [\App\Http\Controllers\WorkPriorityController::class, 'storeDelegation'])->name('work-delegations.store');
+    Route::patch('admin/delegasi-pekerjaan/{workPriority}', [\App\Http\Controllers\WorkPriorityController::class, 'updateDelegation'])->name('work-delegations.update');
     Route::patch('admin/prioritas-pekerjaan/{workPriority}', [\App\Http\Controllers\WorkPriorityController::class, 'update'])->name('work-priorities.update');
 
     Route::prefix('admin')->controller(DashboardController::class)->group(function () {
