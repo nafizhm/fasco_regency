@@ -12,6 +12,10 @@ Tambahkan perubahan SQL berikutnya pada sesi ini ke paket tersebut.
 
 3. Migrasi `2026_11_20_020000_add_rekap_transaksi_menu`: tambah menu **Rekap Transaksi** tepat setelah SPK dengan menggeser urutan menu berikutnya; hak lihat diwarisi dari SPK. Filter tanggal awal–akhir inklusif, pilihan ringkasan per kategori atau detail seluruh transaksi, preview dan cetak PDF. Sumber: `pemasukan`, `pengeluaran`, `barang_masuk_pembayaran`, `spk_pembayaran`. Tidak menambah tabel transaksi. SQL deployment ditambahkan ke paket sesi ini.
 
+4. Migrasi `2026_11_23_000000_create_fee_marketing` (23 November 2026): tambah tabel `fee_marketing` (nomor unik, tanggal, jumlah rupiah bulat, data JSON dalam LONGTEXT, timestamps), menu **Fee Marketing** setelah Pemasukan pada kelompok yang sama, serta hak lihat/tambah/edit/hapus yang diwarisi dari Pemasukan. Data JSON menyimpan kop, penerima, rincian fee per level, riwayat, rekening dan tanda tangan. Komisi dihitung persentase × harga deal; total fee = BLT + komisi; jumlah bukti = jumlah fee saat ini. Modul ini menyimpan bukti mandiri dan tidak otomatis membuat transaksi pengeluaran. SQL hosting yang dapat dijalankan ulang ditambahkan ke `database/sql/2026-11-20-session-changes.sql`.
+
+5. Migrasi `2026_11_23_010000_move_fee_marketing_to_main_menu`: ubah `menu.id_parent` menjadi `0` untuk `fee-marketing.index` agar tampil sebagai menu utama. Data dan hak akses tetap. Query khusus tersedia di `database/sql/2026-11-23-fee-marketing-menu-utama.sql` dan juga ditambahkan ke paket SQL sesi.
+
 ## Catatan baseline sebelumnya
 
 Permintaan pengguna pada 10 November 2026: SQL berikutnya harus dimulai dari penambahan jatuh tempo pembayaran Barang Masuk pada sesi ini.

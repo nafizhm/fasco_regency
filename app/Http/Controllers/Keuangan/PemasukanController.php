@@ -34,6 +34,7 @@ class PemasukanController extends Controller
             }
 
             return DataTables::of($data)
+                ->addColumn('nominal_total', fn ($row) => (string) $row->nominal)
                 ->addIndexColumn()
                 ->addColumn('tanggal', function ($row) {
                     return Carbon::parse($row->tanggal)->translatedFormat('j F Y');

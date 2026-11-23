@@ -2,6 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 
+Route::get('admin/fee-marketing/{fee_marketing}/pdf', [\App\Http\Controllers\FeeMarketingController::class, 'pdf'])->name('fee-marketing.pdf');
+Route::resource('admin/fee-marketing', \App\Http\Controllers\FeeMarketingController::class);
+
 Route::get('admin/spk/{spk}/word', [\App\Http\Controllers\SpkController::class, 'word'])->name('spk.word');
 Route::post('admin/spk/{spk}/pembayaran', [\App\Http\Controllers\SpkController::class, 'payment'])->name('spk.payment');
 Route::resource('admin/spk', \App\Http\Controllers\SpkController::class);

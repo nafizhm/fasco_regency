@@ -29,12 +29,21 @@
                                 </div>
                             </div>
                             <div class="card-body">
-                                <div class="row mb-3">
-                                    <div class="col-lg-2 ms-1">
-                                        <fieldset class="form-group">
+                                <div class="row mb-3 align-items-center">
+                                    <div class="col-lg-2 col-md-4 mb-2 mb-md-0">
+                                        <fieldset class="form-group mb-0">
                                             <input type="date" class="form-control" id="filter_tanggal"
                                                 name="filter_tanggal" required>
                                         </fieldset>
+                                    </div>
+                                    <div class="col-lg-4 col-md-6">
+                                        <div class="card border-danger mb-0">
+                                            <div class="card-body py-2 px-3">
+                                                <div class="text-muted">Total Pengeluaran</div>
+                                                <strong class="h4 text-danger mb-0" id="total-nominal" aria-live="polite">Rp 0</strong>
+                                                <small class="d-block text-muted">Sesuai filter tanggal dan pencarian.</small>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <table class="table table-bordered table-striped data-table w-100">
@@ -401,6 +410,11 @@
                 serverSide: false,
                 ordering: false,
                 responsive: true,
+                drawCallback: function() {
+                    var total = this.api().rows({ search: 'applied' }).data().toArray()
+                        .reduce(function(sum, row) { return sum + Number(row.nominal_total || 0); }, 0);
+                    $('#total-nominal').text('Rp ' + total.toLocaleString('id-ID', { maximumFractionDigits: 0 }));
+                },
                 ajax: {
                     url: "{{ route('pengeluaran.index') }}",
                     data: function(d) {
