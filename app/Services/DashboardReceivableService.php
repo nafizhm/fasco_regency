@@ -24,9 +24,11 @@ class DashboardReceivableService
         ];
     }
 
-    public function customers(array $relations = []): \Illuminate\Database\Eloquent\Collection
+    public function customers(array $relations = [], bool $dueOnly = false): \Illuminate\Database\Eloquent\Collection
     {
         return Customer::where('stt_arsip', 0)
+            ->when($dueOnly, fn ($query) => $query->whereNotNull('tanggal_jatuh_tempo')
+                ->whereDate('tanggal_jatuh_tempo', '<=', now('Asia/Jakarta')->toDateString()))
             ->with($relations)
             ->withSum(['piutangs as total_tagihan' => fn ($q) => $q->where(fn ($q) => $q->whereNull('jenis_piutang')->orWhere('jenis_piutang', '!=', 'bank'))], 'nominal')
             ->withSum(['pemasukans as total_bayar' => function ($query) {

@@ -1,4 +1,4 @@
-<a class="receivable-bell" href="{{ route('dashboard.piutang') }}"
+<a class="receivable-bell" href="{{ route('dashboard.piutang', ['jatuh_tempo' => 1]) }}"
    title="Piutang jatuh tempo hari ini: {{ $receivables['jatuh_tempo_hari_ini'] }} customer. Terlambat: {{ $receivables['terlambat'] }} customer."
    aria-label="{{ $receivables['notifikasi_piutang'] }} notifikasi piutang: {{ $receivables['jatuh_tempo_hari_ini'] }} customer jatuh tempo hari ini, {{ $receivables['terlambat'] }} customer terlambat. Buka rekap piutang.">
     <i class="fas fa-bell" aria-hidden="true"></i>

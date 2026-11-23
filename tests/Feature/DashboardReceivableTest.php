@@ -55,10 +55,19 @@ class DashboardReceivableTest extends TestCase
         $this->assertSame(['piutang' => 1200, 'piutang_customer' => 2,
             'jatuh_tempo_hari_ini' => 1, 'terlambat' => 1, 'notifikasi_piutang' => 2], $summary);
         $this->view('admin.dashboard.receivable-bell', ['receivables' => $summary])
-            ->assertSee(route('dashboard.piutang'))->assertSee('2 notifikasi piutang')->assertSee('fa-bell');
+            ->assertSee(route('dashboard.piutang', ['jatuh_tempo' => 1]))->assertSee('2 notifikasi piutang')->assertSee('fa-bell');
+        $due = app(DashboardReceivableService::class)->customers([], true);
+        $this->assertSame([1, 4], $due->pluck('id')->all());
+        $this->assertSame(1200, $due->sum('sisa_piutang'));
         DB::table('customer')->where('id', 1)->update(['tanggal_jatuh_tempo' => now('Asia/Jakarta')->addDay()->toDateString()]);
+        $due = app(DashboardReceivableService::class)->customers([], true);
+        $this->assertSame([4], $due->pluck('id')->all());
+        $this->assertSame(200, $due->sum('sisa_piutang'));
         DB::table('customer')->where('id', 4)->update(['tanggal_jatuh_tempo' => null]);
         $this->assertSame(0, app(DashboardReceivableService::class)->summary()['notifikasi_piutang']);
+        $due = app(DashboardReceivableService::class)->customers([], true);
+        $this->assertCount(0, $due);
+        $this->assertEquals(0, $due->sum('sisa_piutang'));
         DB::table('customer')->where('id', 1)->update(['tanggal_jatuh_tempo' => $today]);
         DB::table('customer')->where('id', 4)->update(['tanggal_jatuh_tempo' => now('Asia/Jakarta')->subDay()->toDateString()]);
         $customers = app(DashboardReceivableService::class)->customers();

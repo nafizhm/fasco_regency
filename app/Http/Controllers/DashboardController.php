@@ -16,8 +16,9 @@ use Yajra\DataTables\Facades\DataTables;
 
 class DashboardController extends Controller
 {
-    public function piutang(\App\Services\DashboardReceivableService $receivables)
+    public function piutang(Request $request, \App\Services\DashboardReceivableService $receivables)
     {
+        $dueOnly = $request->boolean('jatuh_tempo');
         $customers = $receivables->customers([
             'lokasi', 'kavling',
             'piutangs' => fn ($query) => $query->where(fn ($q) => $q->whereNull('jenis_piutang')->orWhere('jenis_piutang', '!=', 'bank'))->orderBy('tanggal_piutang')->orderBy('id'),
@@ -26,9 +27,9 @@ class DashboardController extends Controller
                 ->where(fn ($payment) => $payment->whereNull('keterangan')
                     ->orWhere('keterangan', 'NOT LIKE', 'Biaya ganti nama%'))
                 ->orderBy('tanggal')->orderBy('id'),
-        ]);
+        ], $dueOnly);
 
-        return view('admin.dashboard.piutang', compact('customers'));
+        return view('admin.dashboard.piutang', compact('customers', 'dueOnly'));
     }
 
     public function piutangKpr(\App\Services\KprReceivableReport $report)

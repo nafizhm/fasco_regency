@@ -3,7 +3,7 @@
 <div class="content-wrapper">
     <section class="content-header">
         <div class="container-fluid d-flex justify-content-between align-items-center">
-            <h1>Detail Piutang</h1>
+            <h1>{{ $dueOnly ? 'Piutang Jatuh Tempo' : 'Detail Piutang' }}</h1>
             <a href="{{ route('beranda.index') }}" class="btn btn-secondary btn-sm">Kembali ke Dashboard</a>
         </div>
     </section>
@@ -13,6 +13,9 @@
                 <div class="card-body">
                     <h3 class="text-danger">Rp {{ number_format($customers->sum('sisa_piutang'), 0, ',', '.') }}</h3>
                     <p class="mb-0">Sisa piutang dari {{ $customers->count() }} customer aktif. Buka rincian untuk melihat tagihan dan pembayaran.</p>
+                    @if($dueOnly)
+                        <p class="mb-1 text-danger">Hanya piutang yang jatuh tempo hari ini dan sebelumnya (sampai {{ now('Asia/Jakarta')->format('d-m-Y') }}). Total nominal di atas sesuai data yang ditampilkan.</p>
+                    @endif
                     <small class="text-muted">Pembayaran biaya ganti nama tidak diperhitungkan sebagai pembayaran piutang.</small>
                 </div>
             </div>
