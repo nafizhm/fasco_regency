@@ -5,8 +5,8 @@
 body { font-family: "Times-Roman", serif; font-size: 11pt; color:#111; line-height:1.25; }
 table { width:100%; border-collapse:collapse; }
 .kop { position:relative; text-align:center; border-bottom:3px double #222; padding-bottom:5px; height:72px; }
-.logo { position:absolute; left:26px; top:0; width:48px; text-align:center; line-height:1; font-family:Helvetica,sans-serif; }
-.logo img { width:44px; height:44px; }
+.logo { position:absolute; left:12px; top:0; width:90px; text-align:center; line-height:1; font-family:Helvetica,sans-serif; }
+.logo img { width:auto; height:72px; max-width:90px; }
 .brand { color:#d6a133; font-size:9px; font-weight:bold; }
 .regency { font-size:6px; color:#555; }
 .company { color:#d59a51; font-size:23px; letter-spacing:1px; }
@@ -41,7 +41,7 @@ table { width:100%; border-collapse:collapse; }
 .signatures .project { font-size:12px; font-weight:bold; }
 .signature-space { height:80px; }
 .stamp { padding-top:20px; }
-.stamp img { width:48px; height:48px; }
+.stamp img { width:auto; height:80px; max-width:100px; }
 .stamp .brand { width:60px; margin:0 auto; font-size:10px; line-height:1.1; }
 tr { page-break-inside:avoid; }
 thead { display:table-header-group; }
