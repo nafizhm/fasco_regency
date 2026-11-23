@@ -137,6 +137,7 @@ class BerandaController extends Controller
             ->values();
 
         return view('admin.beranda.index', compact(
+            'receivables',
             'workPriorities',
             'username',
             'chartYear',

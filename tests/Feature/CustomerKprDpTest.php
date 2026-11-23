@@ -52,7 +52,8 @@ class CustomerKprDpTest extends CustomerReceivableTest
         $this->assertDatabaseHas('customer', ['id' => $customer->id, 'dp_kpr' => 30000000, 'total_harga' => 300000000]);
         $this->assertDatabaseHas('piutang', ['id' => 1, 'nominal' => 30000000, 'terbayar' => 15000000, 'sisa_bayar' => 15000000, 'deskripsi' => 'DP KPR Blok A1']);
         $this->assertDatabaseCount('pemasukan', 2);
-        $this->assertSame(['piutang' => 15000000, 'piutang_customer' => 1], app(DashboardReceivableService::class)->summary());
+        $this->assertSame(['piutang' => 15000000, 'piutang_customer' => 1,
+            'jatuh_tempo_hari_ini' => 0, 'terlambat' => 0, 'notifikasi_piutang' => 0], app(DashboardReceivableService::class)->summary());
         $this->putJson(route('customer.dp-kpr.update', $customer), ['dp_kpr' => '30.000.000'])->assertOk();
         $this->assertDatabaseCount('piutang', 1);
     }
@@ -68,7 +69,8 @@ class CustomerKprDpTest extends CustomerReceivableTest
         $this->assertDatabaseHas('pemasukan', ['nominal' => 5000000]);
         app(CustomerKprDp::class)->sync($customer->id, 3000000);
         $this->assertDatabaseHas('piutang', ['nominal' => 3000000, 'terbayar' => 3000000, 'sisa_bayar' => 0]);
-        $this->assertSame(['piutang' => 0, 'piutang_customer' => 0], app(DashboardReceivableService::class)->summary());
+        $this->assertSame(['piutang' => 0, 'piutang_customer' => 0,
+            'jatuh_tempo_hari_ini' => 0, 'terlambat' => 0, 'notifikasi_piutang' => 0], app(DashboardReceivableService::class)->summary());
     }
 
     public function test_invalid_values_cash_customer_and_unpermitted_edits_are_rejected(): void

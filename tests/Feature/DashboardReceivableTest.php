@@ -16,6 +16,7 @@ class DashboardReceivableTest extends TestCase
         Schema::create('customer', function (Blueprint $table) {
             $table->id();
             $table->integer('stt_arsip')->default(0);
+            $table->date('tanggal_jatuh_tempo')->nullable();
         });
         Schema::create('piutang', function (Blueprint $table) {
             $table->string('jenis_piutang')->nullable();
@@ -47,14 +48,27 @@ class DashboardReceivableTest extends TestCase
 
         DB::table('piutang')->insert(['id_customer' => 1, 'nominal' => 6000, 'jenis_piutang' => 'bank']);
         DB::table('pemasukan')->insert(['id_customer' => 1, 'nominal' => 5500, 'id_kategori_transaksi' => 9]);
-        $this->assertSame(['piutang' => 1200, 'piutang_customer' => 2], app(DashboardReceivableService::class)->summary());
+        $today = now('Asia/Jakarta')->toDateString();
+        DB::table('customer')->whereIn('id', [1, 2, 5])->update(['tanggal_jatuh_tempo' => $today]);
+        DB::table('customer')->whereIn('id', [3, 4])->update(['tanggal_jatuh_tempo' => now('Asia/Jakarta')->subDay()->toDateString()]);
+        $summary = app(DashboardReceivableService::class)->summary();
+        $this->assertSame(['piutang' => 1200, 'piutang_customer' => 2,
+            'jatuh_tempo_hari_ini' => 1, 'terlambat' => 1, 'notifikasi_piutang' => 2], $summary);
+        $this->view('admin.dashboard.receivable-bell', ['receivables' => $summary])
+            ->assertSee(route('dashboard.piutang'))->assertSee('2 notifikasi piutang')->assertSee('fa-bell');
+        DB::table('customer')->where('id', 1)->update(['tanggal_jatuh_tempo' => now('Asia/Jakarta')->addDay()->toDateString()]);
+        DB::table('customer')->where('id', 4)->update(['tanggal_jatuh_tempo' => null]);
+        $this->assertSame(0, app(DashboardReceivableService::class)->summary()['notifikasi_piutang']);
+        DB::table('customer')->where('id', 1)->update(['tanggal_jatuh_tempo' => $today]);
+        DB::table('customer')->where('id', 4)->update(['tanggal_jatuh_tempo' => now('Asia/Jakarta')->subDay()->toDateString()]);
         $customers = app(DashboardReceivableService::class)->customers();
         $this->assertSame([1, 4], $customers->pluck('id')->all());
         $this->assertSame([1000, 200], $customers->pluck('sisa_piutang')->all());
         $this->assertSame(1500, (int) $customers->first()->total_tagihan);
         $this->assertSame(500, (int) $customers->first()->total_bayar);
         DB::table('pemasukan')->insert(['id_customer' => 1, 'nominal' => 1000, 'keterangan' => 'Pelunasan']);
-        $this->assertSame(['piutang' => 200, 'piutang_customer' => 1], app(DashboardReceivableService::class)->summary());
+        $this->assertSame(['piutang' => 200, 'piutang_customer' => 1,
+            'jatuh_tempo_hari_ini' => 0, 'terlambat' => 1, 'notifikasi_piutang' => 1], app(DashboardReceivableService::class)->summary());
         $this->assertSame([4], app(DashboardReceivableService::class)->customers()->pluck('id')->all());
     }
 }

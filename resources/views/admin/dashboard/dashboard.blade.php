@@ -309,4 +309,5 @@
             <!-- /.row -->
     </div><!-- /.container-fluid -->
     </section>
+@include('admin.dashboard.receivable-bell')
 @endsection

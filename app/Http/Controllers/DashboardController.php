@@ -172,7 +172,9 @@ class DashboardController extends Controller
             ];
         }
 
+        $receivables = app(\App\Services\DashboardReceivableService::class)->summary();
         return view('admin.dashboard.dashboard', compact(
+            'receivables',
             'totalKavling',
             'tglSekarang',
             'dataLokasi',

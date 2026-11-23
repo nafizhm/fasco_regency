@@ -9,10 +9,18 @@ class DashboardReceivableService
     public function summary(): array
     {
         $customers = $this->customers();
+        $today = now('Asia/Jakarta')->toDateString();
+        $dueToday = $customers->filter(fn ($customer) => $customer->tanggal_jatuh_tempo
+            && substr((string) $customer->tanggal_jatuh_tempo, 0, 10) === $today)->count();
+        $overdue = $customers->filter(fn ($customer) => $customer->tanggal_jatuh_tempo
+            && substr((string) $customer->tanggal_jatuh_tempo, 0, 10) < $today)->count();
 
         return [
             'piutang' => (int) $customers->sum('sisa_piutang'),
             'piutang_customer' => $customers->count(),
+            'jatuh_tempo_hari_ini' => $dueToday,
+            'terlambat' => $overdue,
+            'notifikasi_piutang' => $dueToday + $overdue,
         ];
     }
 
