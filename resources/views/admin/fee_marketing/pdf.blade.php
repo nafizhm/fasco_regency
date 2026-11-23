@@ -58,7 +58,7 @@ for ($i = 0; $i < count($rows); $i++) {
 }
 @endphp
 <div class="kop">
-<div class="logo"><img src="{{ public_path('assets/img/logo-kwitansi.png') }}"><div class="brand">{{ strtoupper($d['proyek']) }}</div></div>
+@if($logoData ?? null)<div class="logo"><img src="{{ $logoData }}" alt="Logo profil"></div>@endif
 <div class="company">{{ strtoupper($d['perusahaan']) }}</div>
 <div class="subtitle">{{ $d['subjudul'] }}</div>
 <div class="address">{{ $d['alamat'] }}<br>No Hp : {{ $d['telepon'] }}</div>
@@ -98,7 +98,7 @@ for ($i = 0; $i < count($rows); $i++) {
 <div class="conditions">Ketentuan :<br><span class="lines">{{ $d['ketentuan'] }}</span>
 <div class="bank">Bank &amp; No rekening : {{ $d['bank_rekening'] ?: '........................................' }}<br>Atas Nama &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {{ $d['atas_nama'] ?: '........................................' }}</div>
 </div>
-<table class="signatures"><tr><td>{{ $d['kota'] }}, {{ \Carbon\Carbon::parse($record->tanggal)->format('d/m/Y') }}</td><td rowspan="3" class="stamp"><img src="{{ public_path('assets/img/logo-kwitansi.png') }}"><div class="brand">{{ strtoupper($d['proyek']) }}</div></td><td><span class="owner">{{ $d['perusahaan'] }}</span><br><span class="project">"{{ $d['proyek'] }}"</span><br>(Owner)</td></tr>
+<table class="signatures"><tr><td>{{ $d['kota'] }}, {{ \Carbon\Carbon::parse($record->tanggal)->format('d/m/Y') }}</td><td rowspan="3" class="stamp">@if($logoData ?? null)<img src="{{ $logoData }}" alt="Logo profil">@endif</td><td><span class="owner">{{ $d['perusahaan'] }}</span><br><span class="project">"{{ $d['proyek'] }}"</span><br>(Owner)</td></tr>
 <tr><td class="signature-space"></td><td></td></tr>
 <tr><td>({{ $d['jabatan_penerima'] }})</td><td>({{ $d['owner'] }})</td></tr></table>
 </body></html>

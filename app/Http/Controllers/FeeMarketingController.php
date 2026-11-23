@@ -114,7 +114,17 @@ class FeeMarketingController extends Controller
     public function pdf(FeeMarketing $fee_marketing)
     {
         $this->authorizeInventory('fee-marketing.index');
+        $logoMedia = \App\Models\PengaturanMedia::where('jenis_data', 'Logo Login')->first();
+        $logoData = null;
+        if ($logoMedia?->nama_file) {
+            $logoPath = public_path('config_media/'.$logoMedia->nama_file);
+            if (is_file($logoPath) && ($imageInfo = @getimagesize($logoPath))
+                && $imageInfo[0] * $imageInfo[1] <= 4000000) {
+                $logoData = 'data:'.$imageInfo['mime'].';base64,'.base64_encode(file_get_contents($logoPath));
+            }
+        }
         return Pdf::loadView('admin.fee_marketing.pdf', [
+            'logoData' => $logoData,
             'record' => $fee_marketing,
             'd' => $fee_marketing->data,
             'terbilang' => FeeMarketingWords::rupiah($fee_marketing->jumlah),
