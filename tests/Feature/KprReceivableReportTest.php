@@ -25,6 +25,7 @@ class KprReceivableReportTest extends TestCase
         Schema::create('akad', function (Blueprint $t) { $t->id(); $t->date('tgl_akad'); });
         Schema::create('detail_akad', function (Blueprint $t) {
             $t->id(); $t->integer('id_customer'); $t->integer('id_akad'); $t->integer('status');
+            $t->decimal('biaya_kpr', 18, 2)->nullable();
         });
         DB::table('kategori_transaksi')->insert(['id' => 19, 'kategori' => 'Pencairan KPR']);
         DB::table('lokasi_kavling')->insert(['id' => 1, 'nama_kavling' => 'Proyek A']);
@@ -46,7 +47,7 @@ class KprReceivableReportTest extends TestCase
             ['id' => 3, 'id_customer' => 1, 'id_kategori_transaksi' => 1, 'nominal' => 100, 'tanggal' => '2026-03-01'],
         ]);
         DB::table('akad')->insert(['id' => 1, 'tgl_akad' => '2026-02-01']);
-        DB::table('detail_akad')->insert(['id_customer' => 1, 'id_akad' => 1, 'status' => 2]);
+        DB::table('detail_akad')->insert(['id_customer' => 1, 'id_akad' => 1, 'status' => 2, 'biaya_kpr' => 2500000]);
         $rows = app(KprReceivableReport::class)->rows();
         $this->assertCount(2, $rows);
         $row = $rows->firstWhere('customer.id', 1);
@@ -54,6 +55,8 @@ class KprReceivableReportTest extends TestCase
         $this->assertEquals(500, $row['sisa']);
         $this->assertSame('BRI', $row['bank']);
         $this->assertSame('2026-02-01', $row['akad']);
+        $this->assertEquals(2500000, $row['biaya_kpr']);
+        $this->assertNull($rows->firstWhere('customer.id', 3)['biaya_kpr']);
         $this->assertEquals([300, 200], $row['payments']->pluck('nominal')->all());
         $this->assertNull($rows->firstWhere('customer.id', 3)['sisa']);
     }

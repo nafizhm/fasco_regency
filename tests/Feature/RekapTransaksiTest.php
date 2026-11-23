@@ -39,6 +39,7 @@ class RekapTransaksiTest extends TestCase
         foreach (['pemasukan' => 'no_kwitansi', 'pengeluaran' => 'no_tanda_terima'] as $table => $reference) {
             Schema::create($table, function (Blueprint $t) use ($reference) {
                 $t->id(); $t->dateTime('tanggal'); $t->integer('id_kategori_transaksi')->nullable();
+                $t->integer('id_customer')->nullable();
                 $t->unsignedBigInteger('nominal'); $t->string($reference)->nullable(); $t->text('keterangan')->nullable();
             });
         }
@@ -63,7 +64,8 @@ class RekapTransaksiTest extends TestCase
         foreach ([['2026-11-01 00:00:00', 100], ['2026-11-20 23:59:59', 200], ['2026-10-31 23:59:59', 999], ['2026-11-21 00:00:00', 999]] as [$date, $amount]) {
             DB::table('pemasukan')->insert(['tanggal' => $date, 'id_kategori_transaksi' => 1, 'nominal' => $amount]);
         }
-        DB::table('pemasukan')->insert(['tanggal' => '2026-11-10', 'id_kategori_transaksi' => 999, 'nominal' => 10]);
+        DB::table('pemasukan')->insert(['tanggal' => '2026-11-10', 'id_kategori_transaksi' => 999, 'nominal' => 10, 'id_customer' => 0]);
+        DB::table('pemasukan')->insert(['tanggal' => '2026-11-10', 'id_kategori_transaksi' => 1, 'nominal' => 2500000, 'id_customer' => 62, 'keterangan' => 'Pembayaran customer 62']);
         DB::table('pengeluaran')->insert(['tanggal' => '2026-11-05', 'id_kategori_transaksi' => 1, 'nominal' => 50, 'keterangan' => '<script>alert(1)</script>']);
         DB::table('barang_masuk_pembayaran')->insert(['tanggal_pembayaran' => '2026-11-20 23:59:59', 'id_barang_masuk' => 12, 'jumlah_bayar' => 40]);
         DB::table('spk')->insert(['id' => 1, 'nomor' => 'SPK-TEST']);
@@ -102,6 +104,7 @@ class RekapTransaksiTest extends TestCase
                 && $r['rows']->firstWhere('kategori', 'Operasional')->pemasukan == 300
                 && $r['rows']->firstWhere('kategori', 'Operasional')->pengeluaran == 50);
         $this->get(route('rekap-transaksi.index', $this->filters(['tampilan' => 'detail'])))->assertOk()
+            ->assertDontSee('Pembayaran customer 62')
             ->assertDontSee('BM-00012')->assertDontSee('SPK-TEST')->assertSee('&lt;script&gt;', false)->assertDontSee('<script>alert(1)</script>', false)
             ->assertViewHas('report', fn ($r) => $r['income'] == 310 && $r['expense'] == 50 && $r['rows']->count() === 4
                 && $r['rows']->every(fn ($row) => in_array($row->sumber, ['Pemasukan', 'Pengeluaran'], true)));

@@ -22,19 +22,26 @@ class KprReceivableReport
         $akad = DB::table('detail_akad')->join('akad', 'akad.id', '=', 'detail_akad.id_akad')
             ->whereIn('detail_akad.id_customer', $ids)->where('detail_akad.status', 2)
             ->whereDate('akad.tgl_akad', '<=', now('Asia/Jakarta')->toDateString())
-            ->select('detail_akad.id_customer', DB::raw('MIN(akad.tgl_akad) as tanggal'))
-            ->groupBy('detail_akad.id_customer')->pluck('tanggal', 'id_customer');
+            ->select('detail_akad.id_customer', 'akad.tgl_akad as tanggal', 'detail_akad.biaya_kpr')
+            ->orderBy('akad.tgl_akad')->orderBy('detail_akad.id')->get()
+            ->unique('id_customer')->keyBy('id_customer');
 
         return $customers->map(function ($customer) use ($sp3ks, $akad) {
             $sp3k = $sp3ks->get($customer->id);
             $snapshot = $customer->pemasukans->sortByDesc('id')->first(fn ($p) => $p->plafon_sp3k !== null);
             $plafon = $sp3k ? (int) $sp3k->acc_plafon : ($snapshot ? (int) $snapshot->plafon_sp3k : null);
-            return ['customer' => $customer, 'akad' => $akad[$customer->id] ?? null,
+            $customerAkad = $akad->get($customer->id);
+            return ['customer' => $customer, 'akad' => $customerAkad?->tanggal,
+                'biaya_kpr' => $customerAkad?->biaya_kpr,
                 'plafon' => $plafon, 'payments' => $customer->pemasukans,
                 'sisa' => $plafon === null ? null : max($plafon - $customer->pemasukans->sum('nominal'), 0),
                 'bank' => $sp3k?->bankKPR?->nama ?? $customer->bankKPR?->nama ?? '-',
             ];
         })->sort(function ($left, $right) {
+            $date = strcmp($left['akad'] ?? '9999-12-31', $right['akad'] ?? '9999-12-31');
+            if ($date !== 0) {
+                return $date;
+            }
             $leftUnit = $left['customer']->kavling;
             $rightUnit = $right['customer']->kavling;
             $cluster = strnatcasecmp(trim($leftUnit?->nama_cluster ?? ''), trim($rightUnit?->nama_cluster ?? ''));

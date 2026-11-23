@@ -28,7 +28,7 @@
                             <td>{{ $row['customer']->kavling?->kode_kavling ?? '—' }}</td>
                             <td><a href="{{ route('pembayaran.show', $row['customer']->id) }}">{{ $row['customer']->nama_lengkap }}</a></td>
                             <td>{{ $row['akad'] ? \Carbon\Carbon::parse($row['akad'])->format('d/m/Y') : '—' }}</td>
-                            <td class="text-center">—</td>
+                            <td class="text-right">{{ $row['biaya_kpr'] !== null ? number_format($row['biaya_kpr'], 0, ',', '.') : '—' }}</td>
                             <td class="text-right">{{ $row['plafon'] !== null ? number_format($row['plafon'], 0, ',', '.') : 'Belum ada SP3K' }}</td>
                             @for($stage = 0; $stage < $stages; $stage++)
                                 @php($payment = $row['payments']->get($stage))
@@ -44,7 +44,7 @@
                         <tr><td colspan="{{ 9 + $stages * 2 }}" class="text-center">Belum ada customer KPR.</td></tr>
                         @endforelse
                     </tbody>
-                    <tfoot><tr><th colspan="6">TOTAL</th><th class="text-right">{{ number_format($rows->sum('plafon'), 0, ',', '.') }}</th>
+                    <tfoot><tr><th colspan="5">TOTAL</th><th class="text-right">{{ number_format($rows->sum('biaya_kpr'), 0, ',', '.') }}</th><th class="text-right">{{ number_format($rows->sum('plafon'), 0, ',', '.') }}</th>
                         @for($stage = 0; $stage < $stages; $stage++)<td></td><th class="text-right">{{ number_format($rows->sum(fn ($row) => $row['payments']->get($stage)?->nominal ?? 0), 0, ',', '.') }}</th>@endfor
                         <th class="text-right">{{ number_format($rows->sum('sisa'), 0, ',', '.') }}</th><td></td>
                     </tr></tfoot>

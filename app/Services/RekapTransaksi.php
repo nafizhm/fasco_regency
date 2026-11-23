@@ -12,6 +12,7 @@ class RekapTransaksi
         // Batas akhir eksklusif mencakup seluruh jam pada tanggal terakhir.
         $until = CarbonImmutable::parse($end)->addDay()->toDateString();
         $income = DB::table('pemasukan as p')->leftJoin('kategori_transaksi as k', 'k.id', '=', 'p.id_kategori_transaksi')
+            ->where(fn ($query) => $query->whereNull('p.id_customer')->orWhere('p.id_customer', 0))
             ->where('p.tanggal', '>=', $start)->where('p.tanggal', '<', $until)
             ->selectRaw("p.id, p.tanggal, 'Pemasukan' as sumber, p.no_kwitansi as referensi, COALESCE(k.kategori, 'Tanpa Kategori') as kategori, p.keterangan, p.nominal as pemasukan, 0 as pengeluaran");
         $expense = DB::table('pengeluaran as p')->leftJoin('kategori_transaksi as k', 'k.id', '=', 'p.id_kategori_transaksi')
