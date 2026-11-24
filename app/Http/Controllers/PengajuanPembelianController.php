@@ -6,6 +6,7 @@ use App\Models\Barang;
 use App\Models\PengajuanPembelian;
 use App\Models\Supplier;
 use App\Services\PurchaseReceivingService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -149,6 +150,16 @@ class PengajuanPembelianController extends Controller
         }
 
         return view('admin.pengajuan_pembelian.show', compact('data', 'lines', 'permissions'));
+    }
+
+    public function pdf($id, PurchaseReceivingService $service)
+    {
+        $this->authorizeInventory('pengajuan-pembelian.index');
+        $data = PengajuanPembelian::with('supplier')->findOrFail($id);
+        $lines = $service->lines($data);
+
+        return Pdf::loadView('admin.pengajuan_pembelian.pdf', compact('data', 'lines'))
+            ->setPaper('a4', 'portrait')->stream('pengajuan-pembelian-'.$data->id.'.pdf');
     }
 
     public function destroy($id)

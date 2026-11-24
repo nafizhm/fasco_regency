@@ -18,7 +18,8 @@
                 <td class="text-right text-nowrap" data-order="{{ $item->detail->sum(fn ($detail) => $detail->jumlah * $detail->harga) }}">{{ number_format($item->detail->sum(fn ($detail) => $detail->jumlah * $detail->harga), 0, ',', '.') }}</td>
                 <td data-order="{{ $item->penerimaan_count }}">{{ $item->penerimaan_count }} kali</td>
                 <td data-order="{{ $item->masih_terpesan || !$item->detail_count ? 0 : 1 }}"><span class="badge {{ $item->masih_terpesan || !$item->detail_count ? 'badge-warning' : 'badge-success' }}">{{ $item->masih_terpesan || !$item->detail_count ? 'Masih Terpesan' : 'Sudah Diterima' }}</span></td>
-                <td><a class="btn btn-info btn-sm purchase-detail" href="{{ route('pengajuan-pembelian.show', $item->id) }}" title="Lihat Detail" aria-label="Lihat Detail"><i class="fas fa-eye"></i></a></td>
+                <td><a class="btn btn-info btn-sm purchase-detail" href="{{ route('pengajuan-pembelian.show', $item->id) }}" title="Lihat Detail" aria-label="Lihat Detail"><i class="fas fa-eye"></i></a>
+                    <a class="btn btn-outline-primary btn-sm" href="{{ route('pengajuan-pembelian.pdf', $item->id) }}" target="_blank" rel="noopener" title="Cetak PDF" aria-label="Cetak PDF"><i class="fas fa-file-pdf"></i> Cetak PDF</a></td>
             </tr>@endforeach</tbody>
         </table></div>
     </div>

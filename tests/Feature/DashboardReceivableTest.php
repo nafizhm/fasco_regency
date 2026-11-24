@@ -79,5 +79,36 @@ class DashboardReceivableTest extends TestCase
         $this->assertSame(['piutang' => 200, 'piutang_customer' => 1,
             'jatuh_tempo_hari_ini' => 0, 'terlambat' => 1, 'notifikasi_piutang' => 1], app(DashboardReceivableService::class)->summary());
         $this->assertSame([4], app(DashboardReceivableService::class)->customers()->pluck('id')->all());
+
+        Schema::table('customer', function (Blueprint $table) {
+            $table->string('nama_lengkap')->nullable();
+            $table->integer('id_lokasi')->nullable();
+            $table->integer('id_kavling')->nullable();
+        });
+        Schema::create('kavling_peta', function (Blueprint $table) {
+            $table->id(); $table->string('nama_cluster'); $table->string('kode_kavling');
+        });
+        DB::table('kavling_peta')->insert([
+            ['id' => 17, 'nama_cluster' => 'KUNING', 'kode_kavling' => '17'],
+            ['id' => 18, 'nama_cluster' => 'KUNING', 'kode_kavling' => '18'],
+        ]);
+        DB::table('customer')->insert([
+            ['id' => 8, 'nama_lengkap' => 'SHOFYAN SANTRIANSYAH', 'id_lokasi' => 1, 'id_kavling' => 17, 'tanggal_jatuh_tempo' => $today],
+            ['id' => 9, 'nama_lengkap' => 'SHOFYAN', 'id_lokasi' => 1, 'id_kavling' => 18, 'tanggal_jatuh_tempo' => now('Asia/Jakarta')->addDay()->toDateString()],
+        ]);
+        DB::table('piutang')->insert([
+            ['id_customer' => 8, 'nominal' => 1000], ['id_customer' => 9, 'nominal' => 2000],
+        ]);
+        DB::table('pemasukan')->insert(['id_customer' => 9, 'nominal' => 500]);
+        $grouped = app(DashboardReceivableService::class)->customers(['kavling', 'piutangs', 'pemasukans']);
+        $this->assertSame([8, 4], $grouped->pluck('id')->all());
+        $shofyan = $grouped->first();
+        $this->assertSame(3000, $shofyan->total_tagihan);
+        $this->assertSame(500, $shofyan->total_bayar);
+        $this->assertSame(2500, $shofyan->sisa_piutang);
+        $this->assertCount(2, $shofyan->piutangs);
+        $this->assertCount(1, $shofyan->pemasukans);
+        $this->assertSame('KUNING / Blok 17 & KUNING / Blok 18', $shofyan->gabungan_unit);
+        $this->assertSame(2500, app(DashboardReceivableService::class)->customers([], true)->first()->sisa_piutang);
     }
 }

@@ -41,6 +41,27 @@ class InventoryTransactionsTest extends TestCase
         $user = new User(); $user->id = 1; $user->username = 'inventory-test'; $this->actingAs($user);
     }
 
+    public function test_purchase_pdf_contains_purchase_details_and_requires_view_access(): void
+    {
+        DB::table('menu')->insert(['id' => 2, 'route_name' => 'pengajuan-pembelian.index']);
+        DB::table('hak_akses')->insert(['id_user' => 1, 'id_menu' => 2]);
+        DB::table('pengajuan_pembelian_detail')->update(['jumlah' => 2, 'harga' => 50000]);
+        $purchase = \App\Models\PengajuanPembelian::with('supplier')->findOrFail(1);
+        $lines = app(\App\Services\PurchaseReceivingService::class)->lines($purchase);
+        $html = view('admin.pengajuan_pembelian.pdf', ['data' => $purchase, 'lines' => $lines])->render();
+        foreach (['PP-TEST', '01-10-2026', 'Supplier Semen', 'Semen Gudang', 'Sak', '50.000', '100.000'] as $text) {
+            $this->assertStringContainsString($text, $html);
+        }
+        $response = $this->get(route('pengajuan-pembelian.pdf', 1))->assertOk()
+            ->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF-', $response->getContent());
+        $this->assertStringContainsString('inline', $response->headers->get('Content-Disposition'));
+        $this->assertStringContainsString('pengajuan-pembelian-1.pdf', $response->headers->get('Content-Disposition'));
+        $this->get(route('pengajuan-pembelian.pdf', 99999))->assertNotFound();
+        DB::table('hak_akses')->where('id_menu', 2)->update(['lihat' => 0]);
+        $this->get(route('pengajuan-pembelian.pdf', 1))->assertForbidden();
+    }
+
     private function payload(string $quantity = '10', string $price = '50.000'): array
     {
         return ['id_pengajuan_pembelian' => 1, 'id_supplier' => 1, 'nama_penerima' => 'Petugas Gudang', 'tanggal' => '2026-11-01',

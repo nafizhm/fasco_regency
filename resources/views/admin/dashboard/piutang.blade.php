@@ -28,7 +28,7 @@
                             @foreach ($customers as $customer)
                                 <tr>
                                     <td>{{ $loop->iteration }}</td>
-                                    <td>{{ $customer->nama_lengkap }}<br><small>{{ $customer->kavling->nama_cluster ?? '-' }} / Blok {{ $customer->kavling->kode_kavling ?? '-' }}</small></td>
+                                    <td>{{ $customer->nama_lengkap }}<br><small>{{ $customer->gabungan_unit ?? (($customer->kavling->nama_cluster ?? '-').' / Blok '.($customer->kavling->kode_kavling ?? '-')) }}</small></td>
                                     <td data-order="{{ $customer->total_tagihan }}" class="text-nowrap">Rp {{ number_format($customer->total_tagihan, 0, ',', '.') }}</td>
                                     <td data-order="{{ $customer->total_bayar ?? 0 }}" class="text-nowrap">Rp {{ number_format($customer->total_bayar ?? 0, 0, ',', '.') }}</td>
                                     <td data-order="{{ $customer->sisa_piutang }}" class="text-danger text-nowrap font-weight-bold">Rp {{ number_format($customer->sisa_piutang, 0, ',', '.') }}</td>
@@ -72,7 +72,7 @@
 @foreach ($customers as $customer)
     <template id="receivable-detail-{{ $customer->id }}">
         <h5>{{ $customer->nama_lengkap }} <small>{{ $customer->kode_customer }}</small></h5>
-        <p>{{ $customer->lokasi->nama_kavling ?? '-' }} / {{ $customer->kavling->kode_kavling ?? '-' }}</p>
+        <p>{{ $customer->gabungan_unit ?? (($customer->lokasi->nama_kavling ?? '-').' / '.($customer->kavling->kode_kavling ?? '-')) }}</p>
         <p>Jatuh Tempo:<br>@include('admin.dashboard.receivable-due-date')</p>
         <div class="row mb-3">
             <div class="col-md-4">Total Tagihan<strong class="d-block">Rp {{ number_format($customer->total_tagihan, 0, ',', '.') }}</strong></div>

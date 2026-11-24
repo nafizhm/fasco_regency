@@ -20,6 +20,7 @@ Route::resource('admin/master/barang', \App\Http\Controllers\Master\BarangContro
 Route::resource('admin/master/supplier', \App\Http\Controllers\Master\SupplierController::class)->except(['create', 'show']);
 Route::resource('admin/master/satuan', \App\Http\Controllers\Master\SatuanController::class)->except(['create', 'show']);
 Route::get('admin/gudang/pengajuan-pembelian/{id}/penerimaan', [\App\Http\Controllers\PengajuanPembelianController::class, 'receiving'])->name('pengajuan-pembelian.receiving');
+Route::get('admin/gudang/pengajuan-pembelian/{id}/pdf', [\App\Http\Controllers\PengajuanPembelianController::class, 'pdf'])->name('pengajuan-pembelian.pdf');
 Route::resource('admin/gudang/pengajuan-pembelian', \App\Http\Controllers\PengajuanPembelianController::class);
 Route::resource('admin/gudang/barang-masuk', \App\Http\Controllers\BarangMasukController::class)->except(['edit']);
 Route::get('admin/gudang/barang-masuk/{barang_masuk}/nota', [\App\Http\Controllers\BarangMasukController::class, 'nota'])->name('barang-masuk.nota');
