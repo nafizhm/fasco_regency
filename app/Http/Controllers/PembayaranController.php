@@ -586,7 +586,7 @@ class PembayaranController extends Controller
         }
 
         // A receipt includes only payments recorded up to its own transaction.
-        $history = Pemasukan::with(['kategori', 'metode'])
+        $history = Pemasukan::with(['kategori', 'metode'])->tampilDiKwitansi()
             ->where('id_customer', $nasabah->id)
             ->where(fn ($query) => $query->whereNull('keterangan')->orWhere('keterangan', 'NOT LIKE', 'Biaya ganti nama%'))
             ->where(function ($query) use ($pembayaran) {
@@ -956,6 +956,9 @@ class PembayaranController extends Controller
                 $editUrl                = route('pembayaran.edit-pemasukan', $item->id);
                 $item->tanggal          = '<div>' . Carbon::parse($item->tanggal)->translatedFormat('d F Y') . '</div>'
                     . '<div class="text-muted" style="font-size:11px;">' . ($item->no_kwitansi ?? '-') . '</div>';
+                $item->tanggal .= $item->tampilkan_kwitansi
+                    ? '<div class="mt-1"><span class="badge badge-success"><i class="fas fa-check" aria-hidden="true"></i> Ditampilkan di kwitansi</span></div>'
+                    : '<div class="mt-1"><span class="badge badge-secondary"><i class="fas fa-eye-slash" aria-hidden="true"></i> Tidak ditampilkan di kwitansi</span></div>';
                 if ($item->plafon_sp3k !== null) {
                     $reference = $item->no_sp3k ? 'SP3K ' . $item->no_sp3k : 'Acuan pencairan lama';
                     $item->tanggal .= '<div class="text-muted small">' . e($reference) . ': Rp '
@@ -1014,6 +1017,7 @@ class PembayaranController extends Controller
         $rules = [
             'tanggal_pembayaran'    => 'required|date',
             'gunakan_ttd'           => 'nullable|boolean',
+            'tampilkan_kwitansi'    => 'nullable|boolean',
             'id_kategori_transaksi' => ['required', 'integer', \Illuminate\Validation\Rule::exists('kategori_transaksi', 'id')->where('jenis_kategori', 'PEMASUKAN')],
             'id_bank'               => 'required',
             'id_metode_bayar'       => 'required',
@@ -1061,6 +1065,7 @@ class PembayaranController extends Controller
 
             $pemasukan = Pemasukan::create([
                 'gunakan_ttd'           => $request->boolean('gunakan_ttd'),
+                'tampilkan_kwitansi'    => $request->boolean('tampilkan_kwitansi', true),
                 'tanggal'               => $request->tanggal_pembayaran,
                 'id_customer'           => $id,
                 'id_bank'               => $request->id_bank,
@@ -1265,6 +1270,7 @@ class PembayaranController extends Controller
         $request->validate([
             'tanggal_pembayaran'    => 'required|date',
             'gunakan_ttd'           => 'nullable|boolean',
+            'tampilkan_kwitansi'    => 'nullable|boolean',
             'id_kategori_transaksi' => 'required',
             'id_bank'               => 'required',
             'id_metode_bayar'       => 'required',
@@ -1303,6 +1309,7 @@ class PembayaranController extends Controller
             $updateData = [
                 'catatan_pembayaran'    => $request->input('catatan_pembayaran'),
                 'gunakan_ttd'           => $request->boolean('gunakan_ttd'),
+                'tampilkan_kwitansi'    => $request->boolean('tampilkan_kwitansi', true),
                 'tanggal'               => $request->tanggal_pembayaran,
                 'id_bank'               => $request->id_bank,
                 'id_kategori_transaksi' => $request->id_kategori_transaksi,

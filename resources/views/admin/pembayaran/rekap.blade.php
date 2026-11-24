@@ -163,6 +163,17 @@
                         </div>
 
                         <div class="form-group row">
+                            <label class="col-sm-3 col-form-label" for="tampilkan_kwitansi">Tampilkan</label>
+                            <div class="col-sm-7 pt-2">
+                                <input type="hidden" name="tampilkan_kwitansi" value="0">
+                                <div class="form-check">
+                                    <input type="checkbox" name="tampilkan_kwitansi" id="tampilkan_kwitansi" value="1" class="form-check-input" checked>
+                                    <label class="form-check-label" for="tampilkan_kwitansi">Tampilkan pembayaran ini pada riwayat kwitansi</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
                             <label class="col-sm-3 col-form-label" for="gunakan_ttd">Tanda Tangan</label>
                             <div class="col-sm-7 pt-2">
                                 <div class="form-check">

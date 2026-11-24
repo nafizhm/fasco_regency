@@ -149,3 +149,17 @@ INSERT INTO `migrations` (`migration`, `batch`)
 SELECT '2026_11_24_000000_rename_purchase_order_menu', next_batch.batch
 FROM (SELECT COALESCE(MAX(`batch`), 0) + 1 AS batch FROM `migrations`) next_batch
 WHERE NOT EXISTS (SELECT 1 FROM `migrations` WHERE `migration` = '2026_11_24_000000_rename_purchase_order_menu');
+
+-- Pilihan tampil pada riwayat kwitansi customer (24 November 2026).
+SET @kwitansi_sql = IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pemasukan' AND COLUMN_NAME = 'tampilkan_kwitansi') = 0,
+    'ALTER TABLE `pemasukan` ADD COLUMN `tampilkan_kwitansi` TINYINT(1) NOT NULL DEFAULT 1',
+    'SELECT 1');
+PREPARE kwitansi_stmt FROM @kwitansi_sql;
+EXECUTE kwitansi_stmt;
+DEALLOCATE PREPARE kwitansi_stmt;
+INSERT INTO `migrations` (`migration`, `batch`)
+SELECT '2026_11_24_010000_add_tampilkan_kwitansi_to_pemasukan', next_batch.batch
+FROM (SELECT COALESCE(MAX(`batch`), 0) + 1 AS batch FROM `migrations`) next_batch
+WHERE NOT EXISTS (SELECT 1 FROM `migrations` WHERE `migration` = '2026_11_24_010000_add_tampilkan_kwitansi_to_pemasukan');

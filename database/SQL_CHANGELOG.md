@@ -43,3 +43,7 @@ Tambahkan perubahan DB berikutnya ke daftar ini agar paket SQL lanjutan lengkap.
 ## 24 November 2026 - Purchase Order
 
 Migrasi 2026_11_24_000000_rename_purchase_order_menu mengganti title menu pengajuan-pembelian.index menjadi Purchase Order. Route dan hak akses tetap. SQL hosting: database/sql/2026-11-24-purchase-order.sql, juga ditambahkan ke paket sesi 20 November. PDF memakai logo Logo Login seperti kwitansi serta area Order By, tanda tangan dan nama lengkap; tidak menambah kolom transaksi.
+
+## 24 November 2026 - Tampilkan riwayat kwitansi
+
+Migrasi `2026_11_24_010000_add_tampilkan_kwitansi_to_pemasukan` menambah `pemasukan.tampilkan_kwitansi` BOOLEAN NOT NULL DEFAULT 1. Centang Tampilkan pada tambah/edit pembayaran menentukan baris riwayat kwitansi beserta total riwayat. Data lama dan pembayaran baru default tampil; saldo transaksi dan jumlah utama kwitansi tetap menggunakan seluruh pembayaran. SQL deployment idempoten dicatat dalam paket sesi 20 November.

@@ -522,6 +522,17 @@
                         </div>
 
                         <div class="form-group row">
+                            <label class="col-sm-3 col-form-label" for="tampilkan_kwitansi">Tampilkan</label>
+                            <div class="col-sm-7 pt-2">
+                                <input type="hidden" name="tampilkan_kwitansi" value="0">
+                                <div class="form-check">
+                                    <input type="checkbox" name="tampilkan_kwitansi" id="tampilkan_kwitansi" value="1" class="form-check-input" checked>
+                                    <label class="form-check-label" for="tampilkan_kwitansi">Tampilkan pembayaran ini pada riwayat kwitansi</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
                             <label class="col-sm-3 col-form-label" for="gunakan_ttd">Tanda Tangan</label>
                             <div class="col-sm-7 pt-2">
                                 <div class="form-check">
@@ -669,6 +680,17 @@
                             <label for="edit_catatan_pembayaran" class="col-sm-3 col-form-label">Catatan Pembayaran</label>
                             <div class="col-sm-7">
                                 <textarea name="catatan_pembayaran" id="edit_catatan_pembayaran" class="form-control" rows="3" maxlength="5000" placeholder="Ditampilkan pada bagian Untuk Pembayaran di kwitansi"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-sm-3 col-form-label" for="edit_tampilkan_kwitansi">Tampilkan</label>
+                            <div class="col-sm-7 pt-2">
+                                <input type="hidden" name="tampilkan_kwitansi" value="0">
+                                <div class="form-check">
+                                    <input type="checkbox" name="tampilkan_kwitansi" id="edit_tampilkan_kwitansi" value="1" class="form-check-input" checked>
+                                    <label class="form-check-label" for="edit_tampilkan_kwitansi">Tampilkan pembayaran ini pada riwayat kwitansi</label>
+                                </div>
                             </div>
                         </div>
 
@@ -1599,6 +1621,7 @@
                     $('#edit_keterangan_pembayaran').val(data.keterangan);
                     $('#edit_catatan_pembayaran').val(data.catatan_pembayaran || '');
                     $('#edit_gunakan_ttd').prop('checked', Boolean(data.gunakan_ttd));
+                    $('#edit_tampilkan_kwitansi').prop('checked', data.tampilkan_kwitansi !== false && data.tampilkan_kwitansi !== 0);
 
                     let preview = $('#editPreviewLampiran');
                     if (data.lampiran) {
