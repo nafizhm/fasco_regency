@@ -588,6 +588,10 @@ class PembayaranController extends Controller
         // A receipt includes only payments recorded up to its own transaction.
         $history = Pemasukan::with(['kategori', 'metode'])->tampilDiKwitansi()
             ->where('id_customer', $nasabah->id)
+            ->where(function ($query) {
+                $query->whereNull('id_kategori_transaksi')
+                    ->orWhereNotIn('id_kategori_transaksi', KategoriTransaksi::where('kategori', 'Pencairan KPR')->select('id'));
+            })
             ->where(fn ($query) => $query->whereNull('keterangan')->orWhere('keterangan', 'NOT LIKE', 'Biaya ganti nama%'))
             ->where(function ($query) use ($pembayaran) {
                 $query->where('tanggal', '<', $pembayaran->tanggal)
