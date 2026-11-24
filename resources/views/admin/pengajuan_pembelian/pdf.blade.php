@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="utf-8">
-    <title>Pengajuan Pembelian {{ $data->nomor }}</title>
+    <title>Purchase Order {{ $data->nomor }}</title>
     <style>
         @page { margin: 20mm 15mm; }
         body { font-family: DejaVu Sans, sans-serif; font-size: 10px; color: #222; }
@@ -17,12 +17,20 @@
         .center { text-align: center; }
         .notes { white-space: pre-line; overflow-wrap: break-word; }
         tr { page-break-inside: avoid; }
+        .kop { border-bottom: 2px solid #333; margin-bottom: 20px; }
+        .kop td { vertical-align: middle; padding-bottom: 12px; }
+        .logo { width: 100px; }
+        .logo img { max-width: 90px; max-height: 75px; }
+        .kop h1 { margin: 0; }
+        .signature { margin-top: 35px; width: 220px; text-align: center; page-break-inside: avoid; }
+        .signature-space { height: 85px; }
+        .signature-name { border-bottom: 1px solid #333; height: 18px; }
     </style>
 </head>
 <body>
-    <h1>PENGAJUAN PEMBELIAN</h1>
+    <table class="kop"><tr><td class="logo">@if($logoData ?? null)<img src="{{ $logoData }}" alt="Logo">@endif</td><td><h1>PURCHASE ORDER</h1></td><td style="width:100px"></td></tr></table>
     <table class="info">
-        <tr><td class="label">Nomor Pengajuan</td><td>: {{ $data->nomor }}</td></tr>
+        <tr><td class="label">Nomor Purchase Order</td><td>: {{ $data->nomor }}</td></tr>
         <tr><td class="label">Tanggal</td><td>: {{ \Carbon\Carbon::parse($data->tanggal)->format('d-m-Y') }}</td></tr>
         <tr><td class="label">Supplier</td><td>: {{ $data->supplier?->nama ?? '-' }}</td></tr>
     </table>
@@ -35,9 +43,15 @@
                 <tr><td colspan="6" class="center">Belum ada rincian barang.</td></tr>
             @endforelse
         </tbody>
-        <tbody><tr><th colspan="5" class="right">Total Pengajuan (Rp)</th><th class="right">{{ number_format(collect($lines)->sum('subtotal'), 0, ',', '.') }}</th></tr></tbody>
+        <tbody><tr><th colspan="5" class="right">Total Purchase Order (Rp)</th><th class="right">{{ number_format(collect($lines)->sum('subtotal'), 0, ',', '.') }}</th></tr></tbody>
     </table>
     <p><strong>Keterangan:</strong></p>
     <div class="notes">{{ $data->keterangan ?: '-' }}</div>
+    <div class="signature">
+        <strong>Order By</strong>
+        <div class="signature-space"></div>
+        <div class="signature-name"></div>
+        <div>Nama Lengkap</div>
+    </div>
 </body>
 </html>

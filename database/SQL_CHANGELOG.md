@@ -39,3 +39,7 @@ ALTER TABLE `barang_keluar_detail` ADD COLUMN `jenis_pekerjaan` VARCHAR(255) NUL
 ```
 
 Tambahkan perubahan DB berikutnya ke daftar ini agar paket SQL lanjutan lengkap. SQL di atas belum diberikan sebagai paket deployment kepada pengguna; migrasi lokal dijalankan saat implementasi fitur.
+
+## 24 November 2026 - Purchase Order
+
+Migrasi 2026_11_24_000000_rename_purchase_order_menu mengganti title menu pengajuan-pembelian.index menjadi Purchase Order. Route dan hak akses tetap. SQL hosting: database/sql/2026-11-24-purchase-order.sql, juga ditambahkan ke paket sesi 20 November. PDF memakai logo Logo Login seperti kwitansi serta area Order By, tanda tangan dan nama lengkap; tidak menambah kolom transaksi.

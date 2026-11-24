@@ -106,7 +106,7 @@ class PengajuanPembelianController extends Controller
             return $data;
         });
 
-        return redirect()->route('pengajuan-pembelian.show', $data->id)->with('success', 'Pengajuan pembelian berhasil disimpan.');
+        return redirect()->route('pengajuan-pembelian.show', $data->id)->with('success', 'Purchase Order berhasil disimpan.');
     }
 
     public function update(Request $request, $id)
@@ -121,7 +121,7 @@ class PengajuanPembelianController extends Controller
             $this->saveLines($data, $values);
         });
 
-        return redirect()->route('pengajuan-pembelian.show', $id)->with('success', 'Pengajuan pembelian diperbarui.');
+        return redirect()->route('pengajuan-pembelian.show', $id)->with('success', 'Purchase Order diperbarui.');
     }
 
     private function saveLines(PengajuanPembelian $data, array $values): void
@@ -134,7 +134,7 @@ class PengajuanPembelianController extends Controller
     private function ensureEditable(PengajuanPembelian $data): void
     {
         if ($data->penerimaan()->exists()) {
-            throw ValidationException::withMessages(['pengajuan' => 'Pengajuan sudah memiliki penerimaan barang dan tidak dapat diubah atau dihapus.']);
+            throw ValidationException::withMessages(['pengajuan' => 'Purchase Order sudah memiliki penerimaan barang dan tidak dapat diubah atau dihapus.']);
         }
     }
 
@@ -158,8 +158,18 @@ class PengajuanPembelianController extends Controller
         $data = PengajuanPembelian::with('supplier')->findOrFail($id);
         $lines = $service->lines($data);
 
-        return Pdf::loadView('admin.pengajuan_pembelian.pdf', compact('data', 'lines'))
-            ->setPaper('a4', 'portrait')->stream('pengajuan-pembelian-'.$data->id.'.pdf');
+        $logoData = null;
+        $logoMedia = \App\Models\PengaturanMedia::where('jenis_data', 'Logo Login')->first();
+        if ($logoMedia?->nama_file) {
+            $logoPath = public_path('config_media/'.$logoMedia->nama_file);
+            if (is_file($logoPath) && ($info = @getimagesize($logoPath))
+                && $info[0] * $info[1] <= 4000000) {
+                $logoData = 'data:'.$info['mime'].';base64,'.base64_encode(file_get_contents($logoPath));
+            }
+        }
+
+        return Pdf::loadView('admin.pengajuan_pembelian.pdf', compact('data', 'lines', 'logoData'))
+            ->setPaper('a4', 'portrait')->stream('purchase-order-'.$data->id.'.pdf');
     }
 
     public function destroy($id)
@@ -172,7 +182,7 @@ class PengajuanPembelianController extends Controller
             $data->delete();
         });
 
-        return redirect()->route('pengajuan-pembelian.index')->with('success', 'Pengajuan pembelian dihapus.');
+        return redirect()->route('pengajuan-pembelian.index')->with('success', 'Purchase Order dihapus.');
     }
 
     public function receiving($id, PurchaseReceivingService $service)

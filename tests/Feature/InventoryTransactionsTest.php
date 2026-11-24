@@ -56,7 +56,7 @@ class InventoryTransactionsTest extends TestCase
             ->assertHeader('Content-Type', 'application/pdf');
         $this->assertStringStartsWith('%PDF-', $response->getContent());
         $this->assertStringContainsString('inline', $response->headers->get('Content-Disposition'));
-        $this->assertStringContainsString('pengajuan-pembelian-1.pdf', $response->headers->get('Content-Disposition'));
+        $this->assertStringContainsString('purchase-order-1.pdf', $response->headers->get('Content-Disposition'));
         $this->get(route('pengajuan-pembelian.pdf', 99999))->assertNotFound();
         DB::table('hak_akses')->where('id_menu', 2)->update(['lihat' => 0]);
         $this->get(route('pengajuan-pembelian.pdf', 1))->assertForbidden();

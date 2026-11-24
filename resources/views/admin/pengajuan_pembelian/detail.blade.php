@@ -6,9 +6,9 @@
         <a class="btn btn-outline-primary" href="{{ route('pengajuan-pembelian.pdf', $data->id) }}" target="_blank" rel="noopener"><i class="fas fa-file-pdf"></i> Cetak PDF</a>
         @if($data->penerimaan->isEmpty())
             @if($permissions['edit'] ?? false)<a class="btn btn-primary" href="{{ route('pengajuan-pembelian.edit', $data->id) }}" title="Edit" aria-label="Edit"><i class="fas fa-edit"></i></a>@endif
-            @if($permissions['hapus'] ?? false)<form class="d-inline" method="POST" action="{{ route('pengajuan-pembelian.destroy', $data->id) }}" onsubmit="return confirm('Hapus pengajuan pembelian ini?')">@csrf @method('DELETE')<button class="btn btn-danger" title="Hapus" aria-label="Hapus"><i class="fas fa-trash"></i></button></form>@endif
+            @if($permissions['hapus'] ?? false)<form class="d-inline" method="POST" action="{{ route('pengajuan-pembelian.destroy', $data->id) }}" onsubmit="return confirm('Hapus purchase order ini?')">@csrf @method('DELETE')<button class="btn btn-danger" title="Hapus" aria-label="Hapus"><i class="fas fa-trash"></i></button></form>@endif
         @else
-            <p class="text-muted mt-3">Pengajuan sudah digunakan untuk penerimaan dan tidak dapat diubah atau dihapus.</p>
+            <p class="text-muted mt-3">Purchase Order sudah digunakan untuk penerimaan dan tidak dapat diubah atau dihapus.</p>
         @endif
         @if($data->penerimaan->isNotEmpty())
             <h5 class="mt-4">Riwayat Barang Masuk</h5>

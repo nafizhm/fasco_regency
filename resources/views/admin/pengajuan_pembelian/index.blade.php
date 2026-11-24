@@ -2,14 +2,14 @@
 @section('content')
 <div class="content-wrapper"><section class="content pt-3"><div class="container-fluid"><div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h3 class="card-title font-weight-bold">Pengajuan Pembelian</h3>
-        @if($permissions['tambah'] ?? false)<a class="btn btn-primary btn-sm ml-auto" href="{{ route('pengajuan-pembelian.create') }}"><i class="fas fa-plus"></i> Tambah Pengajuan</a>@endif
+        <h3 class="card-title font-weight-bold">Purchase Order</h3>
+        @if($permissions['tambah'] ?? false)<a class="btn btn-primary btn-sm ml-auto" href="{{ route('pengajuan-pembelian.create') }}"><i class="fas fa-plus"></i> Tambah Purchase Order</a>@endif
     </div>
     <div class="card-body">
         @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
         @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
         <div class="table-responsive"><table id="purchaseTable" class="table table-bordered table-striped w-100">
-            <thead><tr><th>No.</th><th>Tanggal</th><th>Nomor Pengajuan</th><th>Supplier</th><th>Rincian Nama Barang</th><th class="text-right">Total Pengajuan (Rp)</th><th>Penerimaan</th><th>Status</th><th>Action</th></tr></thead>
+            <thead><tr><th>No.</th><th>Tanggal</th><th>Nomor Purchase Order</th><th>Supplier</th><th>Rincian Nama Barang</th><th class="text-right">Total Purchase Order (Rp)</th><th>Penerimaan</th><th>Status</th><th>Action</th></tr></thead>
             <tbody>@foreach($items as $item)<tr>
                 <td>{{ $loop->iteration }}</td>
                 <td data-order="{{ $item->tanggal }}">{{ \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y') }}</td><td>{{ $item->nomor }}</td>
@@ -26,7 +26,7 @@
 </div></div></section></div>
 <div class="modal fade" id="purchaseDetailModal" tabindex="-1" aria-labelledby="purchaseDetailTitle" aria-hidden="true">
     <div class="modal-dialog modal-xl"><div class="modal-content">
-        <div class="modal-header"><h5 class="modal-title" id="purchaseDetailTitle">Detail Pengajuan Pembelian</h5><button type="button" class="close" data-dismiss="modal" aria-label="Tutup"><span aria-hidden="true">&times;</span></button></div>
+        <div class="modal-header"><h5 class="modal-title" id="purchaseDetailTitle">Detail Purchase Order</h5><button type="button" class="close" data-dismiss="modal" aria-label="Tutup"><span aria-hidden="true">&times;</span></button></div>
         <div class="modal-body" id="purchaseDetailBody"></div>
         <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button></div>
     </div></div>
@@ -43,9 +43,9 @@
             columnDefs: [{ targets: [0, 8], orderable: false, searchable: false }],
             language: {
                 search: 'Cari:', lengthMenu: 'Tampilkan _MENU_ data',
-                info: 'Menampilkan _START_–_END_ dari _TOTAL_ pengajuan',
-                infoEmpty: 'Belum ada pengajuan pembelian', infoFiltered: '(disaring dari _MAX_ pengajuan)',
-                emptyTable: 'Belum ada pengajuan pembelian.', zeroRecords: 'Tidak ada pengajuan yang sesuai.',
+                info: 'Menampilkan _START_–_END_ dari _TOTAL_ purchase order',
+                infoEmpty: 'Belum ada purchase order', infoFiltered: '(disaring dari _MAX_ purchase order)',
+                emptyTable: 'Belum ada purchase order.', zeroRecords: 'Tidak ada purchase order yang sesuai.',
                 paginate: { first: 'Pertama', last: 'Terakhir', next: 'Berikutnya', previous: 'Sebelumnya' }
             }
         });
@@ -58,7 +58,7 @@
     $(document).on('click', '.purchase-detail', function(event) {
         event.preventDefault();
         if (purchaseDetailRequest) purchaseDetailRequest.abort();
-        $('#purchaseDetailTitle').text('Detail Pengajuan Pembelian ' + $(this).closest('tr').find('td').eq(2).text());
+        $('#purchaseDetailTitle').text('Detail Purchase Order ' + $(this).closest('tr').find('td').eq(2).text());
         $('#purchaseDetailBody').text('Memuat detail...');
         $('#purchaseDetailModal').modal('show');
         purchaseDetailRequest = $.ajax({ url: this.href, dataType: 'html' })
