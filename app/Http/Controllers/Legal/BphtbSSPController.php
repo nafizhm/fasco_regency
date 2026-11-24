@@ -28,9 +28,11 @@ class BphtbSSPController extends Controller
                     $kavling = KavlingPeta::find($row->id_kavling);
 
                     $namaLokasi  = $lokasi ? $lokasi->nama_kavling : '-';
+                    $namaCluster = $kavling?->nama_cluster ?: '-';
                     $kodeKavling = $kavling ? $kavling->kode_kavling : '-';
 
                     return '<div>' . e($namaLokasi) . '</div>' .
+                    '<div>Cluster ' . e($namaCluster) . '</div>' .
                     '<span class="badge badge-info">' . e($kodeKavling) . '</span>';
                 })
 
