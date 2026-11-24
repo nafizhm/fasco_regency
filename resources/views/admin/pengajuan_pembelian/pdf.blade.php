@@ -4,12 +4,12 @@
     <meta charset="utf-8">
     <title>Purchase Order {{ $data->nomor }}</title>
     <style>
-        @page { margin: 20mm 15mm; }
+        @page { margin: 10mm 15mm 15mm; }
         body { font-family: DejaVu Sans, sans-serif; font-size: 10px; color: #222; }
         h1 { text-align: center; font-size: 18px; margin-bottom: 24px; }
         table { width: 100%; border-collapse: collapse; }
         .info td { padding: 3px 0; vertical-align: top; }
-        .info .label { width: 105px; }
+        .info .label { width: 140px; white-space: nowrap; padding-right: 8px; }
         .items { margin-top: 20px; table-layout: fixed; }
         .items th, .items td { border: 1px solid #555; padding: 7px 5px; overflow-wrap: break-word; }
         .items th { background: #eee; }
@@ -17,18 +17,18 @@
         .center { text-align: center; }
         .notes { white-space: pre-line; overflow-wrap: break-word; }
         tr { page-break-inside: avoid; }
-        .kop { border-bottom: 2px solid #333; margin-bottom: 20px; }
-        .kop td { vertical-align: middle; padding-bottom: 12px; }
-        .logo { width: 100px; }
-        .logo img { max-width: 90px; max-height: 75px; }
+        .kop { border-bottom: 1px solid #333; margin-bottom: 12px; }
+        .kop td { vertical-align: middle; padding-bottom: 6px; }
+        .logo { width: 75px; }
+        .logo img { max-width: 65px; max-height: 55px; }
         .kop h1 { margin: 0; }
-        .signature { margin-top: 35px; width: 220px; text-align: center; page-break-inside: avoid; }
+        .signature { margin-top: 25px; margin-left: auto; margin-right: 0; width: 190px; text-align: center; page-break-inside: avoid; }
         .signature-space { height: 85px; }
         .signature-name { border-bottom: 1px solid #333; height: 18px; }
     </style>
 </head>
 <body>
-    <table class="kop"><tr><td class="logo">@if($logoData ?? null)<img src="{{ $logoData }}" alt="Logo">@endif</td><td><h1>PURCHASE ORDER</h1></td><td style="width:100px"></td></tr></table>
+    <table class="kop"><tr><td class="logo">@if($logoData ?? null)<img src="{{ $logoData }}" alt="Logo">@endif</td><td><h1>PURCHASE ORDER</h1></td><td style="width:75px"></td></tr></table>
     <table class="info">
         <tr><td class="label">Nomor Purchase Order</td><td>: {{ $data->nomor }}</td></tr>
         <tr><td class="label">Tanggal</td><td>: {{ \Carbon\Carbon::parse($data->tanggal)->format('d-m-Y') }}</td></tr>
