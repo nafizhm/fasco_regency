@@ -30,7 +30,7 @@ class InvoiceIplController extends Controller
         $this->authorizeInventory('invoice-ipl.index', 'tambah');
         $data = new InvoiceIpl(['nomor' => 'IPL-'.now('Asia/Jakarta')->format('Ymd').'-'.strtoupper(\Illuminate\Support\Str::random(6)),
             'tanggal_stu' => now('Asia/Jakarta')->toDateString(), 'jatuh_tempo' => now('Asia/Jakarta')->addYear()->toDateString(),
-            'nominal_tahun' => 0, 'jabatan' => 'Staff Administrasi']);
+            'nominal_tahun' => 0, 'jabatan' => 'PT. Dwi Raka Graha']);
 
         return view('admin.invoice_ipl.form', compact('data'));
     }

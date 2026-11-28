@@ -11,7 +11,7 @@ class InvoiceIpl extends Model
         'bank' => 'BCA',
         'no_rekening' => '3681655211',
         'penandatangan' => 'Marianita',
-        'jabatan' => 'Staff Administrasi',
+        'jabatan' => 'PT. Dwi Raka Graha',
     ];
 
     protected $table = 'invoice_ipl';
