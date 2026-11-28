@@ -32,11 +32,40 @@ class DashboardController extends Controller
         return view('admin.dashboard.piutang', compact('customers', 'dueOnly'));
     }
 
+    public function piutangPdf(Request $request, \App\Services\DashboardReceivableService $receivables)
+    {
+        $values = $request->validate([
+            'jatuh_tempo' => 'nullable|boolean', 'filtered' => 'nullable|boolean',
+            'ids' => 'nullable|array|max:10000', 'ids.*' => 'required|integer|distinct',
+            'search' => 'nullable|string|max:1000',
+        ]);
+        $dueOnly = $request->boolean('jatuh_tempo');
+        $customers = $receivables->customers(['lokasi', 'kavling'], $dueOnly);
+        if ($request->boolean('filtered')) {
+            $byId = $customers->keyBy('id');
+            $customers = collect($values['ids'] ?? [])->map(fn ($id) => $byId->get($id))->filter()->values();
+        }
+        $search = $values['search'] ?? null;
+
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.dashboard.piutang-pdf', compact('customers', 'dueOnly', 'search'))
+            ->setPaper('a4', 'landscape')->stream('piutang-'.now('Asia/Jakarta')->format('Ymd-His').'.pdf');
+    }
+
     public function piutangKpr(\App\Services\KprReceivableReport $report)
     {
         $rows = $report->rows();
         $stages = max(4, (int) $rows->max(fn ($row) => $row['payments']->count()));
         return view('admin.dashboard.piutang-kpr', compact('rows', 'stages'));
+    }
+
+    public function piutangKprPdf(\App\Services\KprReceivableReport $report)
+    {
+        $rows = $report->rows();
+        $stages = max(4, (int) $rows->max(fn ($row) => $row['payments']->count()));
+
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.dashboard.piutang-kpr-pdf', compact('rows', 'stages'))
+            ->setPaper($stages > 4 ? 'a3' : 'a4', 'landscape')
+            ->stream('piutang-kpr-'.now('Asia/Jakarta')->format('Ymd-His').'.pdf');
     }
 
     public function dashboard()

@@ -122,6 +122,11 @@ Route::get('/hutang/sisa-bayar/{id}', [HutangController::class, 'getSisaBayar'])
 Route::get('/piutang/sisa-bayar/{id}', [PiutangController::class, 'getSisaBayar']);
 
 Route::middleware(['auth'])->group(function () {
+    Route::get('admin/pengajuan-tagihan/{id}/lampiran/{line}', [\App\Http\Controllers\PengajuanTagihanController::class, 'attachment'])->name('pengajuan-tagihan.attachment');
+    Route::post('admin/pengajuan-tagihan/cetak-pdf', [\App\Http\Controllers\PengajuanTagihanController::class, 'pdf'])->name('pengajuan-tagihan.pdf');
+    Route::get('admin/invoice-ipl/{id}/pdf', [\App\Http\Controllers\InvoiceIplController::class, 'pdf'])->name('invoice-ipl.pdf');
+    Route::resource('admin/invoice-ipl', \App\Http\Controllers\InvoiceIplController::class);
+    Route::resource('admin/pengajuan-tagihan', \App\Http\Controllers\PengajuanTagihanController::class);
     require __DIR__.'/inventory.php';
     Route::prefix('admin/keuangan/deposit-notaris')->name('notary-deposits.')->controller(\App\Http\Controllers\Keuangan\NotaryDepositController::class)->group(function () {
         Route::get('/', 'index')->name('index');
@@ -165,7 +170,9 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('admin')->controller(DashboardController::class)->group(function () {
         Route::get('/dashboard', 'dashboard')->name('dashboard.index');
         Route::get('/dashboard/piutang-kpr', 'piutangKpr')->name('dashboard.piutang-kpr');
+        Route::get('/dashboard/piutang-kpr/pdf', 'piutangKprPdf')->name('dashboard.piutang-kpr.pdf');
         Route::get('/dashboard/piutang', 'piutang')->name('dashboard.piutang');
+        Route::post('/dashboard/piutang/pdf', 'piutangPdf')->name('dashboard.piutang.pdf');
         Route::get('/dashboard/lokasi-penjualan/{id}', 'showLokasiPenjualan')->name('dashboard.lokasi-penjualan-show');
         Route::get('/dashboard/customer-status-progres/{id}', 'showCustomer')->name('dashboard.customer-status-progres-show');
         Route::get('/dashboard/customer-bank/{id}', 'showCustomer')->name('dashboard.customer-bank-show');

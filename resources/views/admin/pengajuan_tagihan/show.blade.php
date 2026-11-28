@@ -1,0 +1,12 @@
+@extends('admin.layout_admin')
+@section('content')
+<div class="content-wrapper"><section class="content pt-3"><div class="container-fluid"><div class="card"><div class="card-header"><h3 class="card-title">Pengajuan Tagihan {{ $data->nomor }}</h3></div><div class="card-body">
+@if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
+<p>Tanggal: {{ $data->tanggal }} | Status: <strong>{{ $data->status }}</strong></p><p>{{ $data->keterangan }}</p>
+<div class="table-responsive"><table class="table table-bordered"><thead><tr><th>Tgl nota max</th><th>Nama</th><th>Uraian</th>@foreach(\App\Models\PengajuanTagihan::LOKASI as $label)<th>{{ $label }}</th>@endforeach<th>Total</th><th>No rekening</th><th>Lampiran</th>@if($permissions['edit'] ?? false)<th>Aksi</th>@endif</tr></thead><tbody>
+@foreach($data->detail as $line)<tr><td>{{ $line->tanggal_nota_max }}</td><td>{{ $line->nama }}</td><td style="white-space:pre-line">{{ $line->uraian }}</td>@foreach(\App\Models\PengajuanTagihan::LOKASI as $key => $label)<td class="text-right">{{ number_format($line->$key, 0, ',', '.') }}</td>@endforeach<td class="text-right">{{ number_format($line->total, 0, ',', '.') }}</td><td>{{ $line->rekening }}</td><td>@if($line->lampiran)<a href="{{ route('pengajuan-tagihan.attachment', [$data->id, $line->id]) }}">{{ $line->nama_lampiran }}</a>@else - @endif</td>@if($permissions['edit'] ?? false)<td><a class="btn btn-warning btn-sm open-tagihan" href="{{ route('pengajuan-tagihan.edit', ['pengajuan_tagihan' => $data->id, 'detail' => $line->id]) }}">Edit</a></td>@endif</tr>@endforeach
+</tbody><tfoot><tr><th colspan="3">TOTAL (Rp)</th>@foreach(\App\Models\PengajuanTagihan::LOKASI as $key => $label)<th class="text-right">{{ number_format($data->detail->sum($key), 0, ',', '.') }}</th>@endforeach<th class="text-right">{{ number_format($data->detail->sum('total'), 0, ',', '.') }}</th><th colspan="{{ ($permissions['edit'] ?? false) ? 3 : 2 }}"></th></tr></tfoot></table></div>
+<a class="btn btn-secondary" href="{{ route('pengajuan-tagihan.index') }}">Kembali</a> @if($permissions['edit'] ?? false)<a class="btn btn-warning open-tagihan" href="{{ route('pengajuan-tagihan.edit', $data->id) }}">Edit</a> <a class="btn btn-primary open-tagihan" href="{{ route('pengajuan-tagihan.edit', ['pengajuan_tagihan' => $data->id, 'baru' => 1]) }}">Tambah Tagihan</a>@endif
+</div></div></div></section></div>
+@include('admin.pengajuan_tagihan.modal')
+@endsection

@@ -4,7 +4,7 @@
     <section class="content-header">
         <div class="container-fluid d-flex justify-content-between align-items-center">
             <h1>{{ $dueOnly ? 'Piutang Jatuh Tempo' : 'Detail Piutang' }}</h1>
-            <a href="{{ route('beranda.index') }}" class="btn btn-secondary btn-sm">Kembali ke Dashboard</a>
+            <div><button type="button" id="printReceivables" class="btn btn-primary btn-sm"><i class="fas fa-print"></i> Cetak PDF</button> <a href="{{ route('beranda.index') }}" class="btn btn-secondary btn-sm">Kembali ke Dashboard</a></div>
         </div>
     </section>
     <section class="content">
@@ -26,7 +26,7 @@
                             <thead><tr><th>No</th><th>Nama</th><th>Total Tagihan</th><th>Total Pembayaran</th><th>Sisa Piutang</th><th>Jatuh Tempo</th><th>Status</th><th>Rincian</th></tr></thead>
                             <tbody>
                             @foreach ($customers as $customer)
-                                <tr>
+                                <tr data-customer-id="{{ $customer->id }}">
                                     <td>{{ $loop->iteration }}</td>
                                     <td>{{ $customer->nama_lengkap }}<br><small>{{ $customer->gabungan_unit ?? (($customer->kavling->nama_cluster ?? '-').' / Blok '.($customer->kavling->kode_kavling ?? '-')) }}</small></td>
                                     <td data-order="{{ $customer->total_tagihan }}" class="text-nowrap">Rp {{ number_format($customer->total_tagihan, 0, ',', '.') }}</td>
@@ -119,10 +119,19 @@
         }).on('hidden.bs.modal', function () {
             $(this).find('.modal-body').empty();
         });
-        $('#receivable-table').DataTable({
+        const table = $('#receivable-table').DataTable({
             order: [[4, 'desc']],
             columnDefs: [{ targets: [0, 7], orderable: false }, { targets: 7, searchable: false }],
             language: { emptyTable: 'Tidak ada piutang customer aktif.' }
+        });
+        $('#printReceivables').on('click', function () {
+            const form = document.createElement('form');
+            form.method = 'POST'; form.action = @json(route('dashboard.piutang.pdf')); form.target = '_blank';
+            const field = (name, value) => { const input = document.createElement('input'); input.type = 'hidden'; input.name = name; input.value = value; form.append(input); };
+            field('_token', @json(csrf_token())); field('jatuh_tempo', @json($dueOnly ? 1 : 0));
+            field('filtered', '1'); field('search', table.search());
+            table.rows({search:'applied', order:'applied'}).nodes().toArray().forEach(row => field('ids[]', row.dataset.customerId));
+            document.body.append(form); form.submit(); form.remove();
         });
     });
 </script>

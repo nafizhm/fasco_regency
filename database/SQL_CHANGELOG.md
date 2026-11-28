@@ -47,3 +47,34 @@ Migrasi 2026_11_24_000000_rename_purchase_order_menu mengganti title menu pengaj
 ## 24 November 2026 - Tampilkan riwayat kwitansi
 
 Migrasi `2026_11_24_010000_add_tampilkan_kwitansi_to_pemasukan` menambah `pemasukan.tampilkan_kwitansi` BOOLEAN NOT NULL DEFAULT 1. Centang Tampilkan pada tambah/edit pembayaran menentukan baris riwayat kwitansi beserta total riwayat. Data lama dan pembayaran baru default tampil; saldo transaksi dan jumlah utama kwitansi tetap menggunakan seluruh pembayaran. SQL deployment idempoten dicatat dalam paket sesi 20 November.
+
+
+## 28 November 2026 - Pengajuan Tagihan
+
+Migrasi `2026_11_28_000000_create_pengajuan_tagihan`: tabel header `pengajuan_tagihan` dan rincian `pengajuan_tagihan_detail`, nomor unik, tanggal, status (Draft/Diajukan/Disetujui/Ditolak/Dibayar), keterangan, tanggal nota maksimal, nama, uraian, nominal rupiah bulat untuk Fasco Regency/Tegalgondo/Ruko/Bedali/Lumajang, rekening serta lampiran privat per baris. Total dihitung dari rincian. Menu utama **Pengajuan Tagihan**, route `pengajuan-tagihan.index`, dengan akses lihat/tambah/edit/hapus untuk username `nita`. Tidak membuat transaksi pengeluaran otomatis.
+
+SQL khusus sesi ini untuk hosting: `database/sql/2026-11-28-pengajuan-tagihan.sql`; juga ditambahkan ke paket `database/sql/2026-11-20-session-changes.sql`. Gunakan salah satu sesuai baseline hosting. SQL dapat dijalankan ulang dan mencatat migrasi. Setelah deploy kode dan SQL, login ulang sebagai nita untuk menyegarkan menu session. Lampiran disimpan pada disk local (`storage/app/private` sesuai konfigurasi aplikasi); tidak membutuhkan storage link publik.
+
+
+Penyesuaian alur Pengajuan Tagihan (28 November 2026): tambah dan edit melalui modal, satu pengajuan memuat banyak baris tagihan. Validasi disajikan di modal tanpa menghilangkan isian/lampiran yang dipilih. Tidak ada perubahan struktur database atau SQL tambahan.
+
+Penyesuaian form Pengajuan Tagihan: satu kali input/simpan satu tagihan, layout vertikal dengan label kiri dan isian kanan, tanpa tombol tambah baris di dalam form. Tambah tagihan berikutnya dari halaman detail pengajuan; edit satu tagihan mempertahankan tagihan lainnya. Tidak ada perubahan SQL.
+
+Daftar Pengajuan Tagihan diperbarui menjadi DataTables satu baris per tagihan, seluruh kolom detail, filter status dan total mengikuti pencarian/filter. Aksi lampiran mendukung preview PDF/gambar; Word/Excel diunduh. Simpan kembali ke daftar, tanpa tombol Buka Pengajuan atau jumlah tagihan. Hapus pada daftar hanya menghapus tagihan terpilih (header dihapus jika tagihan terakhir). Tidak ada perubahan SQL.
+
+Penyempurnaan daftar Pengajuan Tagihan: nomor dan tanggal pengajuan digabung satu kolom, tanggal nota maksimal tidak ditampilkan pada daftar, lampiran dibuka dalam modal (PDF/gambar) dengan tombol unduh. Indeks filter status dan total DataTables disesuaikan. Tidak ada perubahan SQL.
+
+Cetak PDF Pengajuan Tagihan: tombol di samping Tambah Pengajuan, A4 landscape, seluruh baris hasil filter status/pencarian DataTables beserta urutannya (semua halaman), total hanya data tercetak. Endpoint POST pengajuan-tagihan.pdf memeriksa hak lihat. Tidak ada perubahan SQL.
+
+
+## 28 November 2026 - Invoice IPL
+
+Migrasi `2026_11_28_010000_create_invoice_ipl`: tabel `invoice_ipl` (nomor unik, nama penghuni, alamat rumah, tanggal STU, nominal tahunan bulat, jatuh tempo, rekening pembayaran dan penandatangan), tabel `invoice_ipl_pembayaran` (tanggal, nominal, transaksi, keterangan), menu utama **Invoice IPL**, akses lihat/tambah/edit/hapus untuk username `nita`. Form tambah/edit halaman terpisah; riwayat pembayaran opsional dan bisa beberapa baris. Total pembayaran, sisa dan status dihitung dari rincian. Cetak PDF A4 portrait mengikuti contoh bukti IPL, logo dari Logo Login. Tidak otomatis membuat transaksi pemasukan.
+
+Hosting: jalankan `database/sql/2026-11-28-invoice-ipl.sql`, atau paket kumulatif `database/sql/2026-11-20-session-changes.sql` sesuai baseline. SQL dapat diulang dan mencatat migrasi. Deploy kode lalu login ulang Nita untuk menampilkan menu.
+
+Invoice IPL: rekening perusahaan dan penandatangan dibuat tetap sesuai contoh (Laji Siswanto, BCA, 3681655211, Marianita, Staff Administrasi). Isian tersebut dihapus dari form; server menetapkan nilainya dan tampilan detail/PDF selalu memakai data tetap, termasuk invoice lama. Tidak ada perubahan struktur atau SQL tambahan.
+
+Dashboard Piutang KPR: tombol Cetak PDF, laporan landscape (A4 hingga empat termin, A3 untuk lebih banyak termin), sumber data dan tabel bersama dengan halaman laporan. Memuat rincian termin, persentase dan total piutang. Tidak ada perubahan SQL.
+
+Dashboard Piutang: tombol Cetak PDF A4 landscape, mengikuti filter jatuh tempo serta pencarian/urutan DataTables pada semua halaman. Sumber perhitungan tetap DashboardReceivableService, total hanya customer tercetak. Tidak ada perubahan SQL.
