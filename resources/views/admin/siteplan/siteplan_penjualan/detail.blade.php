@@ -135,7 +135,7 @@
             .prependTo('#unitOverview');
         $('#modalDetailLabel').text('Unit ' + siteplanValue(unit.kode_kavling));
         $('#unitLocation').text(siteplanValue(unit.lokasi?.nama_kavling));
-        $('#unitStatus').text(customer?.progres?.status_progres || (customer ? 'Terjual' : (unit.is_booked ? 'Hold' : 'Tersedia')));
+        $('#unitStatus').text(response.siteplan_status);
         $('#unitLand').text(siteplanMeasure(unit.luas_tanah, 'm²'));
         $('#unitBuilding').text(siteplanMeasure(unit.luas_bangunan, 'm²'));
         $('#unitType').text(siteplanValue(unit.tipe_bangunan));

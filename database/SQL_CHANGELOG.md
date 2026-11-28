@@ -93,3 +93,10 @@ SQL hosting khusus: `database/sql/2026-11-28-rekap-kpr.sql`; juga ditambahkan ke
 Menu BAST: tombol Cetak PDF daftar BAST (A4 landscape), mengikuti pencarian DataTables seluruh halaman, hanya customer aktif. Hak lihat menu bast.index diperiksa pada tombol dan endpoint. Tidak ada perubahan SQL.
 
 Rekap KPR: SQL `database/sql/2026-11-28-rekap-kpr-akses-semua-user.sql` memberikan hak lihat/tambah/edit/hapus kepada semua user yang sudah ada, mempertahankan beranda dan akses menu lainnya. Juga ditambahkan pada kedua paket SQL sesi. Jalankan setelah menu Rekap KPR tersedia, lalu login ulang. Tidak otomatis memberikan akses untuk akun baru di masa depan.
+
+
+## 28 November 2026 - Status Siteplan Penjualan
+
+Migrasi `2026_11_28_030000_add_siteplan_sales_status`: kolom nullable `kavling_peta.siteplan_status` untuk override manual Ready/Proses/Sold, tabel `siteplan_sales_colors` untuk warna global Proses/Sold. Default customer aktif = Sold, booking aktif = Proses, lainnya Ready. Override hanya memengaruhi siteplan penjualan dan cetak; nomor blok Ready tetap tampil, lainnya SOLD/PROSES. Menu khusus Update Status Siteplan serta endpoint perubahan hanya untuk username Safira (case-insensitive). SQL hosting `database/sql/2026-11-28-siteplan-sales-status.sql`, juga tercakup paket kumulatif 20 November.
+
+Siteplan Penjualan: label SOLD/PROSES dipusatkan pada geometri unit, diputar mengikuti sisi terpanjang dan ukuran font menyesuaikan ruang unit. Renderer sama untuk layar dan cetak PDF/JPG. Tidak ada perubahan SQL.

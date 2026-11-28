@@ -304,6 +304,9 @@
                             $menus = session('getmenus', collect());
                         @endphp
 
+                        @if (\App\Services\SiteplanColors::canManage())
+                            <li class="nav-item"><a href="{{ route('siteplan-status.index') }}" class="nav-link {{ request()->routeIs('siteplan-status.*') ? 'active' : '' }}"><i class="nav-icon fas fa-map"></i><p>Update Status Siteplan</p></a></li>
+                        @endif
                         @foreach ($menus as $menu)
                             @php
                                 $children = $menu->children->filter(fn ($child) => RouteFacade::has($child->route_name));

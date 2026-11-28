@@ -202,6 +202,9 @@ Route::middleware(['auth'])->group(function () {
             Route::get('siteplan-listrik/cetak/jpg/{id_lokasi}', [SiteplanListrikController::class, 'cetakJPG'])->name('siteplan-listrik.cetak.jpg');
             Route::resource('siteplan-listrik', SiteplanListrikController::class);
 
+            Route::get('siteplan-status', [SiteplanPenjualanController::class, 'manage'])->name('siteplan-status.index');
+            Route::patch('siteplan-status/warna', [SiteplanPenjualanController::class, 'updateColors'])->name('siteplan-status.colors');
+            Route::patch('siteplan-status/{id}', [SiteplanPenjualanController::class, 'updateStatus'])->whereNumber('id')->name('siteplan-status.update');
             Route::resource('siteplan-penjualan', SiteplanPenjualanController::class);
             Route::get('siteplan-penjualan/cetak/pdf/{id_lokasi}', [SiteplanPenjualanController::class, 'cetakPDF'])->name('siteplan-penjualan.cetak.pdf');
             Route::get('siteplan-penjualan/cetak/jpg/{id_lokasi}', [SiteplanPenjualanController::class, 'cetakJPG'])->name('siteplan-penjualan.cetak.jpg');

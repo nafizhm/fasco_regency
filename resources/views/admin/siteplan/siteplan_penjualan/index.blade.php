@@ -94,6 +94,9 @@
                         <div class="card card-primary card-outline card-outline-tabs">
                             <div class="card-header">
                                 @include('admin.siteplan.selector', ['printRoute' => 'siteplan-penjualan'])
+                                @if (\App\Services\SiteplanColors::canManage())
+                                    <a href="{{ route('siteplan-status.index', request()->only('id_lokasi')) }}" class="btn btn-warning btn-sm mt-2">Update Status Siteplan</a>
+                                @endif
                             </div>
 
                             <div class="card-body">
@@ -126,21 +129,13 @@
                                                         <a href="javascript:void(0);" class="detail-button"
                                                             data-id="{{ $pt->id }}"
                                                             data-url="{{ route('siteplan-penjualan.show', $pt->id) }}">
-                                                            {!! str_replace(
-                                                                ['[[1]]', '[[2]]', '[[3]]', '[[4]]'],
-                                                                [$pt->map, $warna, $pt->matrik, $pt->kode_kavling],
-                                                                $kav->masterSvg->polygon_svg,
-                                                            ) !!}
+                                                            {!! \App\Services\SiteplanSvg::salesUnit($pt, $kav->masterSvg->polygon_svg, $warna) !!}
                                                         </a>
                                                     @elseif ($pt->jenis_map == 'path')
                                                         <a href="javascript:void(0);" class="detail-button"
                                                             data-id="{{ $pt->id }}"
                                                             data-url="{{ route('siteplan-penjualan.show', $pt->id) }}">
-                                                            {!! str_replace(
-                                                                ['[[1]]', '[[2]]', '[[3]]', '[[4]]'],
-                                                                [$pt->map, $warna, $pt->matrik, $pt->kode_kavling],
-                                                                $kav->masterSvg->path_svg,
-                                                            ) !!}
+                                                            {!! \App\Services\SiteplanSvg::salesUnit($pt, $kav->masterSvg->path_svg, $warna) !!}
                                                         </a>
                                                     @endif
                                                 @endforeach
@@ -182,7 +177,7 @@
                         @endforeach
                         @endif
                         <hr>
-                        <strong>Progres Penjualan</strong>
+                        <strong>Status Penjualan</strong>
                         @foreach ($legend as $item)
                             <div class="legend-item">
                                 <div class="legend-color" style="background-color: {{ $item->warna }}"></div>

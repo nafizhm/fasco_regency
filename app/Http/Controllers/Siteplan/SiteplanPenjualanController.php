@@ -23,15 +23,37 @@ class SiteplanPenjualanController extends Controller
          $selection = \App\Services\SiteplanSelection::load(['masterSvg', 'kavlingPeta' => fn ($query) => $query->withBookingState(), 'kavlingPeta.customer.progres']);
         $lokasiKavling = $selection['lokasiKavling'];
 
-        $legend = ProgresListPenjualan::whereRaw('LOWER(TRIM(status_progres)) NOT IN (?, ?)', ['ready', 'user cancel'])->whereNotNull('warna')
-            ->where('warna', '!=', '')
-            ->where('stt_tampil', 1)
-            ->orderBy('urutan', 'asc')
-            ->get();
-
-        $holdColor = ProgresListPenjualan::whereRaw('LOWER(TRIM(status_progres)) = ?', ['hold'])->value('warna') ?: '#94a3b8';
-
+        $colors = \App\Services\SiteplanColors::colors();
+        $holdColor = $colors['proses'];
+        $legend = collect($colors)->map(fn ($color, $status) => (object) ['warna' => $color, 'status_progres' => ucfirst($status)]);
         return view('admin.siteplan.siteplan_penjualan.index', compact('lokasiKavling', 'legend', 'holdColor'))->with($selection);
+    }
+
+    public function manage()
+    {
+        abort_unless(\App\Services\SiteplanColors::canManage(), 403);
+        $selection = \App\Services\SiteplanSelection::load(['kavlingPeta' => fn ($q) => $q->withBookingState()->with('customer')]);
+        return view('admin.siteplan.siteplan_penjualan.manage', $selection + ['colors' => \App\Services\SiteplanColors::colors()]);
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        abort_unless(\App\Services\SiteplanColors::canManage(), 403);
+        $data = $request->validate(['status' => 'required|in:ready,proses,sold']);
+        $unit = KavlingPeta::findOrFail($id);
+        $unit->siteplan_status = $data['status'];
+        $unit->save();
+        return back()->with('success', 'Status unit berhasil diperbarui.');
+    }
+
+    public function updateColors(Request $request)
+    {
+        abort_unless(\App\Services\SiteplanColors::canManage(), 403);
+        $data = $request->validate(['proses' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'], 'sold' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/']]);
+        DB::transaction(function () use ($data) {
+            foreach ($data as $status => $color) DB::table('siteplan_sales_colors')->updateOrInsert(['status' => $status], ['color' => $color]);
+        });
+        return back()->with('success', 'Warna siteplan berhasil diperbarui.');
     }
 
 
@@ -46,6 +68,7 @@ class SiteplanPenjualanController extends Controller
         return response()->json([
             'success'         => true,
             'data'            => $data,
+            'siteplan_status' => ucfirst(\App\Services\SiteplanColors::status($data)),
             'tagihan'         => $tagihanList,
             'listrik_air' => $data->listrikAir,
             'pemasukan'       => $pemasukanList,
@@ -67,17 +90,16 @@ class SiteplanPenjualanController extends Controller
 
         echo str_replace(['[[lebar]]', '[[tinggi]]'], [$width, $height], $lokasi->masterSvg->header_svg);
 
-        $holdColor = ProgresListPenjualan::whereRaw('LOWER(TRIM(status_progres)) = ?', ['hold'])->value('warna') ?: '#94a3b8';
+        $holdColor = \App\Services\SiteplanColors::colors()['proses'];
 
         foreach ($lokasi->kavlingPeta as $pt) {
             $warna = \App\Services\SiteplanColors::sales($pt, $holdColor, request()->boolean('ready_putih'));
 
-            $replacements = [$pt->map, $warna, $pt->matrik, $pt->kode_kavling];
 
             if ($pt->jenis_map === 'polygon') {
-                echo str_replace(['[[1]]', '[[2]]', '[[3]]', '[[4]]'], $replacements, $lokasi->masterSvg->polygon_svg);
+                echo \App\Services\SiteplanSvg::salesUnit($pt, $lokasi->masterSvg->polygon_svg, $warna);
             } elseif ($pt->jenis_map === 'path') {
-                echo str_replace(['[[1]]', '[[2]]', '[[3]]', '[[4]]'], $replacements, $lokasi->masterSvg->path_svg);
+                echo \App\Services\SiteplanSvg::salesUnit($pt, $lokasi->masterSvg->path_svg, $warna);
             }
         }
 
@@ -223,7 +245,7 @@ class SiteplanPenjualanController extends Controller
         $namaLokasi = $kavling->lokasi->nama_kavling ?? '-';
 
         $kavlingData = [
-            'status'        => $kavling->sales_status,
+            'status'        => ucfirst(\App\Services\SiteplanColors::status($kavling)),
             'marketing'     => optional($cust?->marketing)->nama_marketing ?? '-',
             'lokasi'        => $namaLokasi,
             'blok'          => $kavling->blok ?? $kavling->kode_kavling ?? '-',
@@ -253,7 +275,7 @@ class SiteplanPenjualanController extends Controller
         ];
 
         $kavlingData = [
-            'status'        => $request->status ?? 'Terjual',
+            'status'        => ucfirst(\App\Services\SiteplanColors::status($kavling)),
             'marketing'     => $cust->marketing->nama_marketing ?? '-',
             'lokasi'        => $namaLokasi,
             'blok'          => $request->blok ?? $request->kode_kavling ?? '-',
