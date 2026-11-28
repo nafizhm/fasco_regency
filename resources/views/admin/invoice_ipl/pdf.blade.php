@@ -7,5 +7,5 @@
 </style></head><body><div class="frame">
 <table class="kop"><tr><td class="logo">@if($logoData)<img src="{{ $logoData }}" alt="Logo">@endif</td><td><h1>BUKTI PEMBAYARAN IURAN PENGELOLAAN LINGKUNGAN (IPL)</h1></td></tr></table>
 <p style="text-align:right;font-size:8px">Nomor: {{ $data->nomor }}</p>
-@include('admin.invoice_ipl.detail')
+@include('admin.invoice_ipl.detail', ['hideBalance' => true])
 </div></body></html>

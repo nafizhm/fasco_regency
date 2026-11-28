@@ -34,6 +34,7 @@ class DashboardController extends Controller
 
     public function piutangPdf(Request $request, \App\Services\DashboardReceivableService $receivables)
     {
+        abort_unless(strtolower((string) auth()->user()?->username) === 'tutut', 403);
         $values = $request->validate([
             'jatuh_tempo' => 'nullable|boolean', 'filtered' => 'nullable|boolean',
             'ids' => 'nullable|array|max:10000', 'ids.*' => 'required|integer|distinct',
@@ -60,6 +61,7 @@ class DashboardController extends Controller
 
     public function piutangKprPdf(\App\Services\KprReceivableReport $report)
     {
+        abort_unless(strtolower((string) auth()->user()?->username) === 'tutut', 403);
         $rows = $report->rows();
         $stages = max(4, (int) $rows->max(fn ($row) => $row['payments']->count()));
 

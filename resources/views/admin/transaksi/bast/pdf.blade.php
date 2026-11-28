@@ -1,0 +1,8 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><title>Daftar BAST</title><style>
+@page {margin:10mm;} body {font-family:DejaVu Sans,sans-serif;font-size:9px;color:#222;} h1 {font-size:16px;text-align:center;margin:0 0 12px;} p {margin:4px 0;} table {width:100%;border-collapse:collapse;table-layout:fixed;margin-top:12px;} th,td {border:1px solid #777;padding:5px 4px;word-wrap:break-word;vertical-align:middle;} thead {display:table-header-group;} th {background:#e7effa;} tr {page-break-inside:avoid;} .number {text-align:center;padding-left:1px;padding-right:1px;} .date {white-space:nowrap;text-align:center;}
+</style></head><body><h1>DATA BERITA ACARA SERAH TERIMA (BAST)</h1>
+<p>Dicetak: {{ now('Asia/Jakarta')->format('d-m-Y H:i') }} | Jumlah data: {{ $items->count() }}</p>@if($search)<p>Pencarian: {{ $search }}</p>@endif
+<table><thead><tr><th style="width:3%">No</th><th style="width:12%">Tanggal BAST</th><th style="width:25%">No. BAST</th><th style="width:25%">Customer</th><th style="width:25%">Lokasi Rumah</th><th style="width:10%">Blok / Unit</th></tr></thead><tbody>
+@forelse($items as $item)<tr><td class="number">{{ $loop->iteration }}</td><td class="date">{{ $item->tanggal_bast ? \Carbon\Carbon::parse($item->tanggal_bast)->format('d-m-Y') : '-' }}</td><td>{{ $item->no_bast }}</td><td>{{ $item->customer->nama_lengkap }}</td><td>{{ $item->customer->lokasi?->nama_kavling ?? '-' }}</td><td>{{ trim(($item->customer->kavling?->nama_cluster ?? '').' '.($item->customer->kavling?->kode_kavling ?? '')) ?: '-' }}</td></tr>
+@empty<tr><td colspan="6" style="text-align:center">Tidak ada data BAST sesuai filter.</td></tr>@endforelse
+</tbody></table></body></html>

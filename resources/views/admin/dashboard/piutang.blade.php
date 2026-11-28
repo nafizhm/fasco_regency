@@ -4,7 +4,7 @@
     <section class="content-header">
         <div class="container-fluid d-flex justify-content-between align-items-center">
             <h1>{{ $dueOnly ? 'Piutang Jatuh Tempo' : 'Detail Piutang' }}</h1>
-            <div><button type="button" id="printReceivables" class="btn btn-primary btn-sm"><i class="fas fa-print"></i> Cetak PDF</button> <a href="{{ route('beranda.index') }}" class="btn btn-secondary btn-sm">Kembali ke Dashboard</a></div>
+            <div>@if(strtolower((string) auth()->user()?->username) === 'tutut')<button type="button" id="printReceivables" class="btn btn-primary btn-sm"><i class="fas fa-print"></i> Cetak PDF</button>@endif <a href="{{ route('beranda.index') }}" class="btn btn-secondary btn-sm">Kembali ke Dashboard</a></div>
         </div>
     </section>
     <section class="content">

@@ -3,7 +3,7 @@
 <h4>PEMBAYARAN:</h4>
 <table class="table table-bordered payments"><thead><tr><th>Tanggal Pembayaran</th><th>Nominal</th><th>Transaksi</th><th>Keterangan</th></tr></thead><tbody>
 @forelse($data->pembayaran as $line)<tr><td>{{ \Carbon\Carbon::parse($line->tanggal)->translatedFormat('d F Y') }}</td><td class="money">Rp{{ number_format($line->nominal,0,',','.') }}</td><td>{{ $line->transaksi }}</td><td>{{ $line->keterangan }}</td></tr>@empty<tr><td colspan="4">Belum ada pembayaran.</td></tr>@endforelse
-<tr class="total"><th>TOTAL PEMBAYARAN</th><th class="money">Rp{{ number_format($data->total_pembayaran,0,',','.') }}</th><td colspan="2"></td></tr><tr><th>SISA TAGIHAN</th><th class="money">Rp{{ number_format($data->sisa,0,',','.') }}</th><td colspan="2">{{ $data->status }}</td></tr></tbody></table>
+<tr class="total"><th>TOTAL PEMBAYARAN</th><th class="money">Rp{{ number_format($data->total_pembayaran,0,',','.') }}</th><td colspan="2"></td></tr>@unless($hideBalance ?? false)<tr><th>SISA TAGIHAN</th><th class="money">Rp{{ number_format($data->sisa,0,',','.') }}</th><td colspan="2">{{ $data->status }}</td></tr>@endunless</tbody></table>
 <table class="table table-bordered bank" style="table-layout:fixed">
     <colgroup><col style="width:26%"><col style="width:85px"><col style="width:10px"><col></colgroup>
     @foreach(['nama_rekening' => 'Nama', 'bank' => 'Bank', 'no_rekening' => 'No Rekening'] as $field => $label)

@@ -17,6 +17,7 @@
                                 <div class="d-flex align-content-center justify-content-between">
                                     <h3 class="font-weight-bold text-lg">Data Berita Acara Serah Terima (BAST)</h3>
                                     <div class="d-flex align-items-center">
+                                        @if($canPrint ?? false)<button type="button" id="printBastPdf" class="btn btn-secondary btn-sm mr-2"><i class="fas fa-print"></i> Cetak PDF</button>@endif
                                         @if ($permissions['tambah'])
                                             <button class="btn btn-primary btn-sm" data-toggle="modal"
                                                 data-target="#modalForm"><i class="fas fa-plus"></i>
@@ -179,6 +180,14 @@
         $(function() {
             var permissions = @json($permissions);
             var showActionColumn = (permissions['edit'] == 1 || permissions['hapus'] == 1);
+            $('#printBastPdf').on('click', function () {
+                const form = document.createElement('form');
+                form.method = 'POST'; form.action = @json(route('bast.pdf')); form.target = '_blank';
+                const field = (name, value) => { const input = document.createElement('input'); input.type = 'hidden'; input.name = name; input.value = value; form.append(input); };
+                field('_token', @json(csrf_token())); field('filtered', '1'); field('search', table.search());
+                table.rows({search:'applied', order:'applied'}).data().toArray().forEach(row => field('ids[]', row.id));
+                document.body.append(form); form.submit(); form.remove();
+            });
             var table = $('.data-table').DataTable({
                 processing: false,
                 serverSide: false,

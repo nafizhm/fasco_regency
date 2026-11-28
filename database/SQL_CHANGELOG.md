@@ -78,3 +78,18 @@ Invoice IPL: rekening perusahaan dan penandatangan dibuat tetap sesuai contoh (L
 Dashboard Piutang KPR: tombol Cetak PDF, laporan landscape (A4 hingga empat termin, A3 untuk lebih banyak termin), sumber data dan tabel bersama dengan halaman laporan. Memuat rincian termin, persentase dan total piutang. Tidak ada perubahan SQL.
 
 Dashboard Piutang: tombol Cetak PDF A4 landscape, mengikuti filter jatuh tempo serta pencarian/urutan DataTables pada semua halaman. Sumber perhitungan tetap DashboardReceivableService, total hanya customer tercetak. Tidak ada perubahan SQL.
+
+Paket gabungan khusus sesi 28 November 2026: `database/sql/2026-11-28-session-changes.sql`, berisi Pengajuan Tagihan dan Invoice IPL berikut hak akses Nita. Isinya sudah tercakup dalam paket kumulatif 20 November; pilih paket sesuai baseline hosting, tidak perlu mengimpor keduanya.
+
+Hak cetak laporan Dashboard Piutang dan Piutang KPR dibatasi hanya username Tutut (case-insensitive), baik tombol maupun endpoint PDF. Tidak ada perubahan SQL.
+
+
+## 28 November 2026 - Rekap KPR
+
+Migrasi `2026_11_28_020000_create_rekap_kpr`: tabel `rekap_kpr` menyimpan bank, nama user KPR, blok, tanggal booking/ITJ/masuk opsional, keterangan, perumahan dan penanda merah. Menu utama **Rekap KPR** (`rekap-kpr.index`), hak lihat/tambah/edit/hapus untuk username `tutut`. Tabel dikelompokkan per bank seperti contoh BRI/BNI/MANDIRI/BSN; nama bank lain dapat diketik. Filter bank dan pencarian tersedia. Data manual mandiri, tidak mengubah customer atau transaksi KPR.
+
+SQL hosting khusus: `database/sql/2026-11-28-rekap-kpr.sql`; juga ditambahkan ke kedua paket sesi `2026-11-28-session-changes.sql` dan `2026-11-20-session-changes.sql`. Pilih salah satu sesuai baseline hosting. Login ulang Tutut setelah deploy.
+
+Menu BAST: tombol Cetak PDF daftar BAST (A4 landscape), mengikuti pencarian DataTables seluruh halaman, hanya customer aktif. Hak lihat menu bast.index diperiksa pada tombol dan endpoint. Tidak ada perubahan SQL.
+
+Rekap KPR: SQL `database/sql/2026-11-28-rekap-kpr-akses-semua-user.sql` memberikan hak lihat/tambah/edit/hapus kepada semua user yang sudah ada, mempertahankan beranda dan akses menu lainnya. Juga ditambahkan pada kedua paket SQL sesi. Jalankan setelah menu Rekap KPR tersedia, lalu login ulang. Tidak otomatis memberikan akses untuk akun baru di masa depan.

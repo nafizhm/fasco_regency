@@ -126,6 +126,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('admin/pengajuan-tagihan/cetak-pdf', [\App\Http\Controllers\PengajuanTagihanController::class, 'pdf'])->name('pengajuan-tagihan.pdf');
     Route::get('admin/invoice-ipl/{id}/pdf', [\App\Http\Controllers\InvoiceIplController::class, 'pdf'])->name('invoice-ipl.pdf');
     Route::resource('admin/invoice-ipl', \App\Http\Controllers\InvoiceIplController::class);
+    Route::resource('admin/rekap-kpr', \App\Http\Controllers\RekapKprController::class);
     Route::resource('admin/pengajuan-tagihan', \App\Http\Controllers\PengajuanTagihanController::class);
     require __DIR__.'/inventory.php';
     Route::prefix('admin/keuangan/deposit-notaris')->name('notary-deposits.')->controller(\App\Http\Controllers\Keuangan\NotaryDepositController::class)->group(function () {
@@ -256,6 +257,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('cetak-bast/{id_customer}', [BastController::class, 'cetakBast'])
             ->name('bast.cetak');
         Route::get('/bast/generate-no', [BASTController::class, 'generateNoBAST'])->name('generateNoBAST');
+        Route::post('/bast/cetak-pdf', [BastController::class, 'pdf'])->name('bast.pdf');
         Route::resource('bast', BASTController::class);
         Route::get('cetak-ppjb/{id_customer}', [PPJBController::class, 'cetakPPJB'])
             ->name('ppjb.cetak');

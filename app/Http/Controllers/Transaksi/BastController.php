@@ -80,7 +80,28 @@ class BastController extends Controller
         $customerList = Customer::whereNotIn('id', BAST::select('id_customer')->whereNotNull('id_customer'))
             ->orderBy('nama_lengkap')->get();
 
-        return view('admin.transaksi.bast.index', compact('permissions', 'customerList'));
+        $canPrint = auth()->check() && DB::table('hak_akses')->join('menu', 'menu.id', '=', 'hak_akses.id_menu')
+            ->where('id_user', auth()->id())->where('route_name', 'bast.index')->where('hak_akses.lihat', 1)->exists();
+
+        return view('admin.transaksi.bast.index', compact('permissions', 'customerList', 'canPrint'));
+    }
+
+    public function pdf(Request $request)
+    {
+        abort_unless(DB::table('hak_akses')->join('menu', 'menu.id', '=', 'hak_akses.id_menu')
+            ->where('id_user', auth()->id())->where('route_name', 'bast.index')->where('hak_akses.lihat', 1)->exists(), 403);
+        $values = $request->validate([
+            'ids' => 'nullable|array|max:10000', 'ids.*' => 'required|integer|distinct',
+            'filtered' => 'nullable|boolean', 'search' => 'nullable|string|max:1000',
+        ]);
+        $items = BAST::with(['customer.lokasi', 'customer.kavling'])
+            ->whereHas('customer', fn ($query) => $query->where('stt_arsip', 0))
+            ->when($request->boolean('filtered'), fn ($query) => $query->whereIn('id', $values['ids'] ?? []))
+            ->orderBy('tanggal_bast')->orderBy('id')->get();
+        $search = $values['search'] ?? null;
+
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.transaksi.bast.pdf', compact('items', 'search'))
+            ->setPaper('a4', 'landscape')->stream('daftar-bast-'.now('Asia/Jakarta')->format('Ymd-His').'.pdf');
     }
 
     public function store(Request $request)

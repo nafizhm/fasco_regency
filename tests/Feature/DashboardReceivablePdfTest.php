@@ -14,6 +14,7 @@ class DashboardReceivablePdfTest extends TestCase
     {
         $user = new User;
         $user->id = 1;
+        $user->username = 'Tutut';
         $this->actingAs($user);
         $a = new Customer;
         $a->forceFill(['id' => 1, 'nama_lengkap' => 'Customer A', 'total_tagihan' => 3000000, 'total_bayar' => 1000000, 'sisa_piutang' => 2000000, 'tanggal_jatuh_tempo' => '2026-11-01']);
@@ -44,9 +45,22 @@ class DashboardReceivablePdfTest extends TestCase
         $this->post(route('dashboard.piutang.pdf'))->assertRedirect(route('login'));
         $user = new User;
         $user->id = 1;
+        $user->username = 'Tutut';
         $this->actingAs($user);
         $this->mock(DashboardReceivableService::class)->shouldReceive('customers')->once()->with(['lokasi', 'kavling'], false)->andReturn(new Collection);
         $response = $this->post(route('dashboard.piutang.pdf'), ['filtered' => 1])->assertOk()->assertHeader('Content-Type', 'application/pdf');
-        $this->assertStringStartsWith('%PDF-',$response->getContent());
+        $this->assertStringStartsWith('%PDF-', $response->getContent());
+    }
+
+    public function test_other_users_cannot_print_either_receivable_report(): void
+    {
+        foreach (['nita', 'admin', ''] as $username) {
+            $user = new User;
+            $user->id = 2;
+            $user->username = $username;
+            $this->actingAs($user);
+            $this->post(route('dashboard.piutang.pdf'))->assertForbidden();
+            $this->get(route('dashboard.piutang-kpr.pdf'))->assertForbidden();
+        }
     }
 }

@@ -24,6 +24,7 @@ class KprReceivablePdfTest extends TestCase
     {
         $user = new User;
         $user->id = 1;
+        $user->username = 'Tutut';
         $this->actingAs($user);
         $rows = $this->rows();
         $this->mock(KprReceivableReport::class)->shouldReceive('rows')->once()->andReturn($rows);
@@ -45,6 +46,7 @@ class KprReceivablePdfTest extends TestCase
     {
         $user = new User;
         $user->id = 1;
+        $user->username = 'Tutut';
         $this->actingAs($user);
         $this->mock(KprReceivableReport::class)->shouldReceive('rows')->twice()->andReturn(collect(), $this->rows(5));
         $this->get(route('dashboard.piutang-kpr.pdf'))->assertOk()->assertHeader('Content-Type', 'application/pdf');
@@ -83,5 +85,17 @@ class KprReceivablePdfTest extends TestCase
     public function test_guest_cannot_print_report(): void
     {
         $this->get(route('dashboard.piutang-kpr.pdf'))->assertRedirect(route('login'));
+    }
+
+    public function test_other_users_cannot_print_either_receivable_report(): void
+    {
+        foreach (['nita', 'admin', ''] as $username) {
+            $user = new User;
+            $user->id = 2;
+            $user->username = $username;
+            $this->actingAs($user);
+            $this->post(route('dashboard.piutang.pdf'))->assertForbidden();
+            $this->get(route('dashboard.piutang-kpr.pdf'))->assertForbidden();
+        }
     }
 }
